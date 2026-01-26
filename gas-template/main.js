@@ -94,6 +94,12 @@ function doPost(e) {
       case 'mark_unread':
         return handleMarkUnread(body.threadId, body.messageId);
 
+      case 'add_label':
+        return handleAddLabel(body.threadId, body.messageId, body.label);
+
+      case 'remove_label':
+        return handleRemoveLabel(body.threadId, body.messageId, body.label);
+
       default:
         return errorResponse(`Unknown action: ${action}`);
     }
