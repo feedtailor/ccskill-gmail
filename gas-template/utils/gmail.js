@@ -23,6 +23,7 @@ function formatThread(thread) {
     messageCount: messages.length,
     isUnread: thread.isUnread(),
     isImportant: thread.isImportant(),
+    isInPriorityInbox: thread.isInPriorityInbox(),
     isInInbox: thread.isInInbox(),
     labels: thread.getLabels().map(function(label) {
       return label.getName();
@@ -43,6 +44,9 @@ function formatThreadWithMessages(thread) {
     subject: messages[0].getSubject(),
     messageCount: messages.length,
     isUnread: thread.isUnread(),
+    isImportant: thread.isImportant(),
+    isInPriorityInbox: thread.isInPriorityInbox(),
+    isInInbox: thread.isInInbox(),
     labels: thread.getLabels().map(function(label) {
       return label.getName();
     }),
