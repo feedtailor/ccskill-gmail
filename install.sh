@@ -244,7 +244,33 @@ echo -e "${YELLOW}Please authorize access to your Gmail account.${NC}"
 echo ""
 read -p "Press Enter to open the GAS editor..."
 
-clasp open
+# clasp open は新しいバージョンで廃止されたため、直接URLを開く
+SCRIPT_ID=""
+if [ -f ".clasp.json" ]; then
+    if command -v jq &> /dev/null; then
+        SCRIPT_ID=$(jq -r '.scriptId' .clasp.json 2>/dev/null)
+    else
+        SCRIPT_ID=$(grep -o '"scriptId"[[:space:]]*:[[:space:]]*"[^"]*"' .clasp.json | sed 's/.*"\([^"]*\)".*/\1/')
+    fi
+fi
+
+if [ -n "$SCRIPT_ID" ]; then
+    GAS_EDITOR_URL="https://script.google.com/d/${SCRIPT_ID}/edit"
+    echo ""
+    echo -e "${BLUE}Opening: $GAS_EDITOR_URL${NC}"
+
+    # OS に応じてブラウザを開く
+    if command -v open &> /dev/null; then
+        open "$GAS_EDITOR_URL"
+    elif command -v xdg-open &> /dev/null; then
+        xdg-open "$GAS_EDITOR_URL"
+    else
+        echo "Please open this URL manually: $GAS_EDITOR_URL"
+    fi
+else
+    echo -e "${YELLOW}Could not determine script ID. Please open GAS editor manually.${NC}"
+    echo "Go to: https://script.google.com/home"
+fi
 
 echo ""
 
