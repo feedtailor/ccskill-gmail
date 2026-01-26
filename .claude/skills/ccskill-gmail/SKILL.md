@@ -79,8 +79,8 @@ curl -sL --max-time 60 \
 
 | アクション | 説明 | パラメータ |
 |-----------|------|-----------|
-| create_draft | 下書き作成 | `to`, `subject`, `body` (必須), `cc`, `bcc` (任意) |
-| create_reply_draft | 返信下書き作成 | `threadId`, `body` (必須), `cc`, `bcc` (任意) |
+| create_draft | 新規メールの下書き作成 | `to`, `subject`, `body` (必須), `cc`, `bcc` (任意) |
+| create_reply_draft | 既存スレッドへの返信下書き作成 | `threadId`, `body` (必須), `cc`, `bcc` (任意) |
 | mark_read | 既読にする | `threadId` または `messageId` (いずれか必須) |
 | mark_unread | 未読にする | `threadId` または `messageId` (いずれか必須) |
 | add_label | ラベル追加 | `threadId`, `label` (必須) |

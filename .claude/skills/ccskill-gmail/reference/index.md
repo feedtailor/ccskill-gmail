@@ -13,8 +13,8 @@
 
 | API | ファイル | 説明 |
 |-----|---------|------|
-| create_draft | [draft.md](draft.md) | 下書き作成 |
-| create_reply_draft | [draft.md](draft.md) | 返信下書き作成 |
+| create_draft | [draft.md](draft.md) | 新規メールの下書き作成 |
+| create_reply_draft | [draft.md](draft.md) | 既存スレッドへの返信下書き作成 |
 | mark_read | [status.md](status.md) | 既読にする |
 | mark_unread | [status.md](status.md) | 未読にする |
 | add_label | [label.md](label.md) | ラベル追加 |
