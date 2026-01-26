@@ -80,6 +80,11 @@ curl -sL --max-time 60 \
 | アクション | 説明 | パラメータ |
 |-----------|------|-----------|
 | create_draft | 下書き作成 | `to`, `subject`, `body` (必須), `cc`, `bcc` (任意) |
+| create_reply_draft | 返信下書き作成 | `threadId`, `body` (必須), `cc`, `bcc` (任意) |
+| mark_read | 既読にする | `threadId` または `messageId` (いずれか必須) |
+| mark_unread | 未読にする | `threadId` または `messageId` (いずれか必須) |
+| add_label | ラベル追加 | `threadId`, `label` (必須) |
+| remove_label | ラベル削除 | `threadId`, `label` (必須) |
 
 → 詳細: [reference/](reference/)
 
@@ -139,6 +144,36 @@ curl -sL --max-time 60 \
 curl -sL --max-time 60 \
   -H "Content-Type: application/json" \
   --data '{"action":"create_draft","to":"to@example.com","cc":"cc@example.com","bcc":"bcc@example.com","subject":"件名","body":"本文"}' \
+  "$GMAIL_ENDPOINT"
+
+# 返信下書き作成
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"ご連絡ありがとうございます。"}' \
+  "$GMAIL_ENDPOINT"
+
+# 既読にする
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"mark_read","threadId":"THREAD_ID"}' \
+  "$GMAIL_ENDPOINT"
+
+# 未読にする
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"mark_unread","threadId":"THREAD_ID"}' \
+  "$GMAIL_ENDPOINT"
+
+# ラベル追加
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}' \
+  "$GMAIL_ENDPOINT"
+
+# ラベル削除
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"remove_label","threadId":"THREAD_ID","label":"対応済"}' \
   "$GMAIL_ENDPOINT"
 ```
 

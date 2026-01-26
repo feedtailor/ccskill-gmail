@@ -38,15 +38,14 @@ echo "$RESULT" | jq .
 THREAD_ID=$(echo "$RESULT" | jq -r '.data.threads[0].id')
 curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_thread&threadId=$THREAD_ID" | jq .
 
-# 3. 返信下書きを作成
+# 3. 返信下書きを作成（宛先・件名は自動設定）
 curl -sL --max-time 60 \
   -H "Content-Type: application/json" \
-  --data '{
-    "action": "create_draft",
-    "to": "sender@example.com",
-    "subject": "Re: 元の件名",
-    "body": "ご連絡ありがとうございます。\n\n承知いたしました。対応いたします。\n\nよろしくお願いいたします。"
-  }' \
+  --data "{
+    \"action\": \"create_reply_draft\",
+    \"threadId\": \"$THREAD_ID\",
+    \"body\": \"ご連絡ありがとうございます。\\n\\n承知いたしました。対応いたします。\\n\\nよろしくお願いいたします。\"
+  }" \
   "$GMAIL_ENDPOINT" | jq .
 
 # 4. Gmail で下書きを確認・送信
@@ -110,4 +109,87 @@ curl -sL --max-time 60 \
     "body": "お疲れ様です。\n\n週次ミーティングを以下の日程で行います。\n\n日時: 1月30日（火）15:00〜\n場所: 会議室A\n\nご参加よろしくお願いいたします。"
   }' \
   "$GMAIL_ENDPOINT" | jq .
+```
+
+---
+
+## 8. メールを読んで既読にする
+
+```bash
+source .env
+
+# 1. 未読メールを取得
+THREAD_ID=$(curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=is:unread&maxResults=1" | jq -r '.data.threads[0].id')
+
+# 2. 内容を確認
+curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_thread&threadId=$THREAD_ID" | jq '.data.subject, .data.messages[-1].body'
+
+# 3. 既読にする
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data "{\"action\":\"mark_read\",\"threadId\":\"$THREAD_ID\"}" \
+  "$GMAIL_ENDPOINT" | jq .
+```
+
+---
+
+## 9. メールにラベルを付けて整理
+
+```bash
+source .env
+
+# 1. 未読の重要メールを検索
+THREAD_ID=$(curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=is:unread%20is:important&maxResults=1" | jq -r '.data.threads[0].id')
+
+# 2. 「要対応」ラベルを追加
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"要対応\"}" \
+  "$GMAIL_ENDPOINT" | jq .
+
+# 3. 対応完了後、ラベルを変更
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data "{\"action\":\"remove_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"要対応\"}" \
+  "$GMAIL_ENDPOINT"
+
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"対応済\"}" \
+  "$GMAIL_ENDPOINT" | jq .
+```
+
+---
+
+## 10. 未読メール対応ワークフロー（完全版）
+
+```bash
+source .env
+
+# 1. 未読メールを検索
+THREAD_ID=$(curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=is:unread&maxResults=1" | jq -r '.data.threads[0].id')
+
+# 2. スレッドの内容を確認
+curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_thread&threadId=$THREAD_ID" | jq '.data.subject, .data.messages[-1].body'
+
+# 3. 返信下書きを作成
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data "{\"action\":\"create_reply_draft\",\"threadId\":\"$THREAD_ID\",\"body\":\"承知いたしました。\"}" \
+  "$GMAIL_ENDPOINT" | jq .
+
+# 4. 既読にする
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data "{\"action\":\"mark_read\",\"threadId\":\"$THREAD_ID\"}" \
+  "$GMAIL_ENDPOINT"
+
+# 5. ラベルを追加
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"対応済\"}" \
+  "$GMAIL_ENDPOINT" | jq .
+
+# 6. Gmail で下書きを確認・送信
+echo "https://mail.google.com/mail/u/0/#drafts"
 ```
