@@ -59,3 +59,39 @@ function handleListLabels() {
     labels: labels.map(formatLabel)
   });
 }
+
+/**
+ * Get unread message count
+ * @param {string} labelName - Label name (optional, defaults to INBOX)
+ * @returns {ContentService.TextOutput} JSON response with unread count
+ *
+ * @example
+ * handleGetUnreadCount() // INBOX の未読数
+ *
+ * @example
+ * handleGetUnreadCount("重要") // 特定ラベルの未読数
+ */
+function handleGetUnreadCount(labelName) {
+  let unreadCount;
+  let targetLabel = labelName || 'INBOX';
+
+  if (!labelName || labelName.toUpperCase() === 'INBOX') {
+    // 受信トレイの未読数
+    unreadCount = GmailApp.getInboxUnreadCount();
+    targetLabel = 'INBOX';
+  } else {
+    // 特定ラベルの未読数
+    const label = GmailApp.getUserLabelByName(labelName);
+    if (!label) {
+      return errorResponse(`Label not found: ${labelName}`);
+    }
+    unreadCount = label.getUnreadCount();
+    targetLabel = labelName;
+  }
+
+  return successResponse({
+    label: targetLabel,
+    unreadCount: unreadCount,
+    message: `未読メールが ${unreadCount} 件あります`
+  });
+}
