@@ -40,6 +40,9 @@ function doGet(e) {
       case 'list_labels':
         return handleListLabels();
 
+      case 'get_unread_count':
+        return handleGetUnreadCount(e.parameter.label);
+
       default:
         return errorResponse(`Unknown action: ${action}`);
     }
