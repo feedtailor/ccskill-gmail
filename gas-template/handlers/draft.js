@@ -85,3 +85,74 @@ function handleCreateReplyDraft(threadId, body, cc, bcc) {
     gmailUrl: 'https://mail.google.com/mail/u/0/#drafts'
   });
 }
+
+/**
+ * Update an existing draft
+ * Note: GmailApp doesn't support direct draft update, so we delete and recreate.
+ * @param {string} draftId - Draft ID to update
+ * @param {string} to - New recipient (optional)
+ * @param {string} subject - New subject (optional)
+ * @param {string} body - New body (optional)
+ * @param {string} cc - New CC recipients (optional)
+ * @param {string} bcc - New BCC recipients (optional)
+ * @returns {ContentService.TextOutput} JSON response with new draft info
+ */
+function handleUpdateDraft(draftId, to, subject, body, cc, bcc) {
+  requireParam(draftId, 'draftId');
+
+  // Get existing draft
+  const drafts = GmailApp.getDrafts();
+  const draft = drafts.find(function(d) { return d.getId() === draftId; });
+
+  if (!draft) {
+    return errorResponse(`Draft not found: ${draftId}`);
+  }
+
+  // Get current message content
+  const message = draft.getMessage();
+  const currentTo = to || message.getTo();
+  const currentSubject = subject || message.getSubject();
+  const currentBody = body || message.getPlainBody();
+
+  // Build options
+  const options = buildEmailOptions({
+    cc: cc,
+    bcc: bcc
+  });
+
+  // Delete old draft and create new one
+  draft.deleteDraft();
+  const newDraft = GmailApp.createDraft(currentTo, currentSubject, currentBody, options);
+
+  return successResponse({
+    draftId: newDraft.getId(),
+    oldDraftId: draftId,
+    action: 'update_draft',
+    message: '下書きを更新しました',
+    gmailUrl: 'https://mail.google.com/mail/u/0/#drafts'
+  });
+}
+
+/**
+ * Delete a draft
+ * @param {string} draftId - Draft ID to delete
+ * @returns {ContentService.TextOutput} JSON response
+ */
+function handleDeleteDraft(draftId) {
+  requireParam(draftId, 'draftId');
+
+  const drafts = GmailApp.getDrafts();
+  const draft = drafts.find(function(d) { return d.getId() === draftId; });
+
+  if (!draft) {
+    return errorResponse(`Draft not found: ${draftId}`);
+  }
+
+  draft.deleteDraft();
+
+  return successResponse({
+    draftId: draftId,
+    action: 'delete_draft',
+    message: '下書きを削除しました'
+  });
+}

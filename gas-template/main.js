@@ -109,6 +109,19 @@ function doPost(e) {
       case 'move_to_trash':
         return handleMoveToTrash(body.threadId);
 
+      case 'update_draft':
+        return handleUpdateDraft(
+          body.draftId,
+          body.to,
+          body.subject,
+          body.body,
+          body.cc,
+          body.bcc
+        );
+
+      case 'delete_draft':
+        return handleDeleteDraft(body.draftId);
+
       default:
         return errorResponse(`Unknown action: ${action}`);
     }
