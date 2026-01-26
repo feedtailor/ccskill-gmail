@@ -88,6 +88,12 @@ function doPost(e) {
           body.bcc
         );
 
+      case 'mark_read':
+        return handleMarkRead(body.threadId, body.messageId);
+
+      case 'mark_unread':
+        return handleMarkUnread(body.threadId, body.messageId);
+
       default:
         return errorResponse(`Unknown action: ${action}`);
     }
