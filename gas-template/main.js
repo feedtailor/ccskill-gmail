@@ -80,6 +80,14 @@ function doPost(e) {
           body.bcc
         );
 
+      case 'create_reply_draft':
+        return handleCreateReplyDraft(
+          body.threadId,
+          body.body,
+          body.cc,
+          body.bcc
+        );
+
       default:
         return errorResponse(`Unknown action: ${action}`);
     }
