@@ -103,6 +103,9 @@ function doPost(e) {
       case 'archive':
         return handleArchive(body.threadId);
 
+      case 'move_to_trash':
+        return handleMoveToTrash(body.threadId);
+
       default:
         return errorResponse(`Unknown action: ${action}`);
     }

@@ -28,3 +28,28 @@ function handleArchive(threadId) {
     message: 'スレッドをアーカイブしました'
   });
 }
+
+/**
+ * Move a thread to trash
+ * @param {string} threadId - Thread ID to move to trash
+ * @returns {ContentService.TextOutput} JSON response
+ *
+ * @example
+ * handleMoveToTrash("19bf7f25b96ab637")
+ */
+function handleMoveToTrash(threadId) {
+  requireParam(threadId, 'threadId');
+
+  const thread = GmailApp.getThreadById(threadId);
+  if (!thread) {
+    return errorResponse(`Thread not found: ${threadId}`);
+  }
+
+  thread.moveToTrash();
+
+  return successResponse({
+    threadId: threadId,
+    action: 'move_to_trash',
+    message: 'スレッドをゴミ箱に移動しました'
+  });
+}
