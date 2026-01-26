@@ -1,0 +1,30 @@
+/**
+ * Gmail Skill - Thread Handlers
+ *
+ * Thread operations: archive, move to trash.
+ */
+
+/**
+ * Archive a thread (remove from inbox)
+ * @param {string} threadId - Thread ID to archive
+ * @returns {ContentService.TextOutput} JSON response
+ *
+ * @example
+ * handleArchive("19bf7f25b96ab637")
+ */
+function handleArchive(threadId) {
+  requireParam(threadId, 'threadId');
+
+  const thread = GmailApp.getThreadById(threadId);
+  if (!thread) {
+    return errorResponse(`Thread not found: ${threadId}`);
+  }
+
+  thread.moveToArchive();
+
+  return successResponse({
+    threadId: threadId,
+    action: 'archive',
+    message: 'スレッドをアーカイブしました'
+  });
+}

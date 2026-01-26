@@ -100,6 +100,9 @@ function doPost(e) {
       case 'remove_label':
         return handleRemoveLabel(body.threadId, body.messageId, body.label);
 
+      case 'archive':
+        return handleArchive(body.threadId);
+
       default:
         return errorResponse(`Unknown action: ${action}`);
     }
