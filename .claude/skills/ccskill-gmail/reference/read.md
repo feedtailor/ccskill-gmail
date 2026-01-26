@@ -144,3 +144,53 @@ curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=list_labels"
 ```
 
 **備考**: システムラベル（INBOX, SENT, DRAFT など）は含まれません。ユーザーが作成したラベルのみ返されます。
+
+---
+
+## get_unread_count - 未読メール数取得
+
+受信トレイまたは特定ラベルの未読メール数を取得します。
+
+### リクエスト
+
+**メソッド**: GET
+
+**パラメータ**:
+
+| パラメータ | 必須 | 説明 |
+|-----------|------|------|
+| label | | ラベル名（省略時は INBOX） |
+
+### リクエスト例
+
+```bash
+# 受信トレイの未読数
+curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_unread_count"
+
+# 特定ラベルの未読数
+curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_unread_count&label=重要"
+```
+
+### レスポンス例
+
+```json
+{
+  "ok": true,
+  "data": {
+    "label": "INBOX",
+    "unreadCount": 15,
+    "message": "未読メールが 15 件あります"
+  }
+}
+```
+
+### エラー例
+
+存在しないラベルを指定した場合：
+
+```json
+{
+  "ok": false,
+  "error": "Label not found: 存在しないラベル"
+}
+```

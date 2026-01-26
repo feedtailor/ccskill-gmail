@@ -156,9 +156,100 @@ curl -sL --max-time 60 \
 
 ---
 
-## 今後の拡張予定
+# update_draft - 下書き更新
 
-| API | 説明 |
-|-----|------|
-| update_draft | 下書きの編集 |
-| delete_draft | 下書きの削除 |
+既存の下書きを更新します。
+
+## リクエスト
+
+**メソッド**: POST
+
+**パラメータ**:
+
+| パラメータ | 必須 | 説明 |
+|-----------|------|------|
+| draftId | ✓ | 更新する下書きの ID |
+| to | | 新しい宛先（省略時は現在の値を維持） |
+| subject | | 新しい件名（省略時は現在の値を維持） |
+| body | | 新しい本文（省略時は現在の値を維持） |
+| cc | | 新しい CC |
+| bcc | | 新しい BCC |
+
+## リクエスト例
+
+```bash
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"update_draft","draftId":"r-123456789","subject":"【更新】お見積りの件"}' \
+  "$GMAIL_ENDPOINT"
+```
+
+## レスポンス例
+
+```json
+{
+  "ok": true,
+  "data": {
+    "draftId": "r-987654321",
+    "oldDraftId": "r-123456789",
+    "action": "update_draft",
+    "message": "下書きを更新しました",
+    "gmailUrl": "https://mail.google.com/mail/u/0/#drafts"
+  }
+}
+```
+
+## 注意事項
+
+- GmailApp は下書きの直接編集をサポートしていないため、内部的には「削除→再作成」で実装
+- そのため **draftId が変更されます**（レスポンスで新しい ID を確認してください）
+- 返信下書きの更新には対応していません
+
+---
+
+# delete_draft - 下書き削除
+
+下書きを削除します。
+
+## リクエスト
+
+**メソッド**: POST
+
+**パラメータ**:
+
+| パラメータ | 必須 | 説明 |
+|-----------|------|------|
+| draftId | ✓ | 削除する下書きの ID |
+
+## リクエスト例
+
+```bash
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"delete_draft","draftId":"r-123456789"}' \
+  "$GMAIL_ENDPOINT"
+```
+
+## レスポンス例
+
+```json
+{
+  "ok": true,
+  "data": {
+    "draftId": "r-123456789",
+    "action": "delete_draft",
+    "message": "下書きを削除しました"
+  }
+}
+```
+
+## エラー例
+
+存在しない draftId を指定した場合：
+
+```json
+{
+  "ok": false,
+  "error": "Draft not found: r-invalid"
+}
+```

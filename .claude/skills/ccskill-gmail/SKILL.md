@@ -74,6 +74,7 @@ curl -sL --max-time 60 \
 | get_thread | スレッド取得 | `threadId` (必須) |
 | get_message | メッセージ詳細 | `messageId` (必須) |
 | list_labels | ラベル一覧 | - |
+| get_unread_count | 未読メール数取得 | `label` (任意, デフォルト INBOX) |
 
 ### 書き込み (POST)
 
@@ -81,10 +82,14 @@ curl -sL --max-time 60 \
 |-----------|------|-----------|
 | create_draft | 新規メールの下書き作成 | `to`, `subject`, `body` (必須), `cc`, `bcc` (任意) |
 | create_reply_draft | 既存スレッドへの返信下書き作成 | `threadId`, `body` (必須), `cc`, `bcc` (任意) |
+| update_draft | 下書き更新 | `draftId` (必須), `to`, `subject`, `body`, `cc`, `bcc` (任意) |
+| delete_draft | 下書き削除 | `draftId` (必須) |
 | mark_read | 既読にする | `threadId` または `messageId` (いずれか必須) |
 | mark_unread | 未読にする | `threadId` または `messageId` (いずれか必須) |
 | add_label | ラベル追加 | `threadId`, `label` (必須) |
 | remove_label | ラベル削除 | `threadId`, `label` (必須) |
+| archive | アーカイブ | `threadId` (必須) |
+| move_to_trash | ゴミ箱に移動 | `threadId` (必須) |
 
 → 詳細: [reference/](reference/)
 
@@ -174,6 +179,36 @@ curl -sL --max-time 60 \
 curl -sL --max-time 60 \
   -H "Content-Type: application/json" \
   --data '{"action":"remove_label","threadId":"THREAD_ID","label":"対応済"}' \
+  "$GMAIL_ENDPOINT"
+
+# 未読数取得
+curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_unread_count"
+
+# 特定ラベルの未読数
+curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_unread_count&label=重要"
+
+# アーカイブ
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"archive","threadId":"THREAD_ID"}' \
+  "$GMAIL_ENDPOINT"
+
+# ゴミ箱に移動
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"move_to_trash","threadId":"THREAD_ID"}' \
+  "$GMAIL_ENDPOINT"
+
+# 下書き更新
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"update_draft","draftId":"DRAFT_ID","subject":"新しい件名"}' \
+  "$GMAIL_ENDPOINT"
+
+# 下書き削除
+curl -sL --max-time 60 \
+  -H "Content-Type: application/json" \
+  --data '{"action":"delete_draft","draftId":"DRAFT_ID"}' \
   "$GMAIL_ENDPOINT"
 ```
 
