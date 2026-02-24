@@ -1,0 +1,19 @@
+# ccskill-gmail installation
+/.ccskill-gmail/
+.env
+
+# GAS files
+.clasp.json
+
+# Runtime
+.registry.json
+
+# OS
+.DS_Store
+
+# Tools
+.entire/
+
+# IDE
+.idea/
+.vscode/

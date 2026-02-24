@@ -17,20 +17,14 @@
 | threadId | ※ | スレッド ID（threadId または messageId のいずれか必須） |
 | messageId | ※ | メッセージ ID |
 
-### リクエスト例
+### 実行例
 
 ```bash
 # スレッド全体を既読に
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"mark_read","threadId":"19bf7f25b96ab637"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_read","threadId":"19bf7f25b96ab637"}'
 
 # 特定のメッセージを既読に
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"mark_read","messageId":"19bf7f25b96ab637"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_read","messageId":"19bf7f25b96ab637"}'
 ```
 
 ### レスポンス例
@@ -61,20 +55,14 @@ curl -sL --max-time 60 \
 | threadId | ※ | スレッド ID（threadId または messageId のいずれか必須） |
 | messageId | ※ | メッセージ ID |
 
-### リクエスト例
+### 実行例
 
 ```bash
 # スレッド全体を未読に
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"mark_unread","threadId":"19bf7f25b96ab637"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_unread","threadId":"19bf7f25b96ab637"}'
 
 # 特定のメッセージを未読に
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"mark_unread","messageId":"19bf7f25b96ab637"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_unread","messageId":"19bf7f25b96ab637"}'
 ```
 
 ### レスポンス例

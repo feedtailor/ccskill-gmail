@@ -18,13 +18,10 @@
 |-----------|------|------|
 | threadId | ✓ | アーカイブするスレッドの ID |
 
-### リクエスト例
+### 実行例
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"archive","threadId":"19bf7f25b96ab637"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"archive","threadId":"19bf7f25b96ab637"}'
 ```
 
 ### レスポンス例
@@ -62,13 +59,10 @@ curl -sL --max-time 60 \
 |-----------|------|------|
 | threadId | ✓ | ゴミ箱に移動するスレッドの ID |
 
-### リクエスト例
+### 実行例
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"move_to_trash","threadId":"19bf7f25b96ab637"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"move_to_trash","threadId":"19bf7f25b96ab637"}'
 ```
 
 ### レスポンス例
@@ -97,34 +91,21 @@ curl -sL --max-time 60 \
 ### メール処理完全ワークフロー
 
 ```bash
-source .env
+source .ccskill-gmail/api.sh
 
 # 1. 未読メールを検索
-THREAD_ID=$(curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=is:unread&maxResults=1" | jq -r '.data.threads[0].id')
+THREAD_ID=$(ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread" maxResults=1 | jq -r '.data.threads[0].id')
 
 # 2. 内容を確認
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_thread&threadId=$THREAD_ID" | jq '.data.subject'
+ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId="$THREAD_ID" | jq '.data.subject'
 
 # 3. 返信下書きを作成
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data "{\"action\":\"create_reply_draft\",\"threadId\":\"$THREAD_ID\",\"body\":\"承知いたしました。\"}" \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" "{\"action\":\"create_reply_draft\",\"threadId\":\"$THREAD_ID\",\"body\":\"承知いたしました。\"}"
 
 # 4. 既読にしてラベル追加
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data "{\"action\":\"mark_read\",\"threadId\":\"$THREAD_ID\"}" \
-  "$GMAIL_ENDPOINT"
-
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"対応済\"}" \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" "{\"action\":\"mark_read\",\"threadId\":\"$THREAD_ID\"}"
+ccskill-post "$GMAIL_ENDPOINT" "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"対応済\"}"
 
 # 5. アーカイブして受信トレイを整理
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data "{\"action\":\"archive\",\"threadId\":\"$THREAD_ID\"}" \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" "{\"action\":\"archive\",\"threadId\":\"$THREAD_ID\"}"
 ```

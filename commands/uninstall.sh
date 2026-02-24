@@ -2,7 +2,7 @@
 #
 # Gmail Skill - Uninstaller
 #
-# Usage: ./uninstall.sh [TARGET_DIR]
+# Usage: ccskill-gmail uninstall [--yes|-y] [TARGET_DIR]
 #
 # This script uninstalls ccskill-gmail from a project directory.
 #
@@ -25,7 +25,25 @@ echo ""
 # 1. 引数検証
 # ========================================
 
-TARGET_DIR="${1:-.}"
+if [ -z "$CCSKILL_GMAIL_DIR" ]; then
+    echo "Error: This script should be called via 'ccskill-gmail uninstall'"
+    exit 1
+fi
+
+# フラグのパース
+AUTO_YES=false
+TARGET_DIR="."
+
+for arg in "$@"; do
+    case "$arg" in
+        --yes|-y)
+            AUTO_YES=true
+            ;;
+        *)
+            TARGET_DIR="$arg"
+            ;;
+    esac
+done
 
 # 絶対パスに変換
 if [ ! -d "$TARGET_DIR" ]; then
@@ -38,7 +56,13 @@ echo "Uninstalling from: $TARGET_DIR"
 echo ""
 
 # ========================================
-# 2. インストール存在確認
+# 2. レジストリヘルパーロード
+# ========================================
+
+source "$CCSKILL_GMAIL_DIR/lib/registry.sh"
+
+# ========================================
+# 3. インストール存在確認
 # ========================================
 
 SKILL_DIR="$TARGET_DIR/.claude/skills/ccskill-gmail"
@@ -61,19 +85,34 @@ fi
 echo ""
 
 # ========================================
-# 3. GASプロジェクトID取得
+# 4. GASプロジェクトID取得
 # ========================================
 
 GAS_PROJECT_ID=""
-CLASP_JSON="$GAS_DIR/.clasp.json"
+GAS_PROJECT_NAME=""
+METADATA_FILE="$GAS_DIR/.ccskill-metadata.json"
 
-if [ -f "$CLASP_JSON" ]; then
-    # jq がある場合は使用
+# メタデータからプロジェクト名を取得
+if [ -f "$METADATA_FILE" ]; then
     if command -v jq &> /dev/null; then
-        GAS_PROJECT_ID=$(jq -r '.scriptId // empty' "$CLASP_JSON")
+        GAS_PROJECT_NAME=$(jq -r '.project_name // empty' "$METADATA_FILE" 2>/dev/null)
     else
-        # jq がない場合は grep で抽出
-        GAS_PROJECT_ID=$(grep -o '"scriptId"[[:space:]]*:[[:space:]]*"[^"]*"' "$CLASP_JSON" | sed 's/.*"\([^"]*\)".*/\1/')
+        GAS_PROJECT_NAME=$(grep -o '"project_name"[[:space:]]*:[[:space:]]*"[^"]*"' "$METADATA_FILE" | sed 's/.*"\([^"]*\)".*/\1/')
+    fi
+fi
+
+# Script ID の取得（.clasp.json の場所がアーキテクチャにより異なる）
+if [ -f "$GAS_DIR/.clasp.json" ]; then
+    if command -v jq &> /dev/null; then
+        GAS_PROJECT_ID=$(jq -r '.scriptId // empty' "$GAS_DIR/.clasp.json" 2>/dev/null)
+    else
+        GAS_PROJECT_ID=$(grep -o '"scriptId"[[:space:]]*:[[:space:]]*"[^"]*"' "$GAS_DIR/.clasp.json" | sed 's/.*"\([^"]*\)".*/\1/')
+    fi
+elif [ -f "$GAS_DIR/src/.clasp.json" ]; then
+    if command -v jq &> /dev/null; then
+        GAS_PROJECT_ID=$(jq -r '.scriptId // empty' "$GAS_DIR/src/.clasp.json" 2>/dev/null)
+    else
+        GAS_PROJECT_ID=$(grep -o '"scriptId"[[:space:]]*:[[:space:]]*"[^"]*"' "$GAS_DIR/src/.clasp.json" | sed 's/.*"\([^"]*\)".*/\1/')
     fi
 fi
 
@@ -84,7 +123,7 @@ if [ -z "$GAS_PROJECT_ID" ]; then
 fi
 
 # ========================================
-# 4. 確認プロンプト
+# 5. 確認プロンプト
 # ========================================
 
 echo "================================================"
@@ -98,21 +137,28 @@ echo "  - GMAIL_ENDPOINT entry in .env"
 echo ""
 
 if [ -n "$GAS_PROJECT_ID" ]; then
+    if [ -n "$GAS_PROJECT_NAME" ]; then
+        echo -e "${YELLOW}GAS Project: Gmail Skill - $GAS_PROJECT_NAME${NC}"
+    fi
     echo -e "${YELLOW}GAS Project ID: $GAS_PROJECT_ID${NC}"
     echo "(You will need to manually delete this from script.google.com)"
     echo ""
 fi
 
-read -p "Are you sure you want to uninstall? (y/N): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Uninstallation cancelled."
-    exit 0
+if [ "$AUTO_YES" = true ]; then
+    echo "Auto-confirmed (--yes flag)"
+else
+    read -p "Are you sure you want to uninstall? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Uninstallation cancelled."
+        exit 0
+    fi
 fi
 echo ""
 
 # ========================================
-# 5. ローカルファイル削除
+# 6. ローカルファイル削除
 # ========================================
 
 echo "Removing local files..."
@@ -141,7 +187,7 @@ fi
 echo ""
 
 # ========================================
-# 6. .env 編集
+# 7. .env 編集
 # ========================================
 
 ENV_FILE="$TARGET_DIR/.env"
@@ -185,7 +231,15 @@ else
 fi
 
 # ========================================
-# 7. GASプロジェクト削除ガイダンス
+# 8. レジストリからエントリ削除
+# ========================================
+
+registry_remove "$TARGET_DIR"
+echo -e "${GREEN}✓ Registry entry removed${NC}"
+echo ""
+
+# ========================================
+# 9. GASプロジェクト削除ガイダンス
 # ========================================
 
 if [ -n "$GAS_PROJECT_ID" ]; then
@@ -193,12 +247,19 @@ if [ -n "$GAS_PROJECT_ID" ]; then
     echo "  Manual GAS Project Deletion Required"
     echo "================================================"
     echo ""
+    if [ -n "$GAS_PROJECT_NAME" ]; then
+        echo -e "${YELLOW}GAS Project Name: Gmail Skill - $GAS_PROJECT_NAME${NC}"
+    fi
     echo -e "${YELLOW}GAS Project ID: $GAS_PROJECT_ID${NC}"
     echo ""
     echo "To completely remove the skill, delete the GAS project:"
     echo ""
     echo -e "  1. Open: ${BLUE}https://script.google.com/home${NC}"
-    echo "  2. Find the Gmail Skill project"
+    if [ -n "$GAS_PROJECT_NAME" ]; then
+        echo "  2. Search for: \"Gmail Skill - $GAS_PROJECT_NAME\" or ID: $GAS_PROJECT_ID"
+    else
+        echo "  2. Search for the project ID: $GAS_PROJECT_ID"
+    fi
     echo "  3. Select the project and click the three-dot menu"
     echo "  4. Choose 'Remove' to delete the project"
     echo ""
@@ -207,7 +268,7 @@ if [ -n "$GAS_PROJECT_ID" ]; then
 fi
 
 # ========================================
-# 8. 完了メッセージ
+# 10. 完了メッセージ
 # ========================================
 
 echo "================================================"

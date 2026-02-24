@@ -1,67 +1,114 @@
 # トラブルシューティング
 
-## よくある問題と解決策
+Gmail Skill でよくある問題と解決策です。
 
-### 1. タイムアウトエラー
+> **推奨**: `source .ccskill-gmail/api.sh` を使用すると、`ccskill-get` / `ccskill-post` ラッパーが利用可能になります。これらのラッパーは `-L`、`--max-time 60`、`--data`、Bearer 認証を自動適用するため、以下のトラブルの大半を回避できます。
 
-**症状**: curl がタイムアウトする
+---
 
-**原因**: GAS のコールドスタート（初回起動が遅い）
+## クイックリファレンス
 
-**解決策**: `--max-time 60` を指定する
+| 症状 | 原因 | 解決策 |
+|------|------|--------|
+| HTML が返る（ログインページ） | 認証なし / トークン期限切れ | `clasp login` を実行 |
+| タイムアウト | コールドスタート | 再試行（`--max-time 60` は自動適用済み） |
+| Unknown action | GET/POST の使い分け誤り | ccskill-get / ccskill-post を正しく使用 |
+| Invalid JSON | JSON 構文エラー | JSON を事前検証 |
+| Thread/Message not found | ID の誤りまたは削除済み | `search` で最新の ID を取得 |
+| 日本語検索が動かない | 直接 curl 使用時のエンコード漏れ | ccskill-get を使用（自動エンコード） |
+| `$GMAIL_ENDPOINT` が空 | api.sh 未読み込み / .env なし | `source .ccskill-gmail/api.sh` を実行 |
+
+---
+
+## 詳細な解決策
+
+### 認証エラー (401 / アクセス拒否)
+
+**症状**:
+- レスポンスが HTML（Google ログインページ）
+- `{"ok":false,"error":"Authorization required"}` のようなエラー
+
+**原因と対処**:
+
+1. **clasp にログインしていない**
+   ```bash
+   clasp login
+   ```
+
+2. **トークンが期限切れ（自動リフレッシュ失敗）**
+   ```bash
+   # ~/.clasprc.json を確認
+   jq '.tokens.default.expiry_date' ~/.clasprc.json
+   # 再ログイン
+   clasp login
+   ```
+
+3. **デプロイが "Anyone" のまま**
+   - GAS エディタでデプロイ設定を確認
+   - 「自分のみ」(MYSELF) に変更して再デプロイ
+
+4. **api.sh を source していない**
+   ```bash
+   # NG: 直接 curl（Bearer トークンなし）
+   curl -sL "$GMAIL_ENDPOINT?action=list_labels"
+
+   # OK: api.sh 経由（自動認証）
+   source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_labels
+   ```
+
+---
+
+### タイムアウトエラー
+
+**症状**: リクエストが応答なしでハングする
+
+**原因**: GAS のコールドスタート（初回起動の遅延）
+
+**解決策**: ccskill-get / ccskill-post は内部で `--max-time 60` を設定済みです。それでもタイムアウトする場合は再試行してください。
 
 ```bash
-# 正しい
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=list_labels"
-
-# NG: タイムアウトが短すぎる
-curl -sL "$GMAIL_ENDPOINT?action=list_labels"
+# 再試行
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_labels
 ```
 
 ---
 
-### 2. Unknown action エラー
+### Unknown action エラー
 
 **症状**: `{"ok":false,"error":"Unknown action: search"}`
 
-**原因**: POST で GET 用の API を呼んでいる
+**原因**: GET/POST の使い分けが間違っている
 
-**解決策**: GET/POST を正しく使い分ける
+**解決策**: 読み取り系は `ccskill-get`、書き込み系は `ccskill-post` を使用
 
 ```bash
-# 正しい（GET）
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=is:unread"
+# OK: GET で search
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread"
 
 # NG: POST で search を呼んでいる
-curl -sL --max-time 60 --data '{"action":"search","query":"is:unread"}' "$GMAIL_ENDPOINT"
+source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"search","query":"is:unread"}'
 ```
 
 ---
 
-### 3. Invalid JSON エラー
+### Invalid JSON エラー
 
 **症状**: `{"ok":false,"error":"Invalid JSON in request body"}`
 
-**原因**:
-- JSON の構文エラー
-- `-X POST -d` の組み合わせ（リダイレクト時に POST が GET に変わる）
+**原因**: JSON の構文エラー（クォート、カンマ等）
 
-**解決策**: `--data` を使用する
-
+**解決策**:
 ```bash
-# 正しい
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"Hello"}' \
-  "$GMAIL_ENDPOINT"
+# JSON を事前に検証
+echo '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"Hello"}' | jq .
 
-# NG: -X POST -d の組み合わせ
-curl -sL --max-time 60 -X POST -d '...' "$GMAIL_ENDPOINT"
+# シングルクォートで囲む（シェル変数展開を防ぐ）
+source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"Hello"}'
 ```
 
 ---
 
-### 4. Thread not found / Message not found
+### Thread not found / Message not found
 
 **症状**: `{"ok":false,"error":"Thread not found: xxx"}`
 
@@ -72,76 +119,84 @@ curl -sL --max-time 60 -X POST -d '...' "$GMAIL_ENDPOINT"
 **解決策**: `search` で最新の ID を取得し直す
 
 ```bash
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=is:unread&maxResults=5"
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread" maxResults=5
 ```
 
 ---
 
-### 5. 日本語クエリが動作しない
+### 日本語検索の問題
 
 **症状**: 日本語を含む検索が正しく動作しない
 
-**原因**: URL エンコードされていない
+**以前の問題**: 日本語を URL エンコードする必要があった
 
-**解決策**: `jq` で URL エンコード
+**現在の対処**: ccskill-get は値を自動的に URL エンコードするため、日本語をそのまま渡せます:
 
 ```bash
-# 正しい
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=$(echo -n 'subject:請求書' | jq -sRr @uri)"
+# OK: そのまま日本語を使える
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="from:田中太郎"
 
-# NG: エンコードなし
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=subject:請求書"
+# 手動エンコードは不要
+# curl ... "$(jq -sRr @uri <<< '田中太郎')"  # この書き方はもう不要
 ```
 
 ---
 
-### 6. 権限エラー
+### 権限エラー
 
 **症状**: デプロイ時に権限エラー、または API 呼び出しで 403 エラー
 
-**原因**:
-- Gmail へのアクセス権限が承認されていない
-- Web App のアクセス設定が「自分のみ」になっている
+**原因**: Gmail へのアクセス権限が承認されていない
 
 **解決策**:
 1. GAS エディタで「デプロイ」→「デプロイを管理」を開く
-2. アクセスできるユーザーが「全員」になっているか確認
-3. 「このアプリは確認されていません」画面で「詳細」→「安全でないページに移動」で承認
+2. 「このアプリは確認されていません」画面で「詳細」→「安全でないページに移動」で承認
 
 ---
 
-### 7. .env ファイルがない
+### .env ファイルがない / $GMAIL_ENDPOINT が空
 
 **症状**: `$GMAIL_ENDPOINT` が空
 
-**原因**: install.sh が完了していない
+**原因**: install が完了していない、または api.sh を source していない
 
 **解決策**:
 ```bash
-# 手動で .env を作成
-cat > .env << 'EOF'
-GMAIL_ENDPOINT=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-EOF
+# api.sh が .env を自動読み込みするので、まずこれを試す
+source .ccskill-gmail/api.sh && echo "$GMAIL_ENDPOINT"
 
-# 読み込み
-source .env
+# .env 自体がない場合は再インストール
+ccskill-gmail install
 ```
 
 ---
 
 ## デバッグ方法
 
+### ヘルスチェック
+
+```bash
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT"
+# 期待: {"ok":true,"data":{"status":"ok","message":"Gmail Skill is running","version":"1.0.0"}}
+```
+
+### トークン確認
+
+```bash
+source .ccskill-gmail/api.sh && gas_token
+# アクセストークンが表示されれば OK
+```
+
+### エンドポイント確認
+
+```bash
+source .ccskill-gmail/api.sh && echo "$GMAIL_ENDPOINT"
+# URL が表示されれば .env が正しく読み込まれている
+```
+
 ### レスポンスの確認
 
 ```bash
 # レスポンスを整形表示
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=list_labels" | jq .
-```
-
-### ヘルスチェック
-
-```bash
-# API が動作しているか確認
-curl -sL --max-time 60 "$GMAIL_ENDPOINT"
-# 期待: {"ok":true,"data":{"status":"ok","message":"Gmail Skill is running","version":"1.0.0"}}
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_labels | jq .
 ```

@@ -17,13 +17,10 @@
 | threadId | ✓ | スレッド ID |
 | label | ✓ | ラベル名 |
 
-### リクエスト例
+### 実行例
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"add_label","threadId":"19bf7f25b96ab637","label":"対応済"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_label","threadId":"19bf7f25b96ab637","label":"対応済"}'
 ```
 
 ### レスポンス例
@@ -60,13 +57,10 @@ curl -sL --max-time 60 \
 | threadId | ✓ | スレッド ID |
 | label | ✓ | ラベル名 |
 
-### リクエスト例
+### 実行例
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"remove_label","threadId":"19bf7f25b96ab637","label":"対応済"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"remove_label","threadId":"19bf7f25b96ab637","label":"対応済"}'
 ```
 
 ### レスポンス例
@@ -99,27 +93,17 @@ curl -sL --max-time 60 \
 ## ワークフロー例
 
 ```bash
-source .env
+source .ccskill-gmail/api.sh
 
 # 1. 未読メールを検索
-THREAD_ID=$(curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=is:unread&maxResults=1" | jq -r '.data.threads[0].id')
+THREAD_ID=$(ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread" maxResults=1 | jq -r '.data.threads[0].id')
 
 # 2. 「要確認」ラベルを追加
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"要確認\"}" \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"要確認\"}"
 
 # 3. 対応後、「要確認」を外して「対応済」を追加
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data "{\"action\":\"remove_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"要確認\"}" \
-  "$GMAIL_ENDPOINT"
-
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"対応済\"}" \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" "{\"action\":\"remove_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"要確認\"}"
+ccskill-post "$GMAIL_ENDPOINT" "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"対応済\"}"
 ```
 
 ---

@@ -7,7 +7,22 @@
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
       "Bash(git stash:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(GMAIL_ENDPOINT=\"https://script.google.com/macros/s/AKfycbyH3OAqrC5yveVgAyzebjg18tKDFRDAmMkvaPaTTXBJ4mZE54EBMpR8s3sLAU26oxWfkA/exec\")",
+      "Bash(THREAD_ID=\"19a75cb99b64c9f1\")",
+      "Bash(__NEW_LINE_2377b2106024289d__ echo \"=== 1. create_reply_draft テスト ===\")",
+      "Bash(__NEW_LINE_d71c6eae29ff5aa0__ curl -sL --max-time 60 -H \"Content-Type: application/json\" --data \"{\"\"action\"\":\"\"create_reply_draft\"\",\"\"threadId\"\":\"\"$THREAD_ID\"\",\"\"body\"\":\"\"テスト返信です。\"\"}\" \"$GMAIL_ENDPOINT\")",
+      "Bash(__NEW_LINE_47f68868db6d19ae__ echo \"=== 2. mark_unread テスト ===\")",
+      "Bash(__NEW_LINE_47f68868db6d19ae__ echo \"\")",
+      "Bash(__NEW_LINE_1d3d1efd4fdb84ea__ echo \"=== 4. add_label テスト ===\")",
+      "Bash(__NEW_LINE_1d3d1efd4fdb84ea__ echo \"\")",
+      "Bash(__NEW_LINE_5e0cb12724567077__ echo \"=== エラー系テスト ===\")",
+      "Bash(__NEW_LINE_5e0cb12724567077__ echo \"1. 存在しないthreadId:\")",
+      "Bash(__NEW_LINE_5e0cb12724567077__ echo \"\")"
     ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
   }
 }
