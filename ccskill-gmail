@@ -1,0 +1,81 @@
+#!/bin/bash
+#
+# ccskill-gmail - Gmail Skill for Claude Code
+#
+# Usage: ccskill-gmail <command> [args...]
+#
+
+set -e
+
+# Resolve CCSKILL_GMAIL_DIR from this script's location
+CCSKILL_GMAIL_DIR="$(cd "$(dirname "$0")" && pwd)"
+export CCSKILL_GMAIL_DIR
+
+VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+show_help() {
+    cat << EOF
+ccskill-gmail - Gmail Skill for Claude Code
+
+Usage: ccskill-gmail <command> [args...]
+
+Commands:
+  install [NAME] [DIR]             Install to a project
+  uninstall [DIR]                  Uninstall from a project
+  update [--force] [--yes] [DIR]   Update an installation
+  update-all                       Update all installations
+  apply-config [DIR]               Apply config.js changes to GAS
+  register <PATH> [PATH...]        Register existing installations
+  status [--json] [--clean]        Show installation status
+  help                             Show this help
+  version                          Show version
+
+Version: $VERSION
+EOF
+}
+
+if [ $# -eq 0 ]; then
+    show_help
+    exit 0
+fi
+
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    install)
+        exec "$CCSKILL_GMAIL_DIR/commands/install.sh" "$@"
+        ;;
+    uninstall)
+        exec "$CCSKILL_GMAIL_DIR/commands/uninstall.sh" "$@"
+        ;;
+    update)
+        exec "$CCSKILL_GMAIL_DIR/commands/update.sh" "$@"
+        ;;
+    update-all)
+        exec "$CCSKILL_GMAIL_DIR/commands/update-all.sh" "$@"
+        ;;
+    apply-config)
+        exec "$CCSKILL_GMAIL_DIR/commands/apply-config.sh" "$@"
+        ;;
+    register)
+        exec "$CCSKILL_GMAIL_DIR/commands/register.sh" "$@"
+        ;;
+    status)
+        exec "$CCSKILL_GMAIL_DIR/commands/status.sh" "$@"
+        ;;
+    help|--help|-h)
+        show_help
+        exit 0
+        ;;
+    version|--version|-v)
+        echo "ccskill-gmail $VERSION"
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command '$COMMAND'"
+        echo ""
+        show_help
+        exit 1
+        ;;
+esac

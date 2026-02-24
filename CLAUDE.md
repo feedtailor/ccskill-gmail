@@ -14,7 +14,13 @@ ccskill-gmail は Claude Code 用の Gmail スキル。GAS (Google Apps Script) 
 ## アーキテクチャ
 
 ```
-Claude Code (Skill) ◄── curl/JSON API ──► GAS Web App (standalone) ──► Gmail (GmailApp)
+Claude Code (Skill)
+  ↓ source .ccskill-gmail/api.sh
+  ↓ ccskill-get / ccskill-post
+  ↓ (Bearer OAuth token 自動付与)
+GAS Web App (standalone, MYSELF access)
+  ↓
+Gmail (GmailApp)
 ```
 
 ccskill-spreadsheet と同じアーキテクチャパターンを採用。
@@ -23,17 +29,32 @@ ccskill-spreadsheet と同じアーキテクチャパターンを採用。
 
 ```
 ccskill-gmail/
-├── install.sh / update.sh / uninstall.sh   # シェルスクリプト
-├── gas-template/
-│   ├── appsscript.json      # GAS マニフェスト
-│   ├── config.js.template   # 設定テンプレート
-│   ├── main.js              # エントリポイント（ルーティング）
-│   ├── handlers/            # API ハンドラ（search, read, draft, label）
-│   └── utils/               # ユーティリティ（response, gmail）
+├── ccskill-gmail              # メインコマンド（ディスパッチャ）
+├── commands/                   # サブコマンド
+│   ├── install.sh
+│   ├── uninstall.sh
+│   ├── update.sh
+│   ├── update-all.sh
+│   ├── apply-config.sh
+│   ├── register.sh
+│   └── status.sh
+├── lib/                        # 共通ライブラリ
+│   ├── auth.sh                # OAuth 認証（gas_token）
+│   ├── api.sh                 # API ラッパー（ccskill-get/post）
+│   ├── push-gas.sh            # GAS push/deploy
+│   ├── registry.sh            # レジストリ管理
+│   └── permissions.sh         # パーミッション設定
+├── gas-template/               # GAS ソースコード
+│   ├── appsscript.json
+│   ├── config.js.template
+│   ├── main.js
+│   ├── handlers/
+│   └── utils/
 └── .claude/skills/ccskill-gmail/
-    ├── SKILL.md             # Skill 定義
+    ├── SKILL.md
     ├── troubleshooting.md
-    └── examples.md
+    ├── examples.md
+    └── reference/
 ```
 
 ## API 設計
@@ -56,14 +77,31 @@ ccskill-gmail/
   "oauthScopes": [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.compose",
-    "https://www.googleapis.com/auth/gmail.modify",
-    "https://www.googleapis.com/auth/script.external_request"
+    "https://www.googleapis.com/auth/gmail.modify"
   ]
 }
 ```
 
-## 実装優先度
+※ `script.external_request` は不要のため削除済み
 
-1. **Phase 1 (MVP)**: search, get_thread, get_message, list_labels, create_draft
-2. **Phase 2**: create_reply_draft, mark_read/unread, add/remove_label
-3. **Phase 3**: archive, move_to_trash, get_unread_count, update/delete_draft
+## 開発コマンド
+
+```bash
+# インストール
+ccskill-gmail install [NAME] [DIR]
+
+# 更新
+ccskill-gmail update [--force] [--yes] [DIR]
+
+# 一括更新
+ccskill-gmail update-all
+
+# ステータス確認
+ccskill-gmail status
+```
+
+## コード規約
+
+- シェルスクリプト: `cp` ではなく `/bin/cp` を使用（macOS alias 対策）
+- 環境変数: `CCSKILL_GMAIL_DIR` はディスパッチャが設定
+- lib/ の関数は副作用を最小限に（jq なしでも graceful degradation）

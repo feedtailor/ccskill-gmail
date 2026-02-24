@@ -18,10 +18,10 @@
 |-----------|------|------|
 | threadId | ✓ | スレッド ID |
 
-### リクエスト例
+### 実行例
 
 ```bash
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_thread&threadId=19bf7f25b96ab637"
+ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId=19bf7f25b96ab637
 ```
 
 ### レスポンス例
@@ -70,10 +70,10 @@ curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_thread&threadId=19bf7f25b96ab
 |-----------|------|------|
 | messageId | ✓ | メッセージ ID |
 
-### リクエスト例
+### 実行例
 
 ```bash
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_message&messageId=19bf7f25b96ab637"
+ccskill-get "$GMAIL_ENDPOINT" action=get_message messageId=19bf7f25b96ab637
 ```
 
 ### レスポンス例
@@ -119,10 +119,10 @@ curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_message&messageId=19bf7f25b96
 
 **パラメータ**: なし
 
-### リクエスト例
+### 実行例
 
 ```bash
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=list_labels"
+ccskill-get "$GMAIL_ENDPOINT" action=list_labels
 ```
 
 ### レスポンス例
@@ -161,14 +161,14 @@ curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=list_labels"
 |-----------|------|------|
 | label | | ラベル名（省略時は INBOX） |
 
-### リクエスト例
+### 実行例
 
 ```bash
 # 受信トレイの未読数
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_unread_count"
+ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count
 
 # 特定ラベルの未読数
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=get_unread_count&label=重要"
+ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count label="重要"
 ```
 
 ### レスポンス例

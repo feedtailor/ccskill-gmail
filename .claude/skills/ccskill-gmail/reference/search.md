@@ -13,17 +13,17 @@ Gmail の検索構文を使用してメールを検索します。
 | query | ✓ | Gmail 検索クエリ |
 | maxResults | | 最大取得件数 (デフォルト: 20, 最大: 500) |
 
-## リクエスト例
+## 実行例
 
 ```bash
 # 未読メール
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=is:unread"
+ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread"
 
 # 特定の送信者から（最新10件）
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=from:boss@company.com&maxResults=10"
+ccskill-get "$GMAIL_ENDPOINT" action=search query="from:boss@company.com" maxResults=10
 
-# 日本語を含むクエリ（URLエンコード必須）
-curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=$(echo -n 'subject:請求書' | jq -sRr @uri)"
+# 日本語を含むクエリ（ccskill-get が自動エンコード）
+ccskill-get "$GMAIL_ENDPOINT" action=search query="subject:請求書"
 ```
 
 ## レスポンス例
@@ -38,7 +38,6 @@ curl -sL --max-time 60 "$GMAIL_ENDPOINT?action=search&query=$(echo -n 'subject:�
       {
         "id": "19bf7f25b96ab637",
         "subject": "ミーティングの件",
-        "snippet": "お世話になっております...",
         "from": "sender@example.com",
         "date": "2024-01-15T10:30:00.000Z",
         "messageCount": 3,

@@ -30,33 +30,24 @@
 
 ---
 
-## リクエスト例
+## 実行例
 
 ### 基本的な下書き
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"create_draft","to":"recipient@example.com","subject":"お見積りの件","body":"お世話になっております。\n\n添付の通りお見積りをお送りします。\n\nよろしくお願いいたします。"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"recipient@example.com","subject":"お見積りの件","body":"お世話になっております。\n\n添付の通りお見積りをお送りします。\n\nよろしくお願いいたします。"}'
 ```
 
 ### CC/BCC 付き
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"create_draft","to":"client@example.com","cc":"manager@example.com","bcc":"archive@example.com","subject":"プロジェクト進捗報告","body":"お疲れ様です。\n\n進捗をご報告します。"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"client@example.com","cc":"manager@example.com","bcc":"archive@example.com","subject":"プロジェクト進捗報告","body":"お疲れ様です。\n\n進捗をご報告します。"}'
 ```
 
 ### 複数宛先
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"create_draft","to":"user1@example.com,user2@example.com","subject":"チームミーティングのお知らせ","body":"明日10時からミーティングを行います。"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"user1@example.com,user2@example.com","subject":"チームミーティングのお知らせ","body":"明日10時からミーティングを行います。"}'
 ```
 
 ---
@@ -108,24 +99,18 @@ curl -sL --max-time 60 \
 
 ---
 
-## リクエスト例
+## 実行例
 
 ### 基本的な返信下書き
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ご連絡ありがとうございます。\n\n承知いたしました。"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ご連絡ありがとうございます。\n\n承知いたしました。"}'
 ```
 
 ### CC 付き返信
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"確認しました。","cc":"manager@example.com"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"確認しました。","cc":"manager@example.com"}'
 ```
 
 ---
@@ -175,13 +160,10 @@ curl -sL --max-time 60 \
 | cc | | 新しい CC |
 | bcc | | 新しい BCC |
 
-## リクエスト例
+## 実行例
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"update_draft","draftId":"r-123456789","subject":"【更新】お見積りの件"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"update_draft","draftId":"r-123456789","subject":"【更新】お見積りの件"}'
 ```
 
 ## レスポンス例
@@ -221,13 +203,10 @@ curl -sL --max-time 60 \
 |-----------|------|------|
 | draftId | ✓ | 削除する下書きの ID |
 
-## リクエスト例
+## 実行例
 
 ```bash
-curl -sL --max-time 60 \
-  -H "Content-Type: application/json" \
-  --data '{"action":"delete_draft","draftId":"r-123456789"}' \
-  "$GMAIL_ENDPOINT"
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"delete_draft","draftId":"r-123456789"}'
 ```
 
 ## レスポンス例

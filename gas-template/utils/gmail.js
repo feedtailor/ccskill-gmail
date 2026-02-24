@@ -17,7 +17,6 @@ function formatThread(thread) {
   return {
     id: thread.getId(),
     subject: firstMessage.getSubject(),
-    snippet: thread.getFirstMessageSubject(), // Actually returns snippet
     from: firstMessage.getFrom(),
     date: lastMessage.getDate().toISOString(),
     messageCount: messages.length,
