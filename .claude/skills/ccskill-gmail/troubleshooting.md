@@ -17,10 +17,44 @@ Gmail Skill でよくある問題と解決策です。
 | Thread/Message not found | ID の誤りまたは削除済み | `search` で最新の ID を取得 |
 | 日本語検索が動かない | 直接 curl 使用時のエンコード漏れ | ccskill-get を使用（自動エンコード） |
 | `$GMAIL_ENDPOINT` が空 | api.sh 未読み込み / .env なし | `source .ccskill-gmail/api.sh` を実行 |
+| Action "xxx" is denied by permissions config | パーミッション設定で拒否 | `config.js` の `permissions.deny` から該当アクションを削除 |
 
 ---
 
 ## 詳細な解決策
+
+### Action denied by permissions config
+
+**症状**: `{"ok":false,"error":"Action \"move_to_trash\" is denied by permissions config. ..."}`
+
+**原因**: `config.js` の `permissions.deny` にそのアクションが含まれている（`move_to_trash` はデフォルトで無効）
+
+**解決策**:
+
+1. インストール先の `config.js` を編集し、`permissions.deny` 配列から該当アクションを削除
+2. 再デプロイ
+   ```bash
+   ccskill-gmail apply-config
+   ```
+
+**例**: `move_to_trash` を有効にする場合
+```javascript
+// Before
+permissions: {
+  deny: [
+    'move_to_trash',
+  ]
+}
+
+// After
+permissions: {
+  deny: [
+    // 'move_to_trash',  // コメントアウトまたは削除
+  ]
+}
+```
+
+---
 
 ### 認証エラー (401 / アクセス拒否)
 
