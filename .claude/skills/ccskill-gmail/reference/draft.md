@@ -174,6 +174,8 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"update_draft","draftId":"r-123456789"
   "data": {
     "draftId": "r-987654321",
     "oldDraftId": "r-123456789",
+    "threadId": "19bf7f25b96ab637",
+    "isReply": true,
     "action": "update_draft",
     "message": "下書きを更新しました",
     "gmailUrl": "https://mail.google.com/mail/u/0/#drafts"
@@ -185,7 +187,8 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"update_draft","draftId":"r-123456789"
 
 - GmailApp は下書きの直接編集をサポートしていないため、内部的には「削除→再作成」で実装
 - そのため **draftId が変更されます**（レスポンスで新しい ID を確認してください）
-- 返信下書きの更新には対応していません
+- 返信下書きの場合、スレッドとの紐付け（In-Reply-To / References ヘッダ）が維持されます
+- レスポンスの `threadId` でスレッド ID、`isReply` で返信下書きかどうかを確認できます
 
 ---
 
