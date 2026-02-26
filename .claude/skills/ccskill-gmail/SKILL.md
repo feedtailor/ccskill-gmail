@@ -28,6 +28,12 @@ Gmail の検索・閲覧・下書き作成を行うための Claude Code Skill �
    - `messageId=$(ccskill-get ...)` のようなネストは禁止
    - まず検索結果を取得し、次の Bash 呼び出しで ID を使う
 
+3. **ファイル保存には専用ヘルパーを使う（`>` リダイレクト禁止）**
+   - 添付ファイル保存: `ccskill-download` を使う（`ccskill-get ... | jq | base64 -d > file` は禁止）
+   - HTML 保存: `ccskill-save-html` を使う（`ccskill-get ... | jq -r > file` は禁止）
+   - 理由1: `>` リダイレクトは Claude Code のセキュリティ確認プロンプトを発生させる
+   - 理由2: 大きなレスポンスをパイプで直接処理するとデータが途切れる問題がある
+
 ```bash
 # OK: 別々の Bash ツール呼び出しで実行
 # [Bash 1回目] 検索
@@ -43,6 +49,15 @@ source .ccskill-gmail/api.sh && ccskill-get ... && echo "---" && source .ccskill
 
 # NG: $() 内に API コール
 source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message messageId=$(ccskill-get ... | jq -r ...)
+```
+
+```bash
+# OK: ヘルパーでファイル保存（確認プロンプトなし・データ途切れなし）
+source .ccskill-gmail/api.sh && ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID 0 ./report.pdf
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html
+
+# NG: パイプ + リダイレクトでファイル保存（確認プロンプト発生・大きなファイルでデータ途切れ）
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=MSG attachmentIndex=0 | jq -r '.data.content' | base64 -d > ./report.pdf
 ```
 
 ---
