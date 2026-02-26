@@ -1,7 +1,7 @@
 ---
 name: ccskill-gmail
 description: Gmail の検索・閲覧・下書き作成を行います。curl 経由で GAS Web API を呼び出します。送信は安全のため手動で行う設計です。
-allowed-tools: Bash
+allowed-tools: Bash, Write
 ---
 
 # Gmail Skill
