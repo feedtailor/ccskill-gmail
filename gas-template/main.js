@@ -52,6 +52,21 @@ function doGet(e) {
       case 'get_unread_count':
         return handleGetUnreadCount(e.parameter.label);
 
+      case 'list_attachments':
+        return handleListAttachments(e.parameter.messageId);
+
+      case 'get_attachment':
+        return handleGetAttachment(
+          e.parameter.messageId,
+          e.parameter.attachmentIndex
+        );
+
+      case 'get_message_html':
+        return handleGetMessageHtml(
+          e.parameter.messageId,
+          e.parameter.includeHeaders
+        );
+
       default:
         return errorResponse(`Unknown action: ${action}`);
     }

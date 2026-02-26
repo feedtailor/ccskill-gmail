@@ -122,6 +122,9 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 | get_message | メッセージ詳細 | `messageId` (必須) |
 | list_labels | ラベル一覧 | - |
 | get_unread_count | 未読メール数取得 | `label` (任意, デフォルト INBOX) |
+| list_attachments | 添付ファイル一覧 | `messageId` (必須) |
+| get_attachment | 添付ファイル取得 | `messageId` (必須), `attachmentIndex` (必須, 0始まり) |
+| get_message_html | メール本文 HTML 取得 | `messageId` (必須), `includeHeaders` (任意, デフォルト true) |
 
 ### 書き込み (POST)
 
@@ -167,6 +170,18 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_
 
 # 特定ラベルの未読数
 source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count label=重要
+
+# 添付ファイル一覧
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=MESSAGE_ID
+
+# 添付ファイル取得（base64 デコードして保存）
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=MESSAGE_ID attachmentIndex=0 | jq -r '.data.content' | base64 -d > /tmp/attachment.pdf
+
+# メール本文 HTML 取得
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=MESSAGE_ID | jq -r '.data.html' > /tmp/email.html
+
+# メール本文 HTML 取得（ヘッダーなし）
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=MESSAGE_ID includeHeaders=false | jq -r '.data.html' > /tmp/email.html
 ```
 
 ### 書き込み (POST)
@@ -297,7 +312,8 @@ API 呼び出しでエラーが発生した場合は、まず再試行してく�
 - **OAuth 認可**: 初回インストール時にブラウザで OAuth 認可が必要です（1回のみ）
 - **エンドポイント制限**: `https://script.google.com/*` のみ許可（セキュリティ保護）
 - **レート制限**: GAS の実行時間制限（6分/実行）が適用されます
-- **添付ファイル**: 現在は添付ファイルの追加・ダウンロードは未対応
+- **添付ファイル**: ダウンロードは対応済み（`list_attachments` / `get_attachment`）。添付ファイルの追加（メール作成時）は未対応
+- **添付ファイルサイズ制限**: `get_attachment` は 5MB 超のファイルをエラーにします。大きなファイルは Gmail UI からダウンロードしてください
 - **返信下書きの宛先変更不可**: `update_draft` で返信下書きの to（宛先）は変更できません（GmailApp API の制約）。cc / bcc / body / subject は変更可能です。宛先の変更が必要な場合は、ユーザーに「Gmail の下書き確認時に手動で宛先を変更してください」と案内してください
 
 ---

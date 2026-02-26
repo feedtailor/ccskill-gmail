@@ -53,16 +53,42 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"creat
 
 ---
 
-## 4. 添付ファイル付きメールを検索
+## 4. 添付ファイル付きメールを検索・ダウンロード
 
 ```bash
 # 添付ファイル付きの未読メール
 source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread has:attachment"
+
+# 添付ファイル一覧を確認（MESSAGE_ID は上の結果から取得）
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=MESSAGE_ID
+
+# 添付ファイルをダウンロード（index=0 の添付ファイル）
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=MESSAGE_ID attachmentIndex=0 | jq -r '.data.content' | base64 -d > /tmp/attachment.pdf
 ```
 
 ---
 
-## 5. 日付範囲でメールを検索
+## 5. メール本文を HTML で取得・PDF 化
+
+```bash
+# メール本文を HTML で取得（ヘッダー付き）
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=MESSAGE_ID | jq -r '.data.html' > /tmp/email.html
+
+# ヘッダーなしで取得
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=MESSAGE_ID includeHeaders=false | jq -r '.data.html' > /tmp/email.html
+
+# PDF に変換（wkhtmltopdf がある場合）
+wkhtmltopdf /tmp/email.html /tmp/email.pdf
+
+# PDF に変換（Chrome headless の場合）
+google-chrome --headless --print-to-pdf=/tmp/email.pdf /tmp/email.html
+```
+
+PDF 変換ツールがない場合は、HTML ファイルをブラウザで開いて「印刷 > PDF として保存」を案内してください。
+
+---
+
+## 6. 日付範囲でメールを検索
 
 ```bash
 # 今月のメール
@@ -74,7 +100,7 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 
 ---
 
-## 6. ラベル別にメールを確認
+## 7. ラベル別にメールを確認
 
 ```bash
 # ラベル一覧を取得
@@ -86,7 +112,7 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 
 ---
 
-## 7. 複数宛先への下書き作成
+## 8. 複数宛先への下書き作成
 
 ```bash
 # チームメンバー全員への連絡
@@ -108,7 +134,7 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" @/tmp/draft.json
 
 ---
 
-## 8. メールを読んで既読にする
+## 9. メールを読んで既読にする
 
 ```bash
 # 1. 未読メールを取得（THREAD_ID を確認）
@@ -123,7 +149,7 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_
 
 ---
 
-## 9. メールにラベルを付けて整理
+## 10. メールにラベルを付けて整理
 
 ```bash
 # 1. 未読の重要メールを検索（THREAD_ID を確認）
@@ -139,7 +165,7 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_l
 
 ---
 
-## 10. 未読メール対応ワークフロー（完全版）
+## 11. 未読メール対応ワークフロー（完全版）
 
 ```bash
 # 1. 未読メールを検索（THREAD_ID を確認）
@@ -163,7 +189,7 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_l
 
 ---
 
-## 11. 未読数の監視
+## 12. 未読数の監視
 
 ```bash
 # 受信トレイの未読数
@@ -175,7 +201,7 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_
 
 ---
 
-## 12. メール処理後のアーカイブ
+## 13. メール処理後のアーカイブ
 
 ```bash
 # 1. 未読メールを処理（THREAD_ID を確認）
@@ -191,7 +217,7 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"archi
 
 ---
 
-## 13. 不要メールの削除
+## 14. 不要メールの削除
 
 ```bash
 # 1. 古いプロモーションメールを検索（THREAD_ID を確認）
@@ -203,7 +229,7 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"move_
 
 ---
 
-## 14. 完全ワークフロー（未読確認 → 返信 → 整理 → アーカイブ）
+## 15. 完全ワークフロー（未読確認 → 返信 → 整理 → アーカイブ）
 
 ```bash
 # 1. 未読数を確認
