@@ -169,22 +169,27 @@ ccskill-download() {
         return 1
     fi
 
-    local response
-    response=$(ccskill-get "$endpoint" action=get_attachment messageId="$message_id" attachmentIndex="$index")
+    # 大きなレスポンスのパイプ途切れ対策: 一旦 temp ファイルに保存してから処理
+    local tmpfile
+    tmpfile=$(mktemp "${TMPDIR:-/tmp}/ccskill-dl.XXXXXX")
+
+    ccskill-get "$endpoint" action=get_attachment messageId="$message_id" attachmentIndex="$index" > "$tmpfile"
 
     # エラーチェック
-    if ! echo "$response" | jq -e '.ok == true' > /dev/null 2>&1; then
-        echo "$response"
+    if ! jq -e '.ok == true' "$tmpfile" > /dev/null 2>&1; then
+        cat "$tmpfile"
+        rm -f "$tmpfile"
         return 1
     fi
 
     # base64 デコードしてファイルに保存
-    echo "$response" | jq -r '.data.content' | base64 -d > "$output"
+    jq -r '.data.content' "$tmpfile" | base64 -d > "$output"
 
     # 結果を JSON で返す
     local filename size
-    filename=$(echo "$response" | jq -r '.data.filename')
-    size=$(echo "$response" | jq -r '.data.size')
+    filename=$(jq -r '.data.filename' "$tmpfile")
+    size=$(jq -r '.data.size' "$tmpfile")
+    rm -f "$tmpfile"
     echo "{\"ok\":true,\"data\":{\"filename\":\"${filename}\",\"size\":${size},\"savedTo\":\"${output}\"}}"
 }
 
@@ -211,20 +216,25 @@ ccskill-save-html() {
         return 1
     fi
 
-    local response
-    response=$(ccskill-get "$endpoint" action=get_message_html messageId="$message_id" includeHeaders="$include_headers")
+    # 大きなレスポンスのパイプ途切れ対策: 一旦 temp ファイルに保存してから処理
+    local tmpfile
+    tmpfile=$(mktemp "${TMPDIR:-/tmp}/ccskill-html.XXXXXX")
+
+    ccskill-get "$endpoint" action=get_message_html messageId="$message_id" includeHeaders="$include_headers" > "$tmpfile"
 
     # エラーチェック
-    if ! echo "$response" | jq -e '.ok == true' > /dev/null 2>&1; then
-        echo "$response"
+    if ! jq -e '.ok == true' "$tmpfile" > /dev/null 2>&1; then
+        cat "$tmpfile"
+        rm -f "$tmpfile"
         return 1
     fi
 
     # HTML をファイルに保存
-    echo "$response" | jq -r '.data.html' > "$output"
+    jq -r '.data.html' "$tmpfile" > "$output"
 
     # 結果を JSON で返す
     local subject
-    subject=$(echo "$response" | jq -r '.data.subject')
+    subject=$(jq -r '.data.subject' "$tmpfile")
+    rm -f "$tmpfile"
     echo "{\"ok\":true,\"data\":{\"subject\":$(echo "$subject" | jq -Rs .),\"savedTo\":\"${output}\"}}"
 }
