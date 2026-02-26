@@ -174,14 +174,14 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_
 # 添付ファイル一覧
 source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=MESSAGE_ID
 
-# 添付ファイル取得（base64 デコードして保存）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=MESSAGE_ID attachmentIndex=0 | jq -r '.data.content' | base64 -d > /tmp/attachment.pdf
+# 添付ファイルダウンロード（推奨: ccskill-download ヘルパー）
+source .ccskill-gmail/api.sh && ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID 0 /tmp/attachment.pdf
 
-# メール本文 HTML 取得
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=MESSAGE_ID | jq -r '.data.html' > /tmp/email.html
+# メール本文 HTML 保存（推奨: ccskill-save-html ヘルパー）
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID /tmp/email.html
 
-# メール本文 HTML 取得（ヘッダーなし）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=MESSAGE_ID includeHeaders=false | jq -r '.data.html' > /tmp/email.html
+# メール本文 HTML 保存（ヘッダーなし）
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID /tmp/email.html false
 ```
 
 ### 書き込み (POST)

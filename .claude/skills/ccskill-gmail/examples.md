@@ -63,7 +63,7 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=MESSAGE_ID
 
 # 添付ファイルをダウンロード（index=0 の添付ファイル）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=MESSAGE_ID attachmentIndex=0 | jq -r '.data.content' | base64 -d > /tmp/attachment.pdf
+source .ccskill-gmail/api.sh && ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID 0 /tmp/attachment.pdf
 ```
 
 ---
@@ -71,11 +71,11 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_attachm
 ## 5. メール本文を HTML で取得・PDF 化
 
 ```bash
-# メール本文を HTML で取得（ヘッダー付き）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=MESSAGE_ID | jq -r '.data.html' > /tmp/email.html
+# メール本文を HTML で保存（ヘッダー付き）
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID /tmp/email.html
 
-# ヘッダーなしで取得
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=MESSAGE_ID includeHeaders=false | jq -r '.data.html' > /tmp/email.html
+# ヘッダーなしで保存
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID /tmp/email.html false
 
 # PDF に変換（wkhtmltopdf がある場合）
 wkhtmltopdf /tmp/email.html /tmp/email.pdf

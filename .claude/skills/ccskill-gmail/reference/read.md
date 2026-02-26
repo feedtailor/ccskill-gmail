@@ -264,7 +264,10 @@ ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=19bf7f25b96ab637
 ### 実行例
 
 ```bash
-# 添付ファイルを取得してローカルに保存
+# 添付ファイルを取得してローカルに保存（推奨: ccskill-download ヘルパー）
+ccskill-download "$GMAIL_ENDPOINT" 19bf7f25b96ab637 0 /tmp/report.pdf
+
+# 直接 API を使う場合
 ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=19bf7f25b96ab637 attachmentIndex=0 | jq -r '.data.content' | base64 -d > /tmp/report.pdf
 ```
 
@@ -322,11 +325,14 @@ ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=19bf7f25b96ab637 a
 ### 実行例
 
 ```bash
-# ヘッダー付きで HTML 取得
-ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=19bf7f25b96ab637 | jq -r '.data.html' > /tmp/email.html
+# HTML を保存（推奨: ccskill-save-html ヘルパー）
+ccskill-save-html "$GMAIL_ENDPOINT" 19bf7f25b96ab637 /tmp/email.html
 
-# ヘッダーなしで取得
-ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=19bf7f25b96ab637 includeHeaders=false | jq -r '.data.html' > /tmp/email.html
+# ヘッダーなしで保存
+ccskill-save-html "$GMAIL_ENDPOINT" 19bf7f25b96ab637 /tmp/email.html false
+
+# 直接 API を使う場合
+ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=19bf7f25b96ab637 | jq -r '.data.html' > /tmp/email.html
 ```
 
 ### レスポンス例
