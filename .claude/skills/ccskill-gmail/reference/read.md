@@ -353,23 +353,11 @@ ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=19bf7f25b96ab637
 
 ### PDF 化の手順
 
-HTML を取得後、ローカルツールで PDF に変換します。
+`ccskill-save-pdf` ヘルパーを使うと HTML 取得 → PDF 変換を一括で行えます。
 
 ```bash
-# wkhtmltopdf の場合
-wkhtmltopdf /tmp/email.html /tmp/email.pdf
-
-# Chrome headless の場合
-google-chrome --headless --print-to-pdf=/tmp/email.pdf /tmp/email.html
+# 推奨: ccskill-save-pdf で一括処理
+ccskill-save-pdf "$GMAIL_ENDPOINT" 19bf7f25b96ab637 ./email.pdf
 ```
 
-PDF 変換ツールがない場合は、ユーザーに以下を案内してください：
-
-```
-PDF 変換ツールが見つかりませんでした。
-HTML ファイルを保存しました: /tmp/email.html
-
-PDF として保存するには:
-1. ブラウザで上記ファイルを開く
-2. Cmd+P（印刷）> 「PDF として保存」を選択
-```
+内部で Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、案内メッセージを返します。

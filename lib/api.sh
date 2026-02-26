@@ -238,3 +238,108 @@ ccskill-save-html() {
     rm -f "$tmpfile"
     echo "{\"ok\":true,\"data\":{\"subject\":$(echo "$subject" | jq -Rs .),\"savedTo\":\"${output}\"}}"
 }
+
+# ========================================
+# ccskill-save-pdf: メール PDF 保存
+# ========================================
+# get_message_html → HTML 保存 → PDF 変換 を一括で行う。
+# Chrome headless / wkhtmltopdf を自動検出し、なければ HTML 保存 + 案内を返す。
+#
+# Usage:
+#   ccskill-save-pdf "$GMAIL_ENDPOINT" MESSAGE_ID OUTPUT_PATH
+#
+# Example:
+#   ccskill-save-pdf "$GMAIL_ENDPOINT" 19c98efb629db376 ./receipt.pdf
+
+ccskill-save-pdf() {
+    local endpoint="$1"
+    local message_id="$2"
+    local output="$3"
+
+    if [ -z "$endpoint" ] || [ -z "$message_id" ] || [ -z "$output" ]; then
+        echo '{"ok":false,"error":"Usage: ccskill-save-pdf ENDPOINT MESSAGE_ID OUTPUT_PATH"}'
+        return 1
+    fi
+
+    # HTML を temp ファイルに保存
+    local tmphtml
+    tmphtml=$(mktemp "${TMPDIR:-/tmp}/ccskill-pdf.XXXXXX.html")
+
+    local html_result
+    html_result=$(ccskill-save-html "$endpoint" "$message_id" "$tmphtml")
+
+    # HTML 取得のエラーチェック
+    if ! echo "$html_result" | jq -e '.ok == true' > /dev/null 2>&1; then
+        rm -f "$tmphtml"
+        echo "$html_result"
+        return 1
+    fi
+
+    # PDF 変換ツールを検出
+    local converter=""
+    local converter_name=""
+
+    # 1. wkhtmltopdf
+    if command -v wkhtmltopdf &> /dev/null; then
+        converter="wkhtmltopdf"
+        converter_name="wkhtmltopdf"
+    # 2. Chrome (macOS)
+    elif [ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
+        converter="chrome-mac"
+        converter_name="Google Chrome (headless)"
+    # 3. Chrome (Linux)
+    elif command -v google-chrome &> /dev/null; then
+        converter="chrome-linux"
+        converter_name="Google Chrome (headless)"
+    elif command -v chromium-browser &> /dev/null; then
+        converter="chromium"
+        converter_name="Chromium (headless)"
+    fi
+
+    # ツールなし: HTML を保存して案内を返す
+    if [ -z "$converter" ]; then
+        local html_output="${output%.pdf}.html"
+        /bin/cp "$tmphtml" "$html_output"
+        rm -f "$tmphtml"
+        local subject
+        subject=$(echo "$html_result" | jq -r '.data.subject')
+        echo "{\"ok\":false,\"error\":\"PDF変換ツールが見つかりません。HTMLを保存しました: ${html_output}\\nPDFとして保存するには:\\n1. ブラウザで上記ファイルを開く\\n2. Cmd+P（印刷）> PDF として保存\",\"data\":{\"subject\":$(echo "$subject" | jq -Rs .),\"htmlSavedTo\":\"${html_output}\"}}"
+        return 1
+    fi
+
+    # PDF 変換
+    local convert_ok=false
+    case "$converter" in
+        wkhtmltopdf)
+            wkhtmltopdf --quiet "$tmphtml" "$output" 2>/dev/null && convert_ok=true
+            ;;
+        chrome-mac)
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+                --headless --disable-gpu --no-pdf-header-footer \
+                --print-to-pdf="$output" "$tmphtml" 2>/dev/null && convert_ok=true
+            ;;
+        chrome-linux)
+            google-chrome \
+                --headless --disable-gpu --no-pdf-header-footer \
+                --print-to-pdf="$output" "$tmphtml" 2>/dev/null && convert_ok=true
+            ;;
+        chromium)
+            chromium-browser \
+                --headless --disable-gpu --no-pdf-header-footer \
+                --print-to-pdf="$output" "$tmphtml" 2>/dev/null && convert_ok=true
+            ;;
+    esac
+
+    rm -f "$tmphtml"
+
+    if [ "$convert_ok" = true ] && [ -f "$output" ]; then
+        local filesize
+        filesize=$(wc -c < "$output" | tr -d ' ')
+        local subject
+        subject=$(echo "$html_result" | jq -r '.data.subject')
+        echo "{\"ok\":true,\"data\":{\"subject\":$(echo "$subject" | jq -Rs .),\"size\":${filesize},\"converter\":\"${converter_name}\",\"savedTo\":\"${output}\"}}"
+    else
+        echo "{\"ok\":false,\"error\":\"PDF変換に失敗しました (${converter_name})\"}"
+        return 1
+    fi
+}

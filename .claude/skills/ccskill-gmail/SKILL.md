@@ -30,6 +30,7 @@ Gmail の検索・閲覧・下書き作成を行うための Claude Code Skill �
 
 3. **ファイル保存には専用ヘルパーを使う（`>` リダイレクト禁止）**
    - 添付ファイル保存: `ccskill-download` を使う（`ccskill-get ... | jq | base64 -d > file` は禁止）
+   - メール PDF 化: `ccskill-save-pdf` を使う（HTML 取得 → PDF 変換を一括実行）
    - HTML 保存: `ccskill-save-html` を使う（`ccskill-get ... | jq -r > file` は禁止）
    - 理由1: `>` リダイレクトは Claude Code のセキュリティ確認プロンプトを発生させる
    - 理由2: 大きなレスポンスをパイプで直接処理するとデータが途切れる問題がある
@@ -54,6 +55,7 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message
 ```bash
 # OK: ヘルパーでファイル保存（確認プロンプトなし・データ途切れなし）
 source .ccskill-gmail/api.sh && ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID 0 ./report.pdf
+source .ccskill-gmail/api.sh && ccskill-save-pdf "$GMAIL_ENDPOINT" MESSAGE_ID ./email.pdf
 source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html
 
 # NG: パイプ + リダイレクトでファイル保存（確認プロンプト発生・大きなファイルでデータ途切れ）
@@ -192,11 +194,14 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_attach
 # 添付ファイルダウンロード（推奨: ccskill-download ヘルパー）
 source .ccskill-gmail/api.sh && ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID 0 /tmp/attachment.pdf
 
-# メール本文 HTML 保存（推奨: ccskill-save-html ヘルパー）
-source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID /tmp/email.html
+# メール PDF 化（推奨: ccskill-save-pdf ヘルパー — HTML取得+PDF変換を一括実行）
+source .ccskill-gmail/api.sh && ccskill-save-pdf "$GMAIL_ENDPOINT" MESSAGE_ID ./email.pdf
+
+# メール本文 HTML 保存
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html
 
 # メール本文 HTML 保存（ヘッダーなし）
-source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID /tmp/email.html false
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html false
 ```
 
 ### 書き込み (POST)

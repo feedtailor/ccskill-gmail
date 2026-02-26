@@ -20,7 +20,7 @@ setup_permissions() {
     local target_dir="$1"
     local auto_yes="${2:-}"
     local settings_file="$target_dir/.claude/settings.local.json"
-    local patterns=("Bash(ccskill-get:*)" "Bash(ccskill-post:*)" "Bash(ccskill-download:*)" "Bash(ccskill-save-html:*)")
+    local patterns=("Bash(ccskill-get:*)" "Bash(ccskill-post:*)" "Bash(ccskill-download:*)" "Bash(ccskill-save-html:*)" "Bash(ccskill-save-pdf:*)")
     local missing_patterns=()
 
     # jq が必要

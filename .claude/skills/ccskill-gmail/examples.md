@@ -68,23 +68,17 @@ source .ccskill-gmail/api.sh && ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID 0 
 
 ---
 
-## 5. メール本文を HTML で取得・PDF 化
+## 5. メールを PDF 化（印刷）
 
 ```bash
-# メール本文を HTML で保存（ヘッダー付き）
-source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID /tmp/email.html
+# メールを PDF として保存（HTML取得 → PDF変換を一括実行）
+source .ccskill-gmail/api.sh && ccskill-save-pdf "$GMAIL_ENDPOINT" MESSAGE_ID ./receipt.pdf
 
-# ヘッダーなしで保存
-source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID /tmp/email.html false
-
-# PDF に変換（wkhtmltopdf がある場合）
-wkhtmltopdf /tmp/email.html /tmp/email.pdf
-
-# PDF に変換（Chrome headless の場合）
-google-chrome --headless --print-to-pdf=/tmp/email.pdf /tmp/email.html
+# HTML として保存したい場合
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html
 ```
 
-PDF 変換ツールがない場合は、HTML ファイルをブラウザで開いて「印刷 > PDF として保存」を案内してください。
+`ccskill-save-pdf` は Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、ブラウザでの印刷手順を案内します。
 
 ---
 
