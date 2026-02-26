@@ -100,33 +100,47 @@ function handleCreateReplyDraft(threadId, body, cc, bcc) {
 function handleUpdateDraft(draftId, to, subject, body, cc, bcc) {
   requireParam(draftId, 'draftId');
 
-  // Get existing draft
   const drafts = GmailApp.getDrafts();
   const draft = drafts.find(function(d) { return d.getId() === draftId; });
-
   if (!draft) {
     return errorResponse(`Draft not found: ${draftId}`);
   }
 
-  // Get current message content
   const message = draft.getMessage();
   const currentTo = to || message.getTo();
   const currentSubject = subject || message.getSubject();
   const currentBody = body || message.getPlainBody();
 
-  // Build options
-  const options = buildEmailOptions({
-    cc: cc,
-    bcc: bcc
-  });
+  // スレッドに紐付いているか判定
+  const thread = message.getThread();
+  const threadMessages = thread.getMessages();
+  const isReplyDraft = threadMessages.length > 1
+    || (threadMessages.length === 1 && !threadMessages[0].isDraft());
 
-  // Delete old draft and create new one
+  const options = buildEmailOptions({ cc: cc, bcc: bcc });
+
   draft.deleteDraft();
-  const newDraft = GmailApp.createDraft(currentTo, currentSubject, currentBody, options);
+
+  let newDraft;
+  if (isReplyDraft) {
+    // 返信下書き → スレッドの最後の非下書きメッセージに対して再作成
+    const nonDraftMessages = threadMessages.filter(function(m) {
+      return !m.isDraft();
+    });
+    const replyTarget = nonDraftMessages[nonDraftMessages.length - 1];
+
+    if (to) options.to = to;
+    newDraft = replyTarget.createDraftReply(currentBody, options);
+  } else {
+    // 新規下書き → 従来通り
+    newDraft = GmailApp.createDraft(currentTo, currentSubject, currentBody, options);
+  }
 
   return successResponse({
     draftId: newDraft.getId(),
     oldDraftId: draftId,
+    threadId: thread.getId(),
+    isReply: isReplyDraft,
     action: 'update_draft',
     message: '下書きを更新しました',
     gmailUrl: 'https://mail.google.com/mail/u/0/#drafts'

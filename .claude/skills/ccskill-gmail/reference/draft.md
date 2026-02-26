@@ -154,7 +154,7 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7
 | パラメータ | 必須 | 説明 |
 |-----------|------|------|
 | draftId | ✓ | 更新する下書きの ID |
-| to | | 新しい宛先（省略時は現在の値を維持） |
+| to | | 新しい宛先（**新規下書きのみ有効。返信下書きでは無視される**） |
 | subject | | 新しい件名（省略時は現在の値を維持） |
 | body | | 新しい本文（省略時は現在の値を維持） |
 | cc | | 新しい CC |
@@ -174,6 +174,8 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"update_draft","draftId":"r-123456789"
   "data": {
     "draftId": "r-987654321",
     "oldDraftId": "r-123456789",
+    "threadId": "19bf7f25b96ab637",
+    "isReply": true,
     "action": "update_draft",
     "message": "下書きを更新しました",
     "gmailUrl": "https://mail.google.com/mail/u/0/#drafts"
@@ -181,11 +183,15 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"update_draft","draftId":"r-123456789"
 }
 ```
 
+- `threadId`: 下書きが属するスレッドの ID
+- `isReply`: 返信下書きとして再作成された場合 `true`
+
 ## 注意事項
 
 - GmailApp は下書きの直接編集をサポートしていないため、内部的には「削除→再作成」で実装
 - そのため **draftId が変更されます**（レスポンスで新しい ID を確認してください）
-- 返信下書きの更新には対応していません
+- 返信下書きの場合、スレッドとの紐付けを維持して再作成します（`isReply: true` で判別可能）
+- **返信下書きの to（宛先）は変更できません**（GmailApp API の制約）。cc / bcc / body / subject は変更可能です。宛先を変更したい場合は、Gmail UI の下書き確認時に手動で変更してください
 
 ---
 
