@@ -16,6 +16,37 @@ Gmail の検索・閲覧・下書き作成を行うための Claude Code Skill �
 
 **セキュリティ**: Web App は「自分のみ (Only myself)」で公開されており、clasp の OAuth トークンによる認証が必要です。`gas_token` ヘルパー関数がトークンの自動取得・リフレッシュを行います。
 
+## 重要なルール
+
+**以下のルールは必ず守ってください。違反すると Claude Code のセキュリティ確認プロンプトが発生し、ユーザー体験を大きく損ないます。**
+
+1. **1回の Bash ツール呼び出しにつき API コールは1つだけ**
+   - 複数の API 結果が必要な場合は、Bash ツールを複数回（並列可）呼び出す
+   - 1つの Bash コマンド内に複数の `ccskill-get` / `ccskill-post` を `&&` や `;` で連結しない
+
+2. **`$()` コマンド置換の中に API コールを入れない**
+   - `messageId=$(ccskill-get ...)` のようなネストは禁止
+   - まず検索結果を取得し、次の Bash 呼び出しで ID を使う
+
+```bash
+# OK: 別々の Bash ツール呼び出しで実行
+# [Bash 1回目] 検索
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="subject:報告書"
+
+# [Bash 2回目] 上の結果から得た ID を使って取得
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId=19bf7f25b96ab637
+```
+
+```bash
+# NG: 1つの Bash に複数 API を詰め込む
+source .ccskill-gmail/api.sh && ccskill-get ... && echo "---" && source .ccskill-gmail/api.sh && ccskill-get ...
+
+# NG: $() 内に API コール
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message messageId=$(ccskill-get ... | jq -r ...)
+```
+
+---
+
 ## クイックスタート
 
 ### 1. 初期化 + コマンド実行
