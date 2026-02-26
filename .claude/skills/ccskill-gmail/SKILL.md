@@ -259,6 +259,7 @@ API 呼び出しでエラーが発生した場合は、まず再試行してく�
 
 ## 制限事項
 
+- **パーミッション制御**: `config.js` の `permissions` 設定により、特定のアクションを allow/deny で制御できます（Claude Code の allow/deny パターンに準拠）。`move_to_trash` はデフォルトで無効化されています。有効にするには `config.js` の `permissions.deny` から削除し、`ccskill-gmail apply-config` を実行してください。
 - **送信機能なし**: 下書き作成のみ（送信は Gmail UI で手動）
 - **認証**: `clasp login` 済みで、Web App は「自分のみ (Only myself)」で公開されている必要があります
 - **トークン管理**: `gas_token` 関数が自動リフレッシュを行います。`clasp login` のセッションが切れた場合は再ログインが必要です

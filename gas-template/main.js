@@ -23,6 +23,15 @@ function doGet(e) {
       });
     }
 
+    // Permission check
+    if (!isActionAllowed(action)) {
+      return errorResponse(
+        `Action "${action}" is denied by permissions config. ` +
+        `To enable, remove "${action}" from permissions.deny in config.js ` +
+        `and run: ccskill-gmail apply-config`
+      );
+    }
+
     // Route to appropriate handler
     switch (action) {
       case 'search':
@@ -70,6 +79,15 @@ function doPost(e) {
 
     if (!action) {
       return errorResponse('Missing required field: action');
+    }
+
+    // Permission check
+    if (!isActionAllowed(action)) {
+      return errorResponse(
+        `Action "${action}" is denied by permissions config. ` +
+        `To enable, remove "${action}" from permissions.deny in config.js ` +
+        `and run: ccskill-gmail apply-config`
+      );
     }
 
     // Route to appropriate handler

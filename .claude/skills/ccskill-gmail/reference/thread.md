@@ -47,6 +47,8 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"archive","threadId":"19bf7f25b96ab637
 
 ## move_to_trash - ゴミ箱に移動
 
+> **注意**: このアクションはデフォルトで無効化されています（`permissions.deny` に含まれています）。有効にするには `config.js` の `permissions.deny` 配列から `'move_to_trash'` を削除し、`ccskill-gmail apply-config` を実行してください。
+
 スレッドをゴミ箱に移動します。30日後に自動削除されます。
 
 ### リクエスト
