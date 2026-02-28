@@ -190,7 +190,7 @@ ccskill-download() {
     filename=$(jq -r '.data.filename' "$tmpfile")
     size=$(jq -r '.data.size' "$tmpfile")
     rm -f "$tmpfile"
-    echo "{\"ok\":true,\"data\":{\"filename\":\"${filename}\",\"size\":${size},\"savedTo\":\"${output}\"}}"
+    echo "{\"ok\":true,\"data\":{\"filename\":$(printf '%s' "$filename" | jq -Rs .),\"size\":${size},\"savedTo\":\"${output}\"}}"
 }
 
 # ========================================
@@ -236,7 +236,7 @@ ccskill-save-html() {
     local subject
     subject=$(jq -r '.data.subject' "$tmpfile")
     rm -f "$tmpfile"
-    echo "{\"ok\":true,\"data\":{\"subject\":$(echo "$subject" | jq -Rs .),\"savedTo\":\"${output}\"}}"
+    echo "{\"ok\":true,\"data\":{\"subject\":$(printf '%s' "$subject" | jq -Rs .),\"savedTo\":\"${output}\"}}"
 }
 
 # ========================================
@@ -261,19 +261,28 @@ ccskill-save-pdf() {
         return 1
     fi
 
-    # HTML を temp ファイルに保存
-    local tmphtml
-    tmphtml=$(mktemp "${TMPDIR:-/tmp}/ccskill-pdf.XXXXXX.html")
+    # API レスポンスを temp ファイルに保存（ccskill-save-html のネスト呼び出しを排除）
+    local tmpjson
+    tmpjson=$(mktemp "${TMPDIR:-/tmp}/ccskill-pdf-XXXXXX")
 
-    local html_result
-    html_result=$(ccskill-save-html "$endpoint" "$message_id" "$tmphtml")
+    ccskill-get "$endpoint" action=get_message_html messageId="$message_id" includeHeaders=true > "$tmpjson"
 
-    # HTML 取得のエラーチェック
-    if ! echo "$html_result" | jq -e '.ok == true' > /dev/null 2>&1; then
-        rm -f "$tmphtml"
-        echo "$html_result"
+    # エラーチェック
+    if ! jq -e '.ok == true' "$tmpjson" > /dev/null 2>&1; then
+        cat "$tmpjson"
+        rm -f "$tmpjson"
         return 1
     fi
+
+    # HTML を抽出して temp ファイルに保存
+    local tmphtml
+    tmphtml=$(mktemp "${TMPDIR:-/tmp}/ccskill-pdf-XXXXXX")
+    jq -r '.data.html' "$tmpjson" > "$tmphtml"
+
+    # subject を取得
+    local subject
+    subject=$(jq -r '.data.subject' "$tmpjson")
+    rm -f "$tmpjson"
 
     # PDF 変換ツールを検出
     local converter=""
@@ -301,9 +310,7 @@ ccskill-save-pdf() {
         local html_output="${output%.pdf}.html"
         /bin/cp "$tmphtml" "$html_output"
         rm -f "$tmphtml"
-        local subject
-        subject=$(echo "$html_result" | jq -r '.data.subject')
-        echo "{\"ok\":false,\"error\":\"PDF変換ツールが見つかりません。HTMLを保存しました: ${html_output}\\nPDFとして保存するには:\\n1. ブラウザで上記ファイルを開く\\n2. Cmd+P（印刷）> PDF として保存\",\"data\":{\"subject\":$(echo "$subject" | jq -Rs .),\"htmlSavedTo\":\"${html_output}\"}}"
+        echo "{\"ok\":false,\"error\":\"PDF変換ツールが見つかりません。HTMLを保存しました: ${html_output}\\nPDFとして保存するには:\\n1. ブラウザで上記ファイルを開く\\n2. Cmd+P（印刷）> PDF として保存\",\"data\":{\"subject\":$(printf '%s' "$subject" | jq -Rs .),\"htmlSavedTo\":\"${html_output}\"}}"
         return 1
     fi
 
@@ -335,9 +342,7 @@ ccskill-save-pdf() {
     if [ "$convert_ok" = true ] && [ -f "$output" ]; then
         local filesize
         filesize=$(wc -c < "$output" | tr -d ' ')
-        local subject
-        subject=$(echo "$html_result" | jq -r '.data.subject')
-        echo "{\"ok\":true,\"data\":{\"subject\":$(echo "$subject" | jq -Rs .),\"size\":${filesize},\"converter\":\"${converter_name}\",\"savedTo\":\"${output}\"}}"
+        echo "{\"ok\":true,\"data\":{\"subject\":$(printf '%s' "$subject" | jq -Rs .),\"size\":${filesize},\"converter\":\"${converter_name}\",\"savedTo\":\"${output}\"}}"
     else
         echo "{\"ok\":false,\"error\":\"PDF変換に失敗しました (${converter_name})\"}"
         return 1
