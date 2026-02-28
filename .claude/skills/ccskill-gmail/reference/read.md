@@ -194,3 +194,170 @@ ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count label="重要"
   "error": "Label not found: 存在しないラベル"
 }
 ```
+
+---
+
+## list_attachments - 添付ファイル一覧
+
+メッセージの添付ファイル一覧を取得します。`get_attachment` の前にサイズ確認に使用します。
+
+### リクエスト
+
+**メソッド**: GET
+
+**パラメータ**:
+
+| パラメータ | 必須 | 説明 |
+|-----------|------|------|
+| messageId | ✓ | メッセージ ID |
+
+### 実行例
+
+```bash
+ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=19bf7f25b96ab637
+```
+
+### レスポンス例
+
+```json
+{
+  "ok": true,
+  "data": {
+    "messageId": "19bf7f25b96ab637",
+    "attachments": [
+      {
+        "index": 0,
+        "filename": "report.pdf",
+        "contentType": "application/pdf",
+        "size": 123456
+      },
+      {
+        "index": 1,
+        "filename": "data.xlsx",
+        "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "size": 45678
+      }
+    ]
+  }
+}
+```
+
+添付ファイルがない場合は空配列が返されます。
+
+---
+
+## get_attachment - 添付ファイル取得
+
+添付ファイルの内容を base64 エンコードで取得します。5MB 超のファイルはエラーになります。
+
+### リクエスト
+
+**メソッド**: GET
+
+**パラメータ**:
+
+| パラメータ | 必須 | 説明 |
+|-----------|------|------|
+| messageId | ✓ | メッセージ ID |
+| attachmentIndex | ✓ | 添付ファイルのインデックス（0始まり） |
+
+### 実行例
+
+```bash
+# 添付ファイルを取得してローカルに保存（推奨: ccskill-download ヘルパー）
+ccskill-download "$GMAIL_ENDPOINT" 19bf7f25b96ab637 0 /tmp/report.pdf
+
+# 直接 API を使う場合
+ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=19bf7f25b96ab637 attachmentIndex=0 | jq -r '.data.content' | base64 -d > /tmp/report.pdf
+```
+
+### レスポンス例
+
+```json
+{
+  "ok": true,
+  "data": {
+    "filename": "report.pdf",
+    "contentType": "application/pdf",
+    "size": 123456,
+    "content": "JVBERi0xLjQKMS..."
+  }
+}
+```
+
+### エラー例
+
+インデックスが範囲外の場合：
+
+```json
+{
+  "ok": false,
+  "error": "Attachment index out of range: 2 (message has 1 attachment(s))"
+}
+```
+
+サイズ超過の場合：
+
+```json
+{
+  "ok": false,
+  "error": "Attachment too large: bigfile.zip (7.3MB). Maximum supported size is 5MB."
+}
+```
+
+---
+
+## get_message_html - メール本文 HTML 取得
+
+メール本文を完全な HTML として取得します。PDF 化やブラウザ表示に使用します。
+
+### リクエスト
+
+**メソッド**: GET
+
+**パラメータ**:
+
+| パラメータ | 必須 | 説明 |
+|-----------|------|------|
+| messageId | ✓ | メッセージ ID |
+| includeHeaders | | ヘッダー情報を HTML に含めるか（デフォルト: true） |
+
+### 実行例
+
+```bash
+# HTML を保存（推奨: ccskill-save-html ヘルパー）
+ccskill-save-html "$GMAIL_ENDPOINT" 19bf7f25b96ab637 /tmp/email.html
+
+# ヘッダーなしで保存
+ccskill-save-html "$GMAIL_ENDPOINT" 19bf7f25b96ab637 /tmp/email.html false
+
+# 直接 API を使う場合
+ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=19bf7f25b96ab637 | jq -r '.data.html' > /tmp/email.html
+```
+
+### レスポンス例
+
+```json
+{
+  "ok": true,
+  "data": {
+    "messageId": "19bf7f25b96ab637",
+    "subject": "ミーティングの件",
+    "from": "sender@example.com",
+    "to": "me@gmail.com",
+    "date": "2024-01-15T10:30:00.000Z",
+    "html": "<div style=\"font-family: sans-serif; ...\">...</div><html>...</html>"
+  }
+}
+```
+
+### PDF 化の手順
+
+`ccskill-save-pdf` ヘルパーを使うと HTML 取得 → PDF 変換を一括で行えます。
+
+```bash
+# 推奨: ccskill-save-pdf で一括処理
+ccskill-save-pdf "$GMAIL_ENDPOINT" 19bf7f25b96ab637 ./email.pdf
+```
+
+内部で Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、案内メッセージを返します。

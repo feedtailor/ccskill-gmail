@@ -28,6 +28,13 @@ Gmail の検索・閲覧・下書き作成を行うための Claude Code Skill �
    - `messageId=$(ccskill-get ...)` のようなネストは禁止
    - まず検索結果を取得し、次の Bash 呼び出しで ID を使う
 
+3. **ファイル保存には専用ヘルパーを使う（`>` リダイレクト禁止）**
+   - 添付ファイル保存: `ccskill-download` を使う（`ccskill-get ... | jq | base64 -d > file` は禁止）
+   - メール PDF 化: `ccskill-save-pdf` を使う（HTML 取得 → PDF 変換を一括実行）
+   - HTML 保存: `ccskill-save-html` を使う（`ccskill-get ... | jq -r > file` は禁止）
+   - 理由1: `>` リダイレクトは Claude Code のセキュリティ確認プロンプトを発生させる
+   - 理由2: 大きなレスポンスをパイプで直接処理するとデータが途切れる問題がある
+
 ```bash
 # OK: 別々の Bash ツール呼び出しで実行
 # [Bash 1回目] 検索
@@ -43,6 +50,16 @@ source .ccskill-gmail/api.sh && ccskill-get ... && echo "---" && source .ccskill
 
 # NG: $() 内に API コール
 source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_message messageId=$(ccskill-get ... | jq -r ...)
+```
+
+```bash
+# OK: ヘルパーでファイル保存（確認プロンプトなし・データ途切れなし）
+source .ccskill-gmail/api.sh && ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID 0 ./report.pdf
+source .ccskill-gmail/api.sh && ccskill-save-pdf "$GMAIL_ENDPOINT" MESSAGE_ID ./email.pdf
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html
+
+# NG: パイプ + リダイレクトでファイル保存（確認プロンプト発生・大きなファイルでデータ途切れ）
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=MSG attachmentIndex=0 | jq -r '.data.content' | base64 -d > ./report.pdf
 ```
 
 ---
@@ -122,6 +139,9 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 | get_message | メッセージ詳細 | `messageId` (必須) |
 | list_labels | ラベル一覧 | - |
 | get_unread_count | 未読メール数取得 | `label` (任意, デフォルト INBOX) |
+| list_attachments | 添付ファイル一覧 | `messageId` (必須) |
+| get_attachment | 添付ファイル取得 | `messageId` (必須), `attachmentIndex` (必須, 0始まり) |
+| get_message_html | メール本文 HTML 取得 | `messageId` (必須), `includeHeaders` (任意, デフォルト true) |
 
 ### 書き込み (POST)
 
@@ -167,6 +187,21 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_
 
 # 特定ラベルの未読数
 source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count label=重要
+
+# 添付ファイル一覧
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=MESSAGE_ID
+
+# 添付ファイルダウンロード（推奨: ccskill-download ヘルパー）
+source .ccskill-gmail/api.sh && ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID 0 /tmp/attachment.pdf
+
+# メール PDF 化（推奨: ccskill-save-pdf ヘルパー — HTML取得+PDF変換を一括実行）
+source .ccskill-gmail/api.sh && ccskill-save-pdf "$GMAIL_ENDPOINT" MESSAGE_ID ./email.pdf
+
+# メール本文 HTML 保存
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html
+
+# メール本文 HTML 保存（ヘッダーなし）
+source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html false
 ```
 
 ### 書き込み (POST)
@@ -297,7 +332,8 @@ API 呼び出しでエラーが発生した場合は、まず再試行してく�
 - **OAuth 認可**: 初回インストール時にブラウザで OAuth 認可が必要です（1回のみ）
 - **エンドポイント制限**: `https://script.google.com/*` のみ許可（セキュリティ保護）
 - **レート制限**: GAS の実行時間制限（6分/実行）が適用されます
-- **添付ファイル**: 現在は添付ファイルの追加・ダウンロードは未対応
+- **添付ファイル**: ダウンロードは対応済み（`list_attachments` / `get_attachment`）。添付ファイルの追加（メール作成時）は未対応
+- **添付ファイルサイズ制限**: `get_attachment` は 5MB 超のファイルをエラーにします。大きなファイルは Gmail UI からダウンロードしてください
 - **返信下書きの宛先変更不可**: `update_draft` で返信下書きの to（宛先）は変更できません（GmailApp API の制約）。cc / bcc / body / subject は変更可能です。宛先の変更が必要な場合は、ユーザーに「Gmail の下書き確認時に手動で宛先を変更してください」と案内してください
 
 ---

@@ -61,6 +61,149 @@ function handleListLabels() {
 }
 
 /**
+ * List attachments for a message
+ * @param {string} messageId - Gmail message ID
+ * @returns {ContentService.TextOutput} JSON response with attachment list
+ *
+ * @example
+ * handleListAttachments("18d1a2b3c4d5e6f7")
+ */
+function handleListAttachments(messageId) {
+  requireParam(messageId, 'messageId');
+
+  var message = GmailApp.getMessageById(messageId);
+
+  if (!message) {
+    return errorResponse('Message not found: ' + messageId);
+  }
+
+  var attachments = message.getAttachments();
+
+  return successResponse({
+    messageId: messageId,
+    attachments: attachments.map(function(attachment, index) {
+      return {
+        index: index,
+        filename: attachment.getName(),
+        contentType: attachment.getContentType(),
+        size: attachment.getSize()
+      };
+    })
+  });
+}
+
+/**
+ * Get a single attachment with base64-encoded content
+ * @param {string} messageId - Gmail message ID
+ * @param {number} attachmentIndex - Attachment index (0-based)
+ * @returns {ContentService.TextOutput} JSON response with attachment data
+ *
+ * @example
+ * handleGetAttachment("18d1a2b3c4d5e6f7", 0)
+ */
+function handleGetAttachment(messageId, attachmentIndex) {
+  requireParam(messageId, 'messageId');
+  if (attachmentIndex === undefined || attachmentIndex === null || attachmentIndex === '') {
+    throw new Error('Missing required parameter: attachmentIndex');
+  }
+
+  var index = parseInt(attachmentIndex);
+  if (isNaN(index) || index < 0) {
+    return errorResponse('attachmentIndex must be a non-negative integer');
+  }
+
+  var message = GmailApp.getMessageById(messageId);
+
+  if (!message) {
+    return errorResponse('Message not found: ' + messageId);
+  }
+
+  var attachments = message.getAttachments();
+
+  if (index >= attachments.length) {
+    return errorResponse(
+      'Attachment index out of range: ' + index +
+      ' (message has ' + attachments.length + ' attachment(s))'
+    );
+  }
+
+  var attachment = attachments[index];
+  var size = attachment.getSize();
+
+  // GAS レスポンスサイズ制限対策（5MB 超は拒否）
+  if (size > 5 * 1024 * 1024) {
+    return errorResponse(
+      'Attachment too large: ' + attachment.getName() +
+      ' (' + Math.round(size / 1024 / 1024 * 10) / 10 + 'MB). ' +
+      'Maximum supported size is 5MB.'
+    );
+  }
+
+  return successResponse({
+    filename: attachment.getName(),
+    contentType: attachment.getContentType(),
+    size: size,
+    content: Utilities.base64Encode(attachment.getBytes())
+  });
+}
+
+/**
+ * Get message body as HTML
+ * @param {string} messageId - Gmail message ID
+ * @param {string} includeHeaders - Whether to prepend email headers in HTML ("true"/"false", default "true")
+ * @returns {ContentService.TextOutput} JSON response with HTML body
+ *
+ * @example
+ * handleGetMessageHtml("18d1a2b3c4d5e6f7", "true")
+ */
+function handleGetMessageHtml(messageId, includeHeaders) {
+  requireParam(messageId, 'messageId');
+
+  var message = GmailApp.getMessageById(messageId);
+
+  if (!message) {
+    return errorResponse('Message not found: ' + messageId);
+  }
+
+  var html = message.getBody();
+  var addHeaders = (includeHeaders !== 'false');
+
+  if (addHeaders) {
+    var headerHtml =
+      '<div style="font-family: sans-serif; margin-bottom: 20px; padding: 10px; border-bottom: 1px solid #ccc;">' +
+      '<p><strong>From:</strong> ' + escapeHtml_(message.getFrom()) + '</p>' +
+      '<p><strong>To:</strong> ' + escapeHtml_(message.getTo()) + '</p>' +
+      '<p><strong>Date:</strong> ' + message.getDate().toISOString() + '</p>' +
+      '<p><strong>Subject:</strong> ' + escapeHtml_(message.getSubject()) + '</p>' +
+      '</div>';
+    html = headerHtml + html;
+  }
+
+  return successResponse({
+    messageId: messageId,
+    subject: message.getSubject(),
+    from: message.getFrom(),
+    to: message.getTo(),
+    date: message.getDate().toISOString(),
+    html: html
+  });
+}
+
+/**
+ * Escape HTML special characters
+ * @param {string} str - Input string
+ * @returns {string} Escaped string
+ */
+function escapeHtml_(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
  * Get unread message count
  * @param {string} labelName - Label name (optional, defaults to INBOX)
  * @returns {ContentService.TextOutput} JSON response with unread count
