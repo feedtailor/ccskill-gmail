@@ -252,3 +252,37 @@ source .ccskill-gmail/api.sh && echo "=== 処理後の未読数 ===" && ccskill-
 
 # Gmail で下書きを確認・送信: https://mail.google.com/mail/u/0/#drafts
 ```
+
+---
+
+## 16. 添付ファイル付き下書き作成
+
+添付ファイル付きの下書きは JSON が大きくなるため、Write ツール + `@file` パターンを使用します。
+
+```
+# Step 1: Write ツールで JSON ファイルを作成（base64 エンコード済みの content を含む）
+Write("/tmp/draft-with-attachment.json") に以下の内容:
+{
+  "action": "create_draft",
+  "to": "recipient@example.com",
+  "subject": "報告書送付",
+  "body": "お世話になっております。報告書を添付いたします。",
+  "attachments": [
+    {
+      "filename": "report.pdf",
+      "contentType": "application/pdf",
+      "content": "JVBERi0xLjQ..."
+    }
+  ]
+}
+```
+
+```bash
+# Step 2: Bash で送信
+source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" @/tmp/draft-with-attachment.json
+```
+
+- `attachments` は配列で複数ファイルを添付可能
+- `content` は base64 エンコード済みのデータ
+- 合計サイズ上限: 5MB（base64 デコード後）
+- `contentType` 省略時は `application/octet-stream`

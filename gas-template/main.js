@@ -67,6 +67,14 @@ function doGet(e) {
           e.parameter.includeHeaders
         );
 
+      case 'list_drafts':
+        return handleListDrafts(
+          parseInt(e.parameter.maxResults) || 20
+        );
+
+      case 'get_profile':
+        return handleGetProfile();
+
       default:
         return errorResponse(`Unknown action: ${action}`);
     }
@@ -113,7 +121,9 @@ function doPost(e) {
           body.subject,
           body.body,
           body.cc,
-          body.bcc
+          body.bcc,
+          body.htmlBody,
+          body.attachments
         );
 
       case 'create_reply_draft':
@@ -121,7 +131,9 @@ function doPost(e) {
           body.threadId,
           body.body,
           body.cc,
-          body.bcc
+          body.bcc,
+          body.htmlBody,
+          body.attachments
         );
 
       case 'mark_read':
@@ -149,7 +161,8 @@ function doPost(e) {
           body.subject,
           body.body,
           body.cc,
-          body.bcc
+          body.bcc,
+          body.htmlBody
         );
 
       case 'delete_draft':

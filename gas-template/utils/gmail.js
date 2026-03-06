@@ -164,6 +164,9 @@ function buildEmailOptions(params) {
   if (params.replyTo) {
     options.replyTo = params.replyTo;
   }
+  if (params.attachments && params.attachments.length > 0) {
+    options.attachments = params.attachments;
+  }
 
   return options;
 }
