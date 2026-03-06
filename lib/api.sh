@@ -277,9 +277,11 @@ _gmail_save_pdf() {
         return 1
     fi
 
-    # HTML を抽出して temp ファイルに保存
+    # HTML を抽出して temp ファイルに保存（.html 拡張子が必要 — Chrome headless が MIME 判定に使う）
     local tmphtml
     tmphtml=$(mktemp "${TMPDIR:-/tmp}/ccskill-pdf-XXXXXX")
+    mv "$tmphtml" "${tmphtml}.html"
+    tmphtml="${tmphtml}.html"
     jq -r '.data.html' "$tmpjson" > "$tmphtml"
 
     # subject を取得
