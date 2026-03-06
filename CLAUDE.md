@@ -50,9 +50,9 @@ ccskill-gmail/
 │   ├── main.js
 │   ├── handlers/
 │   └── utils/
-└── .claude/skills/ccskill-gmail/
-    ├── SKILL.md
-    ├── troubleshooting.md
+└── .claude/skills/ccskill-gmail/  # スキル定義のマスターソース
+    ├── SKILL.md                   # install/update 時にインストール先の
+    ├── troubleshooting.md         # .claude/skills/ccskill-gmail/ へコピーされる
     ├── examples.md
     └── reference/
 ```
