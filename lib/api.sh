@@ -147,25 +147,26 @@ ccskill-post() {
 }
 
 # ========================================
-# ccskill-download: 添付ファイルダウンロード
+# _gmail_download: 添付ファイルダウンロード
 # ========================================
 # get_attachment の結果を base64 デコードしてファイルに保存する。
 # > リダイレクトを関数内に隠蔽し、Claude Code の確認プロンプトを回避する。
+# ※ gmail 専用のローカルヘルパー（ccskill-get/post とは異なりシリーズ共通ではない）
 #
 # Usage:
-#   ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID INDEX OUTPUT_PATH
+#   _gmail_download "$GMAIL_ENDPOINT" MESSAGE_ID INDEX OUTPUT_PATH
 #
 # Example:
-#   ccskill-download "$GMAIL_ENDPOINT" 19c98efb629db376 0 /tmp/report.pdf
+#   _gmail_download "$GMAIL_ENDPOINT" 19c98efb629db376 0 /tmp/report.pdf
 
-ccskill-download() {
+_gmail_download() {
     local endpoint="$1"
     local message_id="$2"
     local index="$3"
     local output="$4"
 
     if [ -z "$endpoint" ] || [ -z "$message_id" ] || [ -z "$index" ] || [ -z "$output" ]; then
-        echo '{"ok":false,"error":"Usage: ccskill-download ENDPOINT MESSAGE_ID ATTACHMENT_INDEX OUTPUT_PATH"}'
+        echo '{"ok":false,"error":"Usage: _gmail_download ENDPOINT MESSAGE_ID ATTACHMENT_INDEX OUTPUT_PATH"}'
         return 1
     fi
 
@@ -194,25 +195,26 @@ ccskill-download() {
 }
 
 # ========================================
-# ccskill-save-html: メール HTML 保存
+# _gmail_save_html: メール HTML 保存
 # ========================================
 # get_message_html の結果を HTML ファイルに保存する。
+# ※ gmail 専用のローカルヘルパー（ccskill-get/post とは異なりシリーズ共通ではない）
 #
 # Usage:
-#   ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID OUTPUT_PATH [includeHeaders]
+#   _gmail_save_html "$GMAIL_ENDPOINT" MESSAGE_ID OUTPUT_PATH [includeHeaders]
 #
 # Example:
-#   ccskill-save-html "$GMAIL_ENDPOINT" 19c98efb629db376 /tmp/email.html
-#   ccskill-save-html "$GMAIL_ENDPOINT" 19c98efb629db376 /tmp/email.html false
+#   _gmail_save_html "$GMAIL_ENDPOINT" 19c98efb629db376 /tmp/email.html
+#   _gmail_save_html "$GMAIL_ENDPOINT" 19c98efb629db376 /tmp/email.html false
 
-ccskill-save-html() {
+_gmail_save_html() {
     local endpoint="$1"
     local message_id="$2"
     local output="$3"
     local include_headers="${4:-true}"
 
     if [ -z "$endpoint" ] || [ -z "$message_id" ] || [ -z "$output" ]; then
-        echo '{"ok":false,"error":"Usage: ccskill-save-html ENDPOINT MESSAGE_ID OUTPUT_PATH [includeHeaders]"}'
+        echo '{"ok":false,"error":"Usage: _gmail_save_html ENDPOINT MESSAGE_ID OUTPUT_PATH [includeHeaders]"}'
         return 1
     fi
 
@@ -240,28 +242,29 @@ ccskill-save-html() {
 }
 
 # ========================================
-# ccskill-save-pdf: メール PDF 保存
+# _gmail_save_pdf: メール PDF 保存
 # ========================================
 # get_message_html → HTML 保存 → PDF 変換 を一括で行う。
 # Chrome headless / wkhtmltopdf を自動検出し、なければ HTML 保存 + 案内を返す。
+# ※ gmail 専用のローカルヘルパー（ccskill-get/post とは異なりシリーズ共通ではない）
 #
 # Usage:
-#   ccskill-save-pdf "$GMAIL_ENDPOINT" MESSAGE_ID OUTPUT_PATH
+#   _gmail_save_pdf "$GMAIL_ENDPOINT" MESSAGE_ID OUTPUT_PATH
 #
 # Example:
-#   ccskill-save-pdf "$GMAIL_ENDPOINT" 19c98efb629db376 ./receipt.pdf
+#   _gmail_save_pdf "$GMAIL_ENDPOINT" 19c98efb629db376 ./receipt.pdf
 
-ccskill-save-pdf() {
+_gmail_save_pdf() {
     local endpoint="$1"
     local message_id="$2"
     local output="$3"
 
     if [ -z "$endpoint" ] || [ -z "$message_id" ] || [ -z "$output" ]; then
-        echo '{"ok":false,"error":"Usage: ccskill-save-pdf ENDPOINT MESSAGE_ID OUTPUT_PATH"}'
+        echo '{"ok":false,"error":"Usage: _gmail_save_pdf ENDPOINT MESSAGE_ID OUTPUT_PATH"}'
         return 1
     fi
 
-    # API レスポンスを temp ファイルに保存（ccskill-save-html のネスト呼び出しを排除）
+    # API レスポンスを temp ファイルに保存（_gmail_save_html のネスト呼び出しを排除）
     local tmpjson
     tmpjson=$(mktemp "${TMPDIR:-/tmp}/ccskill-pdf-XXXXXX")
 
