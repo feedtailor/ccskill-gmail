@@ -18,7 +18,8 @@
       "Bash(__NEW_LINE_1d3d1efd4fdb84ea__ echo \"\")",
       "Bash(__NEW_LINE_5e0cb12724567077__ echo \"=== エラー系テスト ===\")",
       "Bash(__NEW_LINE_5e0cb12724567077__ echo \"1. 存在しないthreadId:\")",
-      "Bash(__NEW_LINE_5e0cb12724567077__ echo \"\")"
+      "Bash(__NEW_LINE_5e0cb12724567077__ echo \"\")",
+      "WebFetch(domain:api.github.com)"
     ]
   },
   "sandbox": {

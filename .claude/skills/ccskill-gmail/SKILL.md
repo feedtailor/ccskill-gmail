@@ -142,14 +142,16 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 | list_attachments | 添付ファイル一覧 | `messageId` (必須) |
 | get_attachment | 添付ファイル取得 | `messageId` (必須), `attachmentIndex` (必須, 0始まり) |
 | get_message_html | メール本文 HTML 取得 | `messageId` (必須), `includeHeaders` (任意, デフォルト true) |
+| list_drafts | 下書き一覧取得 | `maxResults` (任意, デフォルト 20, 上限 100) |
+| get_profile | プロフィール情報取得 | - |
 
 ### 書き込み (POST)
 
 | アクション | 説明 | パラメータ |
 |-----------|------|-----------|
-| create_draft | 新規メールの下書き作成 | `to`, `subject`, `body` (必須), `cc`, `bcc` (任意) |
-| create_reply_draft | 既存スレッドへの返信下書き作成 | `threadId`, `body` (必須), `cc`, `bcc` (任意) |
-| update_draft | 下書き更新 | `draftId` (必須), `to`, `subject`, `body`, `cc`, `bcc` (任意) |
+| create_draft | 新規メールの下書き作成 | `to`, `subject`, `body` (必須), `cc`, `bcc`, `htmlBody`, `attachments` (任意) |
+| create_reply_draft | 既存スレッドへの返信下書き作成 | `threadId`, `body` (必須), `cc`, `bcc`, `htmlBody`, `attachments` (任意) |
+| update_draft | 下書き更新 | `draftId` (必須), `to`, `subject`, `body`, `cc`, `bcc`, `htmlBody` (任意) |
 | delete_draft | 下書き削除 | `draftId` (必須) |
 | mark_read | 既読にする | `threadId` または `messageId` (いずれか必須) |
 | mark_unread | 未読にする | `threadId` または `messageId` (いずれか必須) |
@@ -202,6 +204,15 @@ source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID .
 
 # メール本文 HTML 保存（ヘッダーなし）
 source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html false
+
+# 下書き一覧
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_drafts
+
+# 下書き一覧（件数指定）
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_drafts maxResults=50
+
+# プロフィール情報取得
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_profile
 ```
 
 ### 書き込み (POST)
@@ -212,6 +223,9 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"creat
 
 # CC/BCC 付き下書き
 source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"to@example.com","cc":"cc@example.com","bcc":"bcc@example.com","subject":"件名","body":"本文"}'
+
+# HTML メール下書き（body はプレーンテキストフォールバック）
+source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"to@example.com","subject":"件名","body":"本文","htmlBody":"<h1>件名</h1><p>本文</p>"}'
 
 # 返信下書き作成
 source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"ご連絡ありがとうございます。"}'
@@ -332,8 +346,8 @@ API 呼び出しでエラーが発生した場合は、まず再試行してく�
 - **OAuth 認可**: 初回インストール時にブラウザで OAuth 認可が必要です（1回のみ）
 - **エンドポイント制限**: `https://script.google.com/*` のみ許可（セキュリティ保護）
 - **レート制限**: GAS の実行時間制限（6分/実行）が適用されます
-- **添付ファイル**: ダウンロードは対応済み（`list_attachments` / `get_attachment`）。添付ファイルの追加（メール作成時）は未対応
-- **添付ファイルサイズ制限**: `get_attachment` は 5MB 超のファイルをエラーにします。大きなファイルは Gmail UI からダウンロードしてください
+- **添付ファイル**: ダウンロード（`list_attachments` / `get_attachment`）、下書き作成時の添付（`create_draft` / `create_reply_draft` の `attachments` パラメータ）に対応
+- **添付ファイルサイズ制限**: `get_attachment` は 5MB 超のファイルをエラーにします。下書き作成時の添付も合計 5MB が上限です。大きなファイルは Gmail UI で操作してください
 - **返信下書きの宛先変更不可**: `update_draft` で返信下書きの to（宛先）は変更できません（GmailApp API の制約）。cc / bcc / body / subject は変更可能です。宛先の変更が必要な場合は、ユーザーに「Gmail の下書き確認時に手動で宛先を変更してください」と案内してください
 
 ---

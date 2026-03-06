@@ -1,3 +1,58 @@
+# list_drafts - 下書き一覧取得
+
+下書きの一覧を軽量な形式で取得します。
+
+## リクエスト
+
+**メソッド**: GET
+
+**パラメータ**:
+
+| パラメータ | 必須 | 説明 |
+|-----------|------|------|
+| maxResults | | 最大取得件数（デフォルト 20, 上限 100） |
+
+---
+
+## 実行例
+
+```bash
+# 下書き一覧（デフォルト 20 件）
+ccskill-get "$GMAIL_ENDPOINT" action=list_drafts
+
+# 件数指定
+ccskill-get "$GMAIL_ENDPOINT" action=list_drafts maxResults=50
+```
+
+---
+
+## レスポンス例
+
+```json
+{
+  "ok": true,
+  "data": {
+    "total": 5,
+    "count": 5,
+    "drafts": [
+      {
+        "draftId": "r-935971606264660525",
+        "subject": "お見積りの件",
+        "to": "recipient@example.com",
+        "snippet": "お世話になっております。添付の通りお見積りをお送りします。よろしくお願いいたし...",
+        "lastDate": "2024-01-15T10:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+- `total`: 全下書き件数
+- `count`: 今回返した件数（maxResults で制限された場合は total と異なる）
+- `snippet`: 本文の先頭 100 文字（プレーンテキスト）
+
+---
+
 # create_draft - 新規メールの下書き作成
 
 新しいメールの下書きを作成します。既存スレッドへの返信は `create_reply_draft` を使用してください。
@@ -24,9 +79,28 @@
 |-----------|------|------|
 | to | ✓ | 宛先メールアドレス（カンマ区切りで複数可） |
 | subject | ✓ | 件名 |
-| body | ✓ | 本文（プレーンテキスト） |
+| body | ✓ | 本文（プレーンテキスト。htmlBody 指定時はフォールバック用） |
 | cc | | CC（カンマ区切りで複数可） |
 | bcc | | BCC（カンマ区切りで複数可） |
+| htmlBody | | HTML 本文（指定時は body がプレーンテキストフォールバックになる） |
+| attachments | | 添付ファイル配列（詳細は下記参照） |
+
+### attachments の形式
+
+```json
+[
+  {
+    "filename": "report.pdf",
+    "contentType": "application/pdf",
+    "content": "<base64エンコードされたファイル内容>"
+  }
+]
+```
+
+- `filename` (必須): ファイル名
+- `content` (必須): base64 エンコードされたファイルデータ
+- `contentType` (任意): MIME タイプ（省略時は `application/octet-stream`）
+- 合計サイズ上限: 5MB（base64 デコード後のサイズ）
 
 ---
 
@@ -48,6 +122,20 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"client@example.co
 
 ```bash
 ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"user1@example.com,user2@example.com","subject":"チームミーティングのお知らせ","body":"明日10時からミーティングを行います。"}'
+```
+
+### HTML メール
+
+```bash
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"recipient@example.com","subject":"月次レポート","body":"月次レポートを送ります。","htmlBody":"<h1>月次レポート</h1><p>詳細は以下の通りです。</p>"}'
+```
+
+### 添付ファイル付き
+
+Write ツールで JSON ファイルを作成してから送信:
+
+```bash
+source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" @/tmp/draft-with-attachment.json
 ```
 
 ---
@@ -93,9 +181,11 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"user1@example.com
 | パラメータ | 必須 | 説明 |
 |-----------|------|------|
 | threadId | ✓ | 返信先スレッドの ID |
-| body | ✓ | 返信本文（プレーンテキスト） |
+| body | ✓ | 返信本文（プレーンテキスト。htmlBody 指定時はフォールバック用） |
 | cc | | CC（カンマ区切りで複数可） |
 | bcc | | BCC（カンマ区切りで複数可） |
+| htmlBody | | HTML 本文（指定時は body がプレーンテキストフォールバックになる） |
+| attachments | | 添付ファイル配列（形式は create_draft と同じ） |
 
 ---
 
@@ -111,6 +201,12 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7
 
 ```bash
 ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"確認しました。","cc":"manager@example.com"}'
+```
+
+### HTML 返信
+
+```bash
+ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ありがとうございます。","htmlBody":"<p>ありがとうございます。<br>承知いたしました。</p>"}'
 ```
 
 ---
@@ -159,6 +255,7 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7
 | body | | 新しい本文（省略時は現在の値を維持） |
 | cc | | 新しい CC |
 | bcc | | 新しい BCC |
+| htmlBody | | 新しい HTML 本文（省略時は既存の HTML を維持） |
 
 ## 実行例
 
@@ -192,6 +289,7 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"update_draft","draftId":"r-123456789"
 - そのため **draftId が変更されます**（レスポンスで新しい ID を確認してください）
 - 返信下書きの場合、スレッドとの紐付けを維持して再作成します（`isReply: true` で判別可能）
 - **返信下書きの to（宛先）は変更できません**（GmailApp API の制約）。cc / bcc / body / subject は変更可能です。宛先を変更したい場合は、Gmail UI の下書き確認時に手動で変更してください
+- **update_draft では添付ファイル（attachments）の更新は未対応です。** 添付を変更する場合は delete_draft → create_draft で再作成してください
 
 ---
 

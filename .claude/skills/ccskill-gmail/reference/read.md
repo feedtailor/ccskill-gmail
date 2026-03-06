@@ -361,3 +361,38 @@ ccskill-save-pdf "$GMAIL_ENDPOINT" 19bf7f25b96ab637 ./email.pdf
 ```
 
 内部で Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、案内メッセージを返します。
+
+---
+
+## get_profile - プロフィール情報取得
+
+アカウントのメールアドレスと未読数の概要を取得します。
+
+### リクエスト
+
+**メソッド**: GET
+
+**パラメータ**: なし
+
+### 実行例
+
+```bash
+ccskill-get "$GMAIL_ENDPOINT" action=get_profile
+```
+
+### レスポンス例
+
+```json
+{
+  "ok": true,
+  "data": {
+    "email": "user@gmail.com",
+    "inboxUnreadCount": 15,
+    "starredUnreadCount": 3
+  }
+}
+```
+
+- `email`: アカウントのメールアドレス
+- `inboxUnreadCount`: 受信トレイの未読メール数
+- `starredUnreadCount`: スター付き未読メール数

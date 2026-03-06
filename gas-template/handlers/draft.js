@@ -6,12 +6,55 @@
  */
 
 /**
+ * 添付ファイル配列を base64 から Blob に変換
+ * @param {Array} attachments - [{filename, contentType, content(base64)}]
+ * @returns {Array<Blob>} GmailApp 用の Blob 配列
+ * @throws {Error} 合計サイズが 5MB を超える場合
+ */
+function parseAttachments(attachments) {
+  if (!attachments || !Array.isArray(attachments) || attachments.length === 0) {
+    return [];
+  }
+
+  var MAX_ATTACHMENTS = 25;
+  if (attachments.length > MAX_ATTACHMENTS) {
+    throw new Error('添付ファイルは最大 ' + MAX_ATTACHMENTS + ' 個までです');
+  }
+
+  var totalSize = 0;
+  var MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
+  return attachments.map(function(att, index) {
+    if (!att.filename) {
+      throw new Error('attachments[' + index + ']: filename is required');
+    }
+    if (!att.content) {
+      throw new Error('attachments[' + index + ']: content (base64) is required');
+    }
+
+    // base64 文字列長から事前にサイズを推定してチェック
+    var estimatedSize = Math.ceil(att.content.length * 3 / 4);
+    totalSize += estimatedSize;
+    if (totalSize > MAX_SIZE) {
+      throw new Error('添付ファイルの合計サイズが 5MB を超えています（上限: 5MB）');
+    }
+
+    var contentType = att.contentType || 'application/octet-stream';
+    var decoded = Utilities.base64Decode(att.content);
+
+    return Utilities.newBlob(decoded, contentType, att.filename);
+  });
+}
+
+/**
  * Create a new email draft
  * @param {string} to - Recipient email address(es), comma-separated for multiple
  * @param {string} subject - Email subject
- * @param {string} body - Email body (plain text)
+ * @param {string} body - Email body (plain text, フォールバック用)
  * @param {string} cc - CC recipients (optional)
  * @param {string} bcc - BCC recipients (optional)
+ * @param {string} htmlBody - HTML 本文 (optional, 指定時は body がプレーンテキストフォールバックになる)
+ * @param {Array} attachments - 添付ファイル配列 (optional, [{filename, contentType, content(base64)}])
  * @returns {ContentService.TextOutput} JSON response with draft info
  *
  * @example
@@ -20,7 +63,7 @@
  * @example
  * handleCreateDraft("recipient@example.com", "Meeting", "Body", "cc@example.com", "bcc@example.com")
  */
-function handleCreateDraft(to, subject, body, cc, bcc) {
+function handleCreateDraft(to, subject, body, cc, bcc, htmlBody, attachments) {
   requireParam(to, 'to');
   requireParam(subject, 'subject');
   requireParam(body, 'body');
@@ -28,7 +71,9 @@ function handleCreateDraft(to, subject, body, cc, bcc) {
   // Build options object
   const options = buildEmailOptions({
     cc: cc,
-    bcc: bcc
+    bcc: bcc,
+    htmlBody: htmlBody,
+    attachments: parseAttachments(attachments)
   });
 
   // Create the draft
@@ -46,15 +91,17 @@ function handleCreateDraft(to, subject, body, cc, bcc) {
 /**
  * Create a reply draft for an existing thread
  * @param {string} threadId - Thread ID to reply to
- * @param {string} body - Reply body (plain text)
+ * @param {string} body - Reply body (plain text, フォールバック用)
  * @param {string} cc - CC recipients (optional)
  * @param {string} bcc - BCC recipients (optional)
+ * @param {string} htmlBody - HTML 本文 (optional, 指定時は body がプレーンテキストフォールバックになる)
+ * @param {Array} attachments - 添付ファイル配列 (optional, [{filename, contentType, content(base64)}])
  * @returns {ContentService.TextOutput} JSON response with draft info
  *
  * @example
  * handleCreateReplyDraft("19bf7f25b96ab637", "Thank you for your email.")
  */
-function handleCreateReplyDraft(threadId, body, cc, bcc) {
+function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments) {
   requireParam(threadId, 'threadId');
   requireParam(body, 'body');
 
@@ -70,7 +117,9 @@ function handleCreateReplyDraft(threadId, body, cc, bcc) {
   // Build options object
   const options = buildEmailOptions({
     cc: cc,
-    bcc: bcc
+    bcc: bcc,
+    htmlBody: htmlBody,
+    attachments: parseAttachments(attachments)
   });
 
   // Create reply draft
@@ -95,9 +144,10 @@ function handleCreateReplyDraft(threadId, body, cc, bcc) {
  * @param {string} body - New body (optional)
  * @param {string} cc - New CC recipients (optional)
  * @param {string} bcc - New BCC recipients (optional)
+ * @param {string} htmlBody - HTML 本文 (optional, 省略時は既存の HTML を維持)
  * @returns {ContentService.TextOutput} JSON response with new draft info
  */
-function handleUpdateDraft(draftId, to, subject, body, cc, bcc) {
+function handleUpdateDraft(draftId, to, subject, body, cc, bcc, htmlBody) {
   requireParam(draftId, 'draftId');
 
   const drafts = GmailApp.getDrafts();
@@ -110,6 +160,8 @@ function handleUpdateDraft(draftId, to, subject, body, cc, bcc) {
   const currentTo = to || message.getTo();
   const currentSubject = subject || message.getSubject();
   const currentBody = body || message.getPlainBody();
+  // htmlBody は明示的に渡された場合のみ使用（既存の HTML を引き継ぐ場合は getBody）
+  const currentHtmlBody = htmlBody !== undefined ? htmlBody : message.getBody();
 
   // スレッドに紐付いているか判定
   const thread = message.getThread();
@@ -117,7 +169,7 @@ function handleUpdateDraft(draftId, to, subject, body, cc, bcc) {
   const isReplyDraft = threadMessages.length > 1
     || (threadMessages.length === 1 && !threadMessages[0].isDraft());
 
-  const options = buildEmailOptions({ cc: cc, bcc: bcc });
+  const options = buildEmailOptions({ cc: cc, bcc: bcc, htmlBody: currentHtmlBody });
 
   draft.deleteDraft();
 
@@ -144,6 +196,50 @@ function handleUpdateDraft(draftId, to, subject, body, cc, bcc) {
     action: 'update_draft',
     message: '下書きを更新しました',
     gmailUrl: 'https://mail.google.com/mail/u/0/#drafts'
+  });
+}
+
+/**
+ * 下書き一覧を取得
+ * @param {number} maxResults - 最大取得件数（デフォルト 20, 上限 100）
+ * @returns {ContentService.TextOutput} JSON response with draft list
+ *
+ * @example
+ * handleListDrafts(20)
+ */
+function handleListDrafts(maxResults) {
+  let limit = maxResults || 20;
+  if (limit > 100) {
+    limit = 100;
+  }
+
+  const drafts = GmailApp.getDrafts();
+  const total = drafts.length;
+
+  // maxResults で切り詰め
+  const sliced = drafts.slice(0, limit);
+
+  const results = sliced.map(function(draft) {
+    const message = draft.getMessage();
+    const plainBody = message.getPlainBody() || '';
+    let snippet = plainBody.substring(0, 100);
+    if (plainBody.length > 100) {
+      snippet += '...';
+    }
+
+    return {
+      draftId: draft.getId(),
+      subject: message.getSubject(),
+      to: message.getTo(),
+      snippet: snippet,
+      lastDate: message.getDate().toISOString()
+    };
+  });
+
+  return successResponse({
+    total: total,
+    count: results.length,
+    drafts: results
   });
 }
 

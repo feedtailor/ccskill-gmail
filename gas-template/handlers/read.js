@@ -238,3 +238,22 @@ function handleGetUnreadCount(labelName) {
     message: `未読メールが ${unreadCount} 件あります`
   });
 }
+
+/**
+ * アカウントのプロフィール情報を取得
+ * @returns {ContentService.TextOutput} JSON response with profile info
+ *
+ * @example
+ * handleGetProfile()
+ */
+function handleGetProfile() {
+  const email = Session.getActiveUser().getEmail();
+  const inboxUnreadCount = GmailApp.getInboxUnreadCount();
+  const starredUnreadCount = GmailApp.getStarredUnreadCount();
+
+  return successResponse({
+    email: email,
+    inboxUnreadCount: inboxUnreadCount,
+    starredUnreadCount: starredUnreadCount
+  });
+}
