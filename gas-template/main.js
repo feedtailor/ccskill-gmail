@@ -133,7 +133,9 @@ function doPost(e) {
           body.cc,
           body.bcc,
           body.htmlBody,
-          body.attachments
+          body.attachments,
+          body.skipSelf,
+          body.replyAll
         );
 
       case 'mark_read':

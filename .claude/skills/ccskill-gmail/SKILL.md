@@ -150,7 +150,7 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 | アクション | 説明 | パラメータ |
 |-----------|------|-----------|
 | create_draft | 新規メールの下書き作成 | `to`, `subject`, `body` (必須), `cc`, `bcc`, `htmlBody`, `attachments` (任意) |
-| create_reply_draft | 既存スレッドへの返信下書き作成 | `threadId`, `body` (必須), `cc`, `bcc`, `htmlBody`, `attachments` (任意) |
+| create_reply_draft | 既存スレッドへの返信下書き作成 | `threadId`, `body` (必須), `cc`, `bcc`, `htmlBody`, `attachments`, `skipSelf`, `replyAll` (任意) |
 | update_draft | 下書き更新 | `draftId` (必須), `to`, `subject`, `body`, `cc`, `bcc`, `htmlBody` (任意) |
 | delete_draft | 下書き削除 | `draftId` (必須) |
 | mark_read | 既読にする | `threadId` または `messageId` (いずれか必須) |

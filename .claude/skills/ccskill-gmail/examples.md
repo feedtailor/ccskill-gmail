@@ -44,12 +44,20 @@ source .ccskill-gmail/api.sh && RESULT=$(ccskill-get "$GMAIL_ENDPOINT" action=se
 # 2. スレッドの詳細を取得（THREAD_ID は手順1の結果から取得）
 source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId=THREAD_ID
 
-# 3. 返信下書きを作成（宛先・件名は自動設定）
+# 3. 返信下書きを作成（宛先・件名は自動設定、デフォルトで全員に返信）
 source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"ご連絡ありがとうございます。\n\n承知いたしました。対応いたします。\n\nよろしくお願いいたします。"}'
+
+# 送信者のみに返信したい場合（replyAll: false）
+source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。","replyAll":false}'
+
+# 自分の送信メッセージをスキップせず、最後のメッセージに返信したい場合
+source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"追記です。","skipSelf":false,"replyAll":false}'
 
 # 4. Gmail で下書きを確認・送信
 # https://mail.google.com/mail/u/0/#drafts
 ```
+
+デフォルト動作（`skipSelf: true`, `replyAll: true`）は、自分が最後に返信したスレッドでも正しく相手に宛てた全員返信の下書きを作成します。
 
 ---
 
