@@ -63,7 +63,7 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=MESSAGE_ID
 
 # 添付ファイルをダウンロード（index=0 の添付ファイル）
-source .ccskill-gmail/api.sh && ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID 0 /tmp/attachment.pdf
+source .ccskill-gmail/api.sh && _gmail_download "$GMAIL_ENDPOINT" MESSAGE_ID 0 /tmp/attachment.pdf
 ```
 
 ---
@@ -72,13 +72,13 @@ source .ccskill-gmail/api.sh && ccskill-download "$GMAIL_ENDPOINT" MESSAGE_ID 0 
 
 ```bash
 # メールを PDF として保存（HTML取得 → PDF変換を一括実行）
-source .ccskill-gmail/api.sh && ccskill-save-pdf "$GMAIL_ENDPOINT" MESSAGE_ID ./receipt.pdf
+source .ccskill-gmail/api.sh && _gmail_save_pdf "$GMAIL_ENDPOINT" MESSAGE_ID ./receipt.pdf
 
 # HTML として保存したい場合
-source .ccskill-gmail/api.sh && ccskill-save-html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html
+source .ccskill-gmail/api.sh && _gmail_save_html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html
 ```
 
-`ccskill-save-pdf` は Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、ブラウザでの印刷手順を案内します。
+`_gmail_save_pdf` は Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、ブラウザでの印刷手順を案内します。
 
 ---
 
