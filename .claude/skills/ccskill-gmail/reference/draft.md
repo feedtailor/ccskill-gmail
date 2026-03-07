@@ -186,6 +186,8 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" @/tmp/draft-with-
 | bcc | | BCC（カンマ区切りで複数可） |
 | htmlBody | | HTML 本文（指定時は body がプレーンテキストフォールバックになる） |
 | attachments | | 添付ファイル配列（形式は create_draft と同じ） |
+| skipSelf | | 自分の送信メッセージをスキップして相手のメッセージに返信する（デフォルト `true`） |
+| replyAll | | 全員に返信する — 元メッセージの to/cc を自動保持（デフォルト `true`） |
 
 ---
 
@@ -221,6 +223,8 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7
     "threadId": "19bf7f25b96ab637",
     "to": "original-sender@example.com",
     "subject": "Re: 元の件名",
+    "skipSelf": true,
+    "replyAll": true,
     "message": "返信下書きを作成しました。Gmail で確認・送信してください。",
     "gmailUrl": "https://mail.google.com/mail/u/0/#drafts"
   }
@@ -231,9 +235,10 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7
 
 ## 動作詳細
 
-- スレッドの最後のメッセージに対する返信として下書きを作成
+- **skipSelf（デフォルト true）**: スレッド内メッセージを新しい順に遡り、自分以外が送信したメッセージを返信対象にする。全メッセージが自分の場合は最後のメッセージにフォールバック
+- **replyAll（デフォルト true）**: 元メッセージの to/cc を自動保持した「全員に返信」で下書きを作成
 - 件名は自動的に「Re: 元の件名」形式に設定
-- 宛先は元のメッセージの送信者に自動設定
+- 宛先は実際の下書き宛先（`draft.getMessage().getTo()`）を返す
 
 ---
 

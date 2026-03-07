@@ -96,23 +96,40 @@ function handleCreateDraft(to, subject, body, cc, bcc, htmlBody, attachments) {
  * @param {string} bcc - BCC recipients (optional)
  * @param {string} htmlBody - HTML 本文 (optional, 指定時は body がプレーンテキストフォールバックになる)
  * @param {Array} attachments - 添付ファイル配列 (optional, [{filename, contentType, content(base64)}])
+ * @param {boolean} skipSelf - 自分の送信メッセージをスキップして相手のメッセージに返信する (デフォルト true)
+ * @param {boolean} replyAll - 全員に返信する (デフォルト true)
  * @returns {ContentService.TextOutput} JSON response with draft info
  *
  * @example
  * handleCreateReplyDraft("19bf7f25b96ab637", "Thank you for your email.")
  */
-function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments) {
+function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, skipSelf, replyAll) {
   requireParam(threadId, 'threadId');
   requireParam(body, 'body');
+
+  // デフォルト値: 両方 true
+  if (skipSelf === undefined || skipSelf === null) skipSelf = true;
+  if (replyAll === undefined || replyAll === null) replyAll = true;
 
   const thread = GmailApp.getThreadById(threadId);
   if (!thread) {
     return errorResponse(`Thread not found: ${threadId}`);
   }
 
-  // Get the last message in the thread to reply to
   const messages = thread.getMessages();
-  const lastMessage = messages[messages.length - 1];
+
+  // skipSelf: 自分以外が送信した直近のメッセージを探す
+  let targetMessage = messages[messages.length - 1]; // フォールバック
+  if (skipSelf) {
+    const myEmail = Session.getActiveUser().getEmail().toLowerCase();
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const from = messages[i].getFrom().toLowerCase();
+      if (!from.includes(myEmail)) {
+        targetMessage = messages[i];
+        break;
+      }
+    }
+  }
 
   // Build options object
   const options = buildEmailOptions({
@@ -122,14 +139,21 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments) 
     attachments: parseAttachments(attachments)
   });
 
-  // Create reply draft
-  const draft = lastMessage.createDraftReply(body, options);
+  // replyAll に応じて使い分け
+  const draft = replyAll
+    ? targetMessage.createDraftReplyAll(body, options)
+    : targetMessage.createDraftReply(body, options);
+
+  // 実際の下書き宛先を返す
+  const draftMessage = draft.getMessage();
 
   return successResponse({
     draftId: draft.getId(),
     threadId: threadId,
-    to: lastMessage.getFrom(),
-    subject: 'Re: ' + lastMessage.getSubject().replace(/^Re:\s*/i, ''),
+    to: draftMessage.getTo(),
+    subject: 'Re: ' + targetMessage.getSubject().replace(/^Re:\s*/i, ''),
+    skipSelf: skipSelf,
+    replyAll: replyAll,
     message: '返信下書きを作成しました。Gmail で確認・送信してください。',
     gmailUrl: 'https://mail.google.com/mail/u/0/#drafts'
   });
@@ -175,14 +199,24 @@ function handleUpdateDraft(draftId, to, subject, body, cc, bcc, htmlBody) {
 
   let newDraft;
   if (isReplyDraft) {
-    // 返信下書き → スレッドの最後の非下書きメッセージに対して再作成
+    // 返信下書き → 自分以外が送信した直近の非下書きメッセージに対して再作成
     const nonDraftMessages = threadMessages.filter(function(m) {
       return !m.isDraft();
     });
-    const replyTarget = nonDraftMessages[nonDraftMessages.length - 1];
+    let replyTarget = nonDraftMessages[nonDraftMessages.length - 1];
+
+    // skipSelf: 自分以外の送信メッセージを優先
+    const myEmail = Session.getActiveUser().getEmail().toLowerCase();
+    for (let i = nonDraftMessages.length - 1; i >= 0; i--) {
+      const from = nonDraftMessages[i].getFrom().toLowerCase();
+      if (!from.includes(myEmail)) {
+        replyTarget = nonDraftMessages[i];
+        break;
+      }
+    }
 
     if (to) options.to = to;
-    newDraft = replyTarget.createDraftReply(currentBody, options);
+    newDraft = replyTarget.createDraftReplyAll(currentBody, options);
   } else {
     // 新規下書き → 従来通り
     newDraft = GmailApp.createDraft(currentTo, currentSubject, currentBody, options);
