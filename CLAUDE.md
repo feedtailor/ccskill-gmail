@@ -100,6 +100,27 @@ ccskill-gmail update-all
 ccskill-gmail status
 ```
 
+## テスト手順
+
+GAS コードを変更したら、必ずデプロイして実機テストすること。
+
+```bash
+# 1. テスト用プロジェクト（ftgmail）にデプロイ
+cd ~/projects/ftgmail
+~/projects/ccskill-gmail/ccskill-gmail update --force --yes .
+
+# 2. テスト用プロジェクトに cd してからテスト実行
+cd ~/projects/ftgmail
+source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=...
+source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":...}'
+```
+
+**注意事項**:
+- テストは必ず対象プロジェクトに `cd` してから行う（`source .ccskill-gmail/api.sh` がカレントディレクトリ依存）
+- デプロイは `ccskill-gmail update` を使う（`push_gas` を直接呼ばない）
+- Bash ツールでは `$()` を避けてパイプで繋ぐ（`$()` は sandbox の確認プロンプトを発生させる）
+- curl の exit code 56 やレスポンスが HTML の場合、まず OAuth トークン期限切れを疑う（`auth.sh` の `gas_token` が自動リフレッシュする仕組みがある。sandbox でリフレッシュがブロックされる場合は sandbox 無効化が必要）
+
 ## コード規約
 
 - シェルスクリプト: `cp` ではなく `/bin/cp` を使用（macOS alias 対策）
