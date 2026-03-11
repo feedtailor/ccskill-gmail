@@ -68,6 +68,15 @@ function handleCreateDraft(to, subject, body, cc, bcc, htmlBody, attachments) {
   requireParam(subject, 'subject');
   requireParam(body, 'body');
 
+  // htmlBody 未指定時は body から自動生成（改行消失防止）
+  if (!htmlBody && body) {
+    htmlBody = body
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>');
+  }
+
   // Build options object
   const options = buildEmailOptions({
     cc: cc,
@@ -129,6 +138,15 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, 
         break;
       }
     }
+  }
+
+  // htmlBody 未指定時は body から自動生成（改行消失防止）
+  if (!htmlBody && body) {
+    htmlBody = body
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>');
   }
 
   // Build options object
