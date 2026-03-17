@@ -20,7 +20,7 @@
 ### 実行例
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_label","threadId":"19bf7f25b96ab637","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"19bf7f25b96ab637","label":"対応済"}'
 ```
 
 ### レスポンス例
@@ -60,7 +60,7 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_label","threadId":"19bf7f25b96ab6
 ### 実行例
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"remove_label","threadId":"19bf7f25b96ab637","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"remove_label","threadId":"19bf7f25b96ab637","label":"対応済"}'
 ```
 
 ### レスポンス例
@@ -93,17 +93,15 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"remove_label","threadId":"19bf7f25b96
 ## ワークフロー例
 
 ```bash
-source .ccskill-gmail/api.sh
+# 1. 未読メールを検索（THREAD_ID を確認）
+.ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
-# 1. 未読メールを検索
-THREAD_ID=$(ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread" maxResults=1 | jq -r '.data.threads[0].id')
-
-# 2. 「要確認」ラベルを追加
-ccskill-post "$GMAIL_ENDPOINT" "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"要確認\"}"
+# 2. 「要確認」ラベルを追加（THREAD_ID は手順1の結果から取得）
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"要確認"}'
 
 # 3. 対応後、「要確認」を外して「対応済」を追加
-ccskill-post "$GMAIL_ENDPOINT" "{\"action\":\"remove_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"要確認\"}"
-ccskill-post "$GMAIL_ENDPOINT" "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"対応済\"}"
+.ccskill-gmail/api post '{"action":"remove_label","threadId":"THREAD_ID","label":"要確認"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 ```
 
 ---

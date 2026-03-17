@@ -20,14 +20,14 @@ setup_permissions() {
     local target_dir="$1"
     local auto_yes="${2:-}"
     local settings_file="$target_dir/.claude/settings.local.json"
-    local patterns=("Bash(ccskill-get:*)" "Bash(ccskill-post:*)" "Bash(_gmail_download:*)" "Bash(_gmail_save_html:*)" "Bash(_gmail_save_pdf:*)")
+    local patterns=("Bash(.ccskill-gmail/api *)")
     local missing_patterns=()
 
     # jq が必要
     if ! command -v jq &> /dev/null; then
         echo -e "${YELLOW:-}Note: jq not found. Skipping permission setup.${NC:-}"
         echo "  To manually allow ccskill commands, add the following to $settings_file:"
-        echo '    "Bash(ccskill-get:*)", "Bash(ccskill-post:*)"'
+        echo '    "Bash(.ccskill-gmail/api *)"'
         return 0
     fi
 

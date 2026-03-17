@@ -178,13 +178,14 @@ echo -e "${GREEN}✓ Skill definition installed${NC}"
 echo ""
 
 # ========================================
-# 7. auth.sh / api.sh をプロジェクトにコピー
+# 7. auth.sh / api をプロジェクトにコピー
 # ========================================
 
 /bin/cp "$CCSKILL_GMAIL_DIR/lib/auth.sh" "$GAS_DIR/auth.sh"
-/bin/cp "$CCSKILL_GMAIL_DIR/lib/api.sh" "$GAS_DIR/api.sh"
+/bin/cp "$CCSKILL_GMAIL_DIR/lib/api" "$GAS_DIR/api"
+chmod +x "$GAS_DIR/api"
 
-echo -e "${GREEN}✓ auth.sh / api.sh copied${NC}"
+echo -e "${GREEN}✓ auth.sh / api copied${NC}"
 
 # ========================================
 # 8. clasp create
@@ -335,10 +336,15 @@ echo ""
 # 13. .env に GMAIL_ENDPOINT 保存
 # ========================================
 
-echo "Step 5: Saving endpoint to .env..."
+echo "Step 5: Saving endpoint..."
 
 ENV_FILE="$TARGET_DIR/.env"
 
+# .ccskill-gmail/endpoint ファイルに保存（api スクリプトが直接読み込む。sandbox の .env 制限を回避）
+echo "$ENDPOINT_URL" > "$GAS_DIR/endpoint"
+echo -e "${GREEN}✓ Endpoint saved to $GAS_DIR/endpoint${NC}"
+
+# .env にも保存（後方互換・人間向け）
 if [ -f "$ENV_FILE" ]; then
     if grep -q "^GMAIL_ENDPOINT=" "$ENV_FILE"; then
         # 既存エントリを更新
@@ -361,7 +367,7 @@ GMAIL_ENDPOINT=${ENDPOINT_URL}
 EOF
 fi
 
-echo -e "${GREEN}✓ Endpoint saved to .env${NC}"
+echo -e "${GREEN}✓ Endpoint also saved to .env (backward compat)${NC}"
 echo ""
 
 # ========================================

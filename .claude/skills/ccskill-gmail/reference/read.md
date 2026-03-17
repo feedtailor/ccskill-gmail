@@ -21,7 +21,7 @@
 ### 実行例
 
 ```bash
-ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId=19bf7f25b96ab637
+.ccskill-gmail/api get action=get_thread threadId=19bf7f25b96ab637
 ```
 
 ### レスポンス例
@@ -73,7 +73,7 @@ ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId=19bf7f25b96ab637
 ### 実行例
 
 ```bash
-ccskill-get "$GMAIL_ENDPOINT" action=get_message messageId=19bf7f25b96ab637
+.ccskill-gmail/api get action=get_message messageId=19bf7f25b96ab637
 ```
 
 ### レスポンス例
@@ -122,7 +122,7 @@ ccskill-get "$GMAIL_ENDPOINT" action=get_message messageId=19bf7f25b96ab637
 ### 実行例
 
 ```bash
-ccskill-get "$GMAIL_ENDPOINT" action=list_labels
+.ccskill-gmail/api get action=list_labels
 ```
 
 ### レスポンス例
@@ -165,10 +165,10 @@ ccskill-get "$GMAIL_ENDPOINT" action=list_labels
 
 ```bash
 # 受信トレイの未読数
-ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count
+.ccskill-gmail/api get action=get_unread_count
 
 # 特定ラベルの未読数
-ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count label="重要"
+.ccskill-gmail/api get action=get_unread_count label="重要"
 ```
 
 ### レスポンス例
@@ -214,7 +214,7 @@ ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count label="重要"
 ### 実行例
 
 ```bash
-ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=19bf7f25b96ab637
+.ccskill-gmail/api get action=list_attachments messageId=19bf7f25b96ab637
 ```
 
 ### レスポンス例
@@ -264,11 +264,8 @@ ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=19bf7f25b96ab637
 ### 実行例
 
 ```bash
-# 添付ファイルを取得してローカルに保存（推奨: _gmail_download ヘルパー）
-_gmail_download "$GMAIL_ENDPOINT" 19bf7f25b96ab637 0 /tmp/report.pdf
-
-# 直接 API を使う場合
-ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=19bf7f25b96ab637 attachmentIndex=0 | jq -r '.data.content' | base64 -d > /tmp/report.pdf
+# 添付ファイルを取得してローカルに保存（推奨: download サブコマンド）
+.ccskill-gmail/api download 19bf7f25b96ab637 0 /tmp/report.pdf
 ```
 
 ### レスポンス例
@@ -325,14 +322,11 @@ ccskill-get "$GMAIL_ENDPOINT" action=get_attachment messageId=19bf7f25b96ab637 a
 ### 実行例
 
 ```bash
-# HTML を保存（推奨: _gmail_save_html ヘルパー）
-_gmail_save_html "$GMAIL_ENDPOINT" 19bf7f25b96ab637 /tmp/email.html
+# HTML を保存（推奨: save-html サブコマンド）
+.ccskill-gmail/api save-html 19bf7f25b96ab637 /tmp/email.html
 
 # ヘッダーなしで保存
-_gmail_save_html "$GMAIL_ENDPOINT" 19bf7f25b96ab637 /tmp/email.html false
-
-# 直接 API を使う場合
-ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=19bf7f25b96ab637 | jq -r '.data.html' > /tmp/email.html
+.ccskill-gmail/api save-html 19bf7f25b96ab637 /tmp/email.html false
 ```
 
 ### レスポンス例
@@ -353,11 +347,11 @@ ccskill-get "$GMAIL_ENDPOINT" action=get_message_html messageId=19bf7f25b96ab637
 
 ### PDF 化の手順
 
-`_gmail_save_pdf` ヘルパーを使うと HTML 取得 → PDF 変換を一括で行えます。
+`save-pdf` サブコマンドを使うと HTML 取得 → PDF 変換を一括で行えます。
 
 ```bash
-# 推奨: _gmail_save_pdf で一括処理
-_gmail_save_pdf "$GMAIL_ENDPOINT" 19bf7f25b96ab637 ./email.pdf
+# 推奨: save-pdf で一括処理
+.ccskill-gmail/api save-pdf 19bf7f25b96ab637 ./email.pdf
 ```
 
 内部で Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、案内メッセージを返します。
@@ -377,7 +371,7 @@ _gmail_save_pdf "$GMAIL_ENDPOINT" 19bf7f25b96ab637 ./email.pdf
 ### 実行例
 
 ```bash
-ccskill-get "$GMAIL_ENDPOINT" action=get_profile
+.ccskill-gmail/api get action=get_profile
 ```
 
 ### レスポンス例
