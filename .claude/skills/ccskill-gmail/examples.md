@@ -2,15 +2,8 @@
 
 ## 前提
 
-すべての例は、最初に以下を実行済みであることを前提とします:
-
-```bash
-source .ccskill-gmail/api.sh
-```
-
-これにより `$GMAIL_ENDPOINT`、`ccskill-get`、`ccskill-post` が使用可能になります。
-
-**重要: Claude Code の Bash ツールは呼び出しごとに別プロセスで実行されるため、`source` と `ccskill-get` / `ccskill-post` は必ず `&&` で繋いで同一コマンドとして実行してください。**
+以下のワークフロー例では `.ccskill-gmail/api` コマンドを使用します。
+エンドポイントと認証はスクリプト内部で自動解決されます。
 
 ---
 
@@ -18,10 +11,10 @@ source .ccskill-gmail/api.sh
 
 ```bash
 # 未読メール一覧を取得
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread" maxResults=10
+.ccskill-gmail/api get action=search query="is:unread" maxResults=10
 
 # 特定のスレッドを詳細表示
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId=THREAD_ID
+.ccskill-gmail/api get action=get_thread threadId=THREAD_ID
 ```
 
 ---
@@ -30,7 +23,7 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_thread 
 
 ```bash
 # 特定の送信者からの未読メール
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread from:boss@company.com"
+.ccskill-gmail/api get action=search query="is:unread from:boss@company.com"
 ```
 
 ---
@@ -39,19 +32,19 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 
 ```bash
 # 1. 未読メールを検索
-source .ccskill-gmail/api.sh && RESULT=$(ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread" maxResults=1) && echo "$RESULT" | jq .
+.ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
 # 2. スレッドの詳細を取得（THREAD_ID は手順1の結果から取得）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId=THREAD_ID
+.ccskill-gmail/api get action=get_thread threadId=THREAD_ID
 
 # 3. 返信下書きを作成（宛先・件名は自動設定、デフォルトで全員に返信）
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"ご連絡ありがとうございます。\n\n承知いたしました。対応いたします。\n\nよろしくお願いいたします。"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"ご連絡ありがとうございます。\n\n承知いたしました。対応いたします。\n\nよろしくお願いいたします。"}'
 
 # 送信者のみに返信したい場合（replyAll: false）
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。","replyAll":false}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。","replyAll":false}'
 
 # 自分の送信メッセージをスキップせず、最後のメッセージに返信したい場合
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"追記です。","skipSelf":false,"replyAll":false}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"追記です。","skipSelf":false,"replyAll":false}'
 
 # 4. Gmail で下書きを確認・送信
 # https://mail.google.com/mail/u/0/#drafts
@@ -65,13 +58,13 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"creat
 
 ```bash
 # 添付ファイル付きの未読メール
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread has:attachment"
+.ccskill-gmail/api get action=search query="is:unread has:attachment"
 
 # 添付ファイル一覧を確認（MESSAGE_ID は上の結果から取得）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_attachments messageId=MESSAGE_ID
+.ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
 
 # 添付ファイルをダウンロード（index=0 の添付ファイル）
-source .ccskill-gmail/api.sh && _gmail_download "$GMAIL_ENDPOINT" MESSAGE_ID 0 /tmp/attachment.pdf
+.ccskill-gmail/api download MESSAGE_ID 0 /tmp/attachment.pdf
 ```
 
 ---
@@ -80,13 +73,13 @@ source .ccskill-gmail/api.sh && _gmail_download "$GMAIL_ENDPOINT" MESSAGE_ID 0 /
 
 ```bash
 # メールを PDF として保存（HTML取得 → PDF変換を一括実行）
-source .ccskill-gmail/api.sh && _gmail_save_pdf "$GMAIL_ENDPOINT" MESSAGE_ID ./receipt.pdf
+.ccskill-gmail/api save-pdf MESSAGE_ID ./receipt.pdf
 
 # HTML として保存したい場合
-source .ccskill-gmail/api.sh && _gmail_save_html "$GMAIL_ENDPOINT" MESSAGE_ID ./email.html
+.ccskill-gmail/api save-html MESSAGE_ID ./email.html
 ```
 
-`_gmail_save_pdf` は Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、ブラウザでの印刷手順を案内します。
+`save-pdf` は Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、ブラウザでの印刷手順を案内します。
 
 ---
 
@@ -94,10 +87,10 @@ source .ccskill-gmail/api.sh && _gmail_save_html "$GMAIL_ENDPOINT" MESSAGE_ID ./
 
 ```bash
 # 今月のメール
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="after:2024/01/01 before:2024/02/01"
+.ccskill-gmail/api get action=search query="after:2024/01/01 before:2024/02/01"
 
 # 過去7日間
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="newer_than:7d"
+.ccskill-gmail/api get action=search query="newer_than:7d"
 ```
 
 ---
@@ -106,10 +99,10 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 
 ```bash
 # ラベル一覧を取得
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=list_labels | jq '.data.labels[] | select(.unreadCount > 0)'
+.ccskill-gmail/api get action=list_labels | jq '.data.labels[] | select(.unreadCount > 0)'
 
 # 特定ラベルのメール
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="label:Projects is:unread"
+.ccskill-gmail/api get action=search query="label:Projects is:unread"
 ```
 
 ---
@@ -118,7 +111,7 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search quer
 
 ```bash
 # チームメンバー全員への連絡
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"member1@example.com,member2@example.com,member3@example.com","cc":"manager@example.com","subject":"週次ミーティングのお知らせ","body":"お疲れ様です。\n\n週次ミーティングを以下の日程で行います。\n\n日時: 1月30日（火）15:00〜\n場所: 会議室A\n\nご参加よろしくお願いいたします。"}'
+.ccskill-gmail/api post '{"action":"create_draft","to":"member1@example.com,member2@example.com,member3@example.com","cc":"manager@example.com","subject":"週次ミーティングのお知らせ","body":"お疲れ様です。\n\n週次ミーティングを以下の日程で行います。\n\n日時: 1月30日（火）15:00〜\n場所: 会議室A\n\nご参加よろしくお願いいたします。"}'
 ```
 
 長い JSON の場合は Write ツール + `@file` パターンを使用:
@@ -131,7 +124,7 @@ Write("/tmp/draft.json") に以下の内容:
 
 ```bash
 # Step 2: Bash で送信
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" @/tmp/draft.json
+.ccskill-gmail/api post @/tmp/draft.json
 ```
 
 ---
@@ -140,13 +133,13 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" @/tmp/draft.json
 
 ```bash
 # 1. 未読メールを取得（THREAD_ID を確認）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread" maxResults=1
+.ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
 # 2. 内容を確認
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
+.ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
 # 3. 既読にする
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_read","threadId":"THREAD_ID"}'
+.ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 ```
 
 ---
@@ -155,14 +148,14 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_
 
 ```bash
 # 1. 未読の重要メールを検索（THREAD_ID を確認）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread is:important" maxResults=1
+.ccskill-gmail/api get action=search query="is:unread is:important" maxResults=1
 
 # 2. 「要対応」ラベルを追加
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_label","threadId":"THREAD_ID","label":"要対応"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"要対応"}'
 
 # 3. 対応完了後、ラベルを変更
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"remove_label","threadId":"THREAD_ID","label":"要対応"}'
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"remove_label","threadId":"THREAD_ID","label":"要対応"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 ```
 
 ---
@@ -171,19 +164,19 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_l
 
 ```bash
 # 1. 未読メールを検索（THREAD_ID を確認）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread" maxResults=1
+.ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
 # 2. スレッドの内容を確認
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
+.ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
 # 3. 返信下書きを作成
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。"}'
 
 # 4. 既読にする
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_read","threadId":"THREAD_ID"}'
+.ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 
 # 5. ラベルを追加
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 
 # 6. Gmail で下書きを確認・送信
 # https://mail.google.com/mail/u/0/#drafts
@@ -195,10 +188,10 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_l
 
 ```bash
 # 受信トレイの未読数
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count
+.ccskill-gmail/api get action=get_unread_count
 
 # 特定ラベルの未読数
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count label=重要
+.ccskill-gmail/api get action=get_unread_count label=重要
 ```
 
 ---
@@ -207,14 +200,14 @@ source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_
 
 ```bash
 # 1. 未読メールを処理（THREAD_ID を確認）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread" maxResults=1
+.ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
 # 2. 既読にしてラベル追加
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_read","threadId":"THREAD_ID"}'
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 
 # 3. アーカイブして受信トレイを整理
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"archive","threadId":"THREAD_ID"}'
+.ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
 ```
 
 ---
@@ -223,10 +216,10 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"archi
 
 ```bash
 # 1. 古いプロモーションメールを検索（THREAD_ID を確認）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="category:promotions older_than:30d" maxResults=1
+.ccskill-gmail/api get action=search query="category:promotions older_than:30d" maxResults=1
 
 # 2. ゴミ箱に移動（30日後に自動削除）
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"move_to_trash","threadId":"THREAD_ID"}'
+.ccskill-gmail/api post '{"action":"move_to_trash","threadId":"THREAD_ID"}'
 ```
 
 ---
@@ -235,28 +228,28 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"move_
 
 ```bash
 # 1. 未読数を確認
-source .ccskill-gmail/api.sh && echo "=== 未読数確認 ===" && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count | jq '.data.unreadCount'
+.ccskill-gmail/api get action=get_unread_count | jq '.data.unreadCount'
 
 # 2. 未読メールを取得（THREAD_ID を確認）
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread" maxResults=1
+.ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
 # 3. 内容を確認
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
+.ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
 # 4. 返信下書きを作成
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。"}'
 
 # 5. 既読にする
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_read","threadId":"THREAD_ID"}'
+.ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 
 # 6. ラベルを追加
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 
 # 7. アーカイブ
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":"archive","threadId":"THREAD_ID"}'
+.ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
 
 # 8. 未読数を再確認
-source .ccskill-gmail/api.sh && echo "=== 処理後の未読数 ===" && ccskill-get "$GMAIL_ENDPOINT" action=get_unread_count | jq '.data.unreadCount'
+.ccskill-gmail/api get action=get_unread_count | jq '.data.unreadCount'
 
 # Gmail で下書きを確認・送信: https://mail.google.com/mail/u/0/#drafts
 ```
@@ -287,7 +280,7 @@ Write("/tmp/draft-with-attachment.json") に以下の内容:
 
 ```bash
 # Step 2: Bash で送信
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" @/tmp/draft-with-attachment.json
+.ccskill-gmail/api post @/tmp/draft-with-attachment.json
 ```
 
 - `attachments` は配列で複数ファイルを添付可能

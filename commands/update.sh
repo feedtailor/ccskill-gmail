@@ -187,13 +187,32 @@ else
     done
 fi
 
-# auth.sh / api.sh を GAS_DIR にコピー（更新）
+# auth.sh / api を GAS_DIR にコピー（更新）
 if [ -f "$CCSKILL_GMAIL_DIR/lib/auth.sh" ]; then
     /bin/cp "$CCSKILL_GMAIL_DIR/lib/auth.sh" "$GAS_DIR/auth.sh"
 fi
 
-if [ -f "$CCSKILL_GMAIL_DIR/lib/api.sh" ]; then
-    /bin/cp "$CCSKILL_GMAIL_DIR/lib/api.sh" "$GAS_DIR/api.sh"
+if [ -f "$CCSKILL_GMAIL_DIR/lib/api" ]; then
+    /bin/cp "$CCSKILL_GMAIL_DIR/lib/api" "$GAS_DIR/api"
+    chmod +x "$GAS_DIR/api"
+fi
+
+# endpoint ファイルが未作成の場合は .env から移行
+if [ ! -f "$GAS_DIR/endpoint" ]; then
+    local_env="$TARGET_DIR/.env"
+    if [ -f "$local_env" ]; then
+        extracted_url=$(grep '^GMAIL_ENDPOINT=' "$local_env" | cut -d'=' -f2- | tr -d '[:space:]')
+        if [ -n "$extracted_url" ]; then
+            echo "$extracted_url" > "$GAS_DIR/endpoint"
+            echo -e "${GREEN}✓ Migrated GMAIL_ENDPOINT to $GAS_DIR/endpoint${NC}"
+        fi
+    fi
+fi
+
+# 旧 api.sh を削除（新 api スクリプトに移行済み）
+if [ -f "$GAS_DIR/api.sh" ]; then
+    rm -f "$GAS_DIR/api.sh"
+    echo -e "${YELLOW}Removed legacy api.sh (replaced by standalone api script)${NC}"
 fi
 
 echo -e "${GREEN}✓ Skill definition and helpers updated${NC}"

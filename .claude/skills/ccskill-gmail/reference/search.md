@@ -17,13 +17,13 @@ Gmail の検索構文を使用してメールを検索します。
 
 ```bash
 # 未読メール
-ccskill-get "$GMAIL_ENDPOINT" action=search query="is:unread"
+.ccskill-gmail/api get action=search query="is:unread"
 
 # 特定の送信者から（最新10件）
-ccskill-get "$GMAIL_ENDPOINT" action=search query="from:boss@company.com" maxResults=10
+.ccskill-gmail/api get action=search query="from:boss@company.com" maxResults=10
 
-# 日本語を含むクエリ（ccskill-get が自動エンコード）
-ccskill-get "$GMAIL_ENDPOINT" action=search query="subject:請求書"
+# 日本語を含むクエリ（get サブコマンドが自動エンコード）
+.ccskill-gmail/api get action=search query="subject:請求書"
 ```
 
 ## レスポンス例

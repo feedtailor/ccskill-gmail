@@ -1,0 +1,377 @@
+#!/bin/bash
+#
+# Gmail Skill - API Standalone Script
+#
+# スタンドアロン実行スクリプト。source 不要。
+# install/update 時に .ccskill-gmail/api としてコピーされる。
+#
+# Usage:
+#   .ccskill-gmail/api get action=search query="is:unread"
+#   .ccskill-gmail/api get action=get_thread thread_id=abc123
+#   .ccskill-gmail/api post '{"action":"create_draft","to":"a@b.com","subject":"Hi","body":"Hello"}'
+#   .ccskill-gmail/api post @/tmp/draft.json
+#   .ccskill-gmail/api download MSG_ID INDEX /tmp/file.pdf
+#   .ccskill-gmail/api save-html MSG_ID ./email.html [includeHeaders]
+#   .ccskill-gmail/api save-pdf MSG_ID ./receipt.pdf
+#
+
+# ========================================
+# スクリプト自身のディレクトリを取得
+# ========================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+
+# ========================================
+# 初期化: エンドポイントと auth.sh の読み込み
+# ========================================
+
+_api_init() {
+    # エンドポイントを取得
+    # 優先順: 1) 環境変数 GMAIL_ENDPOINT, 2) .ccskill-gmail/endpoint ファイル,
+    #          3) .env から grep+cut で抽出（source しない）
+    if [ -z "$GMAIL_ENDPOINT" ]; then
+        local endpoint_file="$SCRIPT_DIR/endpoint"
+        if [ -f "$endpoint_file" ]; then
+            GMAIL_ENDPOINT=$(tr -d '[:space:]' < "$endpoint_file")
+        else
+            # .env からキーをgrep+cutで抽出（sandbox 外での手動デバッグ用フォールバック。
+            # Claude Code sandbox は **/.env の読み取り自体をブロックするため、
+            # sandbox 内では endpoint ファイルが唯一の解決手段）
+            local env_file
+            env_file="$(dirname "$SCRIPT_DIR")/.env"
+            if [ -f "$env_file" ]; then
+                GMAIL_ENDPOINT=$(grep '^GMAIL_ENDPOINT=' "$env_file" | cut -d'=' -f2- | tr -d '[:space:]')
+            fi
+        fi
+    fi
+
+    if [ -z "$GMAIL_ENDPOINT" ]; then
+        echo '{"ok":false,"error":"GMAIL_ENDPOINT not set. Run: ccskill-gmail update or set GMAIL_ENDPOINT env var"}'
+        return 1
+    fi
+
+    # auth.sh を読み込み（gas_token 関数）
+    if [ -f "$SCRIPT_DIR/auth.sh" ]; then
+        # shellcheck source=/dev/null
+        source "$SCRIPT_DIR/auth.sh"
+    else
+        echo '{"ok":false,"error":"auth.sh not found. Run: ccskill-gmail update"}'
+        return 1
+    fi
+
+    if ! type gas_token &>/dev/null; then
+        echo '{"ok":false,"error":"gas_token function not available. Run: clasp login && ccskill-gmail update"}'
+        return 1
+    fi
+
+    return 0
+}
+
+# ========================================
+# エンドポイント許可リスト
+# ========================================
+
+_assert_endpoint() {
+    local url="$1"
+    case "$url" in
+        https://script.google.com/*|https://script.googleapis.com/*)
+            return 0
+            ;;
+        *)
+            echo '{"ok":false,"error":"Blocked: endpoint must be https://script.google.com/* or https://script.googleapis.com/*"}'
+            return 1
+            ;;
+    esac
+}
+
+# ========================================
+# URL エンコード
+# ========================================
+
+_encode() {
+    printf '%s' "$1" | jq -sRr @uri
+}
+
+# ========================================
+# GET リクエスト（内部用）
+# ========================================
+
+_do_get() {
+    local url="$1"
+    shift
+
+    local query_url="$url"
+
+    if [ $# -ge 2 ]; then
+        # key=value 形式（2つ以上の引数）: 値を自動エンコード
+        local query_parts=()
+        for arg in "$@"; do
+            local key="${arg%%=*}"
+            local value="${arg#*=}"
+            query_parts+=("${key}=$(_encode "$value")")
+        done
+        local IFS='&'
+        query_url="${url}?${query_parts[*]}"
+    elif [ $# -eq 1 ]; then
+        # 単一引数: key=value 形式か生クエリ文字列かを判定
+        local arg="$1"
+        if [[ "$arg" == *=* ]] && [[ "$arg" != *'&'* ]]; then
+            # 単一 key=value: 値をエンコード
+            local key="${arg%%=*}"
+            local value="${arg#*=}"
+            query_url="${url}?${key}=$(_encode "$value")"
+        else
+            # 生クエリ文字列（後方互換）
+            query_url="${url}?${arg}"
+        fi
+    fi
+
+    curl -sL --max-time 60 \
+        -H "Authorization: Bearer $(gas_token)" \
+        "$query_url"
+}
+
+# ========================================
+# POST リクエスト（内部用）
+# ========================================
+
+_do_post() {
+    local body="$1"
+
+    curl -sL --max-time 60 \
+        -H "Authorization: Bearer $(gas_token)" \
+        -H "Content-Type: application/json" \
+        --data "$body" \
+        "$GMAIL_ENDPOINT"
+}
+
+# ========================================
+# サブコマンド: get
+# ========================================
+
+cmd_get() {
+    # $@ = key=value ... または 生クエリ文字列
+    _assert_endpoint "$GMAIL_ENDPOINT" || return $?
+    _do_get "$GMAIL_ENDPOINT" "$@"
+}
+
+# ========================================
+# サブコマンド: post
+# ========================================
+
+cmd_post() {
+    local body="$1"
+
+    if [ -z "$body" ]; then
+        echo '{"ok":false,"error":"Usage: .ccskill-gmail/api post JSON_BODY_OR_@FILE"}'
+        return 1
+    fi
+
+    _assert_endpoint "$GMAIL_ENDPOINT" || return $?
+    _do_post "$body"
+}
+
+# ========================================
+# サブコマンド: download
+# ========================================
+
+cmd_download() {
+    local message_id="$1"
+    local index="$2"
+    local output="$3"
+
+    if [ -z "$message_id" ] || [ -z "$index" ] || [ -z "$output" ]; then
+        echo '{"ok":false,"error":"Usage: .ccskill-gmail/api download MESSAGE_ID ATTACHMENT_INDEX OUTPUT_PATH"}'
+        return 1
+    fi
+
+    _assert_endpoint "$GMAIL_ENDPOINT" || return $?
+
+    local tmpfile
+    tmpfile=$(mktemp "${TMPDIR:-/tmp}/ccskill-dl.XXXXXX")
+
+    _do_get "$GMAIL_ENDPOINT" action=get_attachment messageId="$message_id" attachmentIndex="$index" > "$tmpfile"
+
+    if ! jq -e '.ok == true' "$tmpfile" > /dev/null 2>&1; then
+        cat "$tmpfile"
+        rm -f "$tmpfile"
+        return 1
+    fi
+
+    jq -r '.data.content' "$tmpfile" | base64 -d > "$output"
+
+    local filename size
+    filename=$(jq -r '.data.filename' "$tmpfile")
+    size=$(jq -r '.data.size' "$tmpfile")
+    rm -f "$tmpfile"
+    echo "{\"ok\":true,\"data\":{\"filename\":$(printf '%s' "$filename" | jq -Rs .),\"size\":${size},\"savedTo\":\"${output}\"}}"
+}
+
+# ========================================
+# サブコマンド: save-html
+# ========================================
+
+cmd_save_html() {
+    local message_id="$1"
+    local output="$2"
+    local include_headers="${3:-true}"
+
+    if [ -z "$message_id" ] || [ -z "$output" ]; then
+        echo '{"ok":false,"error":"Usage: .ccskill-gmail/api save-html MESSAGE_ID OUTPUT_PATH [includeHeaders]"}'
+        return 1
+    fi
+
+    _assert_endpoint "$GMAIL_ENDPOINT" || return $?
+
+    local tmpfile
+    tmpfile=$(mktemp "${TMPDIR:-/tmp}/ccskill-html.XXXXXX")
+
+    _do_get "$GMAIL_ENDPOINT" action=get_message_html messageId="$message_id" includeHeaders="$include_headers" > "$tmpfile"
+
+    if ! jq -e '.ok == true' "$tmpfile" > /dev/null 2>&1; then
+        cat "$tmpfile"
+        rm -f "$tmpfile"
+        return 1
+    fi
+
+    jq -r '.data.html' "$tmpfile" > "$output"
+
+    local subject
+    subject=$(jq -r '.data.subject' "$tmpfile")
+    rm -f "$tmpfile"
+    echo "{\"ok\":true,\"data\":{\"subject\":$(printf '%s' "$subject" | jq -Rs .),\"savedTo\":\"${output}\"}}"
+}
+
+# ========================================
+# サブコマンド: save-pdf
+# ========================================
+
+cmd_save_pdf() {
+    local message_id="$1"
+    local output="$2"
+
+    if [ -z "$message_id" ] || [ -z "$output" ]; then
+        echo '{"ok":false,"error":"Usage: .ccskill-gmail/api save-pdf MESSAGE_ID OUTPUT_PATH"}'
+        return 1
+    fi
+
+    _assert_endpoint "$GMAIL_ENDPOINT" || return $?
+
+    local tmpjson
+    tmpjson=$(mktemp "${TMPDIR:-/tmp}/ccskill-pdf.XXXXXX")
+
+    _do_get "$GMAIL_ENDPOINT" action=get_message_html messageId="$message_id" includeHeaders=true > "$tmpjson"
+
+    if ! jq -e '.ok == true' "$tmpjson" > /dev/null 2>&1; then
+        cat "$tmpjson"
+        rm -f "$tmpjson"
+        return 1
+    fi
+
+    local tmphtml
+    tmphtml=$(mktemp "${TMPDIR:-/tmp}/ccskill-pdf.XXXXXX")
+    mv "$tmphtml" "${tmphtml}.html"
+    tmphtml="${tmphtml}.html"
+    jq -r '.data.html' "$tmpjson" > "$tmphtml"
+
+    local subject
+    subject=$(jq -r '.data.subject' "$tmpjson")
+    rm -f "$tmpjson"
+
+    # PDF 変換ツールを検出
+    local converter=""
+    local converter_name=""
+
+    if command -v wkhtmltopdf &> /dev/null; then
+        converter="wkhtmltopdf"
+        converter_name="wkhtmltopdf"
+    elif [ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
+        converter="chrome-mac"
+        converter_name="Google Chrome (headless)"
+    elif command -v google-chrome &> /dev/null; then
+        converter="chrome-linux"
+        converter_name="Google Chrome (headless)"
+    elif command -v chromium-browser &> /dev/null; then
+        converter="chromium"
+        converter_name="Chromium (headless)"
+    fi
+
+    if [ -z "$converter" ]; then
+        local html_output="${output%.pdf}.html"
+        /bin/cp "$tmphtml" "$html_output"
+        rm -f "$tmphtml"
+        echo "{\"ok\":false,\"error\":\"PDF変換ツールが見つかりません。HTMLを保存しました: ${html_output}\\nPDFとして保存するには:\\n1. ブラウザで上記ファイルを開く\\n2. Cmd+P（印刷）> PDF として保存\",\"data\":{\"subject\":$(printf '%s' "$subject" | jq -Rs .),\"htmlSavedTo\":\"${html_output}\"}}"
+        return 1
+    fi
+
+    local convert_ok=false
+    case "$converter" in
+        wkhtmltopdf)
+            wkhtmltopdf --quiet "$tmphtml" "$output" 2>/dev/null && convert_ok=true
+            ;;
+        chrome-mac)
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+                --headless --disable-gpu --no-pdf-header-footer \
+                --print-to-pdf="$output" "$tmphtml" 2>/dev/null && convert_ok=true
+            ;;
+        chrome-linux)
+            google-chrome \
+                --headless --disable-gpu --no-pdf-header-footer \
+                --print-to-pdf="$output" "$tmphtml" 2>/dev/null && convert_ok=true
+            ;;
+        chromium)
+            chromium-browser \
+                --headless --disable-gpu --no-pdf-header-footer \
+                --print-to-pdf="$output" "$tmphtml" 2>/dev/null && convert_ok=true
+            ;;
+    esac
+
+    rm -f "$tmphtml"
+
+    if [ "$convert_ok" = true ] && [ -f "$output" ]; then
+        local filesize
+        filesize=$(wc -c < "$output" | tr -d ' ')
+        echo "{\"ok\":true,\"data\":{\"subject\":$(printf '%s' "$subject" | jq -Rs .),\"size\":${filesize},\"converter\":\"${converter_name}\",\"savedTo\":\"${output}\"}}"
+    else
+        echo "{\"ok\":false,\"error\":\"PDF変換に失敗しました (${converter_name})\"}"
+        return 1
+    fi
+}
+
+# ========================================
+# メインディスパッチャ
+# ========================================
+
+SUBCOMMAND="${1:-}"
+
+if [ -z "$SUBCOMMAND" ]; then
+    echo '{"ok":false,"error":"Usage: .ccskill-gmail/api <get|post|download|save-html|save-pdf> [args...]"}'
+    exit 1
+fi
+
+shift
+
+# 初期化（共通）
+_api_init || exit 1
+
+case "$SUBCOMMAND" in
+    get)
+        cmd_get "$@"
+        ;;
+    post)
+        cmd_post "$@"
+        ;;
+    download)
+        cmd_download "$@"
+        ;;
+    save-html)
+        cmd_save_html "$@"
+        ;;
+    save-pdf)
+        cmd_save_pdf "$@"
+        ;;
+    *)
+        echo "{\"ok\":false,\"error\":\"Unknown subcommand: ${SUBCOMMAND}. Use: get, post, download, save-html, save-pdf\"}"
+        exit 1
+        ;;
+esac

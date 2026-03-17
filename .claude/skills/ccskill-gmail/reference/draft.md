@@ -18,10 +18,10 @@
 
 ```bash
 # 下書き一覧（デフォルト 20 件）
-ccskill-get "$GMAIL_ENDPOINT" action=list_drafts
+.ccskill-gmail/api get action=list_drafts
 
 # 件数指定
-ccskill-get "$GMAIL_ENDPOINT" action=list_drafts maxResults=50
+.ccskill-gmail/api get action=list_drafts maxResults=50
 ```
 
 ---
@@ -109,25 +109,25 @@ ccskill-get "$GMAIL_ENDPOINT" action=list_drafts maxResults=50
 ### 基本的な下書き
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"recipient@example.com","subject":"お見積りの件","body":"お世話になっております。\n\n添付の通りお見積りをお送りします。\n\nよろしくお願いいたします。"}'
+.ccskill-gmail/api post '{"action":"create_draft","to":"recipient@example.com","subject":"お見積りの件","body":"お世話になっております。\n\n添付の通りお見積りをお送りします。\n\nよろしくお願いいたします。"}'
 ```
 
 ### CC/BCC 付き
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"client@example.com","cc":"manager@example.com","bcc":"archive@example.com","subject":"プロジェクト進捗報告","body":"お疲れ様です。\n\n進捗をご報告します。"}'
+.ccskill-gmail/api post '{"action":"create_draft","to":"client@example.com","cc":"manager@example.com","bcc":"archive@example.com","subject":"プロジェクト進捗報告","body":"お疲れ様です。\n\n進捗をご報告します。"}'
 ```
 
 ### 複数宛先
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"user1@example.com,user2@example.com","subject":"チームミーティングのお知らせ","body":"明日10時からミーティングを行います。"}'
+.ccskill-gmail/api post '{"action":"create_draft","to":"user1@example.com,user2@example.com","subject":"チームミーティングのお知らせ","body":"明日10時からミーティングを行います。"}'
 ```
 
 ### HTML メール
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"recipient@example.com","subject":"月次レポート","body":"月次レポートを送ります。","htmlBody":"<h1>月次レポート</h1><p>詳細は以下の通りです。</p>"}'
+.ccskill-gmail/api post '{"action":"create_draft","to":"recipient@example.com","subject":"月次レポート","body":"月次レポートを送ります。","htmlBody":"<h1>月次レポート</h1><p>詳細は以下の通りです。</p>"}'
 ```
 
 ### 添付ファイル付き
@@ -135,7 +135,7 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"recipient@example
 Write ツールで JSON ファイルを作成してから送信:
 
 ```bash
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" @/tmp/draft-with-attachment.json
+.ccskill-gmail/api post @/tmp/draft-with-attachment.json
 ```
 
 ---
@@ -196,19 +196,19 @@ source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" @/tmp/draft-with-
 ### 基本的な返信下書き
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ご連絡ありがとうございます。\n\n承知いたしました。"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ご連絡ありがとうございます。\n\n承知いたしました。"}'
 ```
 
 ### CC 付き返信
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"確認しました。","cc":"manager@example.com"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"確認しました。","cc":"manager@example.com"}'
 ```
 
 ### HTML 返信
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ありがとうございます。","htmlBody":"<p>ありがとうございます。<br>承知いたしました。</p>"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ありがとうございます。","htmlBody":"<p>ありがとうございます。<br>承知いたしました。</p>"}'
 ```
 
 ---
@@ -265,7 +265,7 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_reply_draft","threadId":"19bf7
 ## 実行例
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"update_draft","draftId":"r-123456789","subject":"【更新】お見積りの件"}'
+.ccskill-gmail/api post '{"action":"update_draft","draftId":"r-123456789","subject":"【更新】お見積りの件"}'
 ```
 
 ## レスポンス例
@@ -315,7 +315,7 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"update_draft","draftId":"r-123456789"
 ## 実行例
 
 ```bash
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"delete_draft","draftId":"r-123456789"}'
+.ccskill-gmail/api post '{"action":"delete_draft","draftId":"r-123456789"}'
 ```
 
 ## レスポンス例

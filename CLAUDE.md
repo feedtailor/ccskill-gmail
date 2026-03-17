@@ -15,8 +15,7 @@ ccskill-gmail は Claude Code 用の Gmail スキル。GAS (Google Apps Script) 
 
 ```
 Claude Code (Skill)
-  ↓ source .ccskill-gmail/api.sh
-  ↓ ccskill-get / ccskill-post
+  ↓ .ccskill-gmail/api get|post|download|save-html|save-pdf
   ↓ (Bearer OAuth token 自動付与)
 GAS Web App (standalone, MYSELF access)
   ↓
@@ -40,7 +39,7 @@ ccskill-gmail/
 │   └── status.sh
 ├── lib/                        # 共通ライブラリ
 │   ├── auth.sh                # OAuth 認証（gas_token）
-│   ├── api.sh                 # API ラッパー（ccskill-get/post）
+│   ├── api                    # API スタンドアロンスクリプト（get/post/download/save-html/save-pdf）
 │   ├── push-gas.sh            # GAS push/deploy
 │   ├── registry.sh            # レジストリ管理
 │   └── permissions.sh         # パーミッション設定
@@ -111,12 +110,12 @@ cd ~/projects/ftgmail
 
 # 2. テスト用プロジェクトに cd してからテスト実行
 cd ~/projects/ftgmail
-source .ccskill-gmail/api.sh && ccskill-get "$GMAIL_ENDPOINT" action=...
-source .ccskill-gmail/api.sh && ccskill-post "$GMAIL_ENDPOINT" '{"action":...}'
+.ccskill-gmail/api get action=...
+.ccskill-gmail/api post '{"action":...}'
 ```
 
 **注意事項**:
-- テストは必ず対象プロジェクトに `cd` してから行う（`source .ccskill-gmail/api.sh` がカレントディレクトリ依存）
+- テストは必ず対象プロジェクトに `cd` してから行う（`.ccskill-gmail/api` がカレントディレクトリ依存）
 - デプロイは `ccskill-gmail update` を使う（`push_gas` を直接呼ばない）
 - Bash ツールでは `$()` を避けてパイプで繋ぐ（`$()` は sandbox の確認プロンプトを発生させる）
 - curl の exit code 56 やレスポンスが HTML の場合、まず OAuth トークン期限切れを疑う（`auth.sh` の `gas_token` が自動リフレッシュする仕組みがある。sandbox でリフレッシュがブロックされる場合は sandbox 無効化が必要）

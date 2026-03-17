@@ -21,10 +21,10 @@
 
 ```bash
 # スレッド全体を既読に
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_read","threadId":"19bf7f25b96ab637"}'
+.ccskill-gmail/api post '{"action":"mark_read","threadId":"19bf7f25b96ab637"}'
 
 # 特定のメッセージを既読に
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_read","messageId":"19bf7f25b96ab637"}'
+.ccskill-gmail/api post '{"action":"mark_read","messageId":"19bf7f25b96ab637"}'
 ```
 
 ### レスポンス例
@@ -59,10 +59,10 @@ ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_read","messageId":"19bf7f25b96ab
 
 ```bash
 # スレッド全体を未読に
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_unread","threadId":"19bf7f25b96ab637"}'
+.ccskill-gmail/api post '{"action":"mark_unread","threadId":"19bf7f25b96ab637"}'
 
 # 特定のメッセージを未読に
-ccskill-post "$GMAIL_ENDPOINT" '{"action":"mark_unread","messageId":"19bf7f25b96ab637"}'
+.ccskill-gmail/api post '{"action":"mark_unread","messageId":"19bf7f25b96ab637"}'
 ```
 
 ### レスポンス例
