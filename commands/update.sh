@@ -187,44 +187,38 @@ else
     done
 fi
 
-# auth.sh / api を GAS_DIR にコピー（更新）
-if [ -f "$CCSKILL_GMAIL_DIR/lib/auth.sh" ]; then
-    /bin/cp "$CCSKILL_GMAIL_DIR/lib/auth.sh" "$GAS_DIR/auth.sh"
-fi
-
+# api スクリプトを更新
 if [ -f "$CCSKILL_GMAIL_DIR/lib/api" ]; then
     /bin/cp "$CCSKILL_GMAIL_DIR/lib/api" "$GAS_DIR/api"
     chmod +x "$GAS_DIR/api"
 fi
 
-# history.sh を更新コピー
-if [ -f "$CCSKILL_GMAIL_DIR/lib/history.sh" ]; then
-    /bin/cp "$CCSKILL_GMAIL_DIR/lib/history.sh" "$GAS_DIR/history.sh"
-fi
+# ディレクトリ保護
+chmod 700 "$GAS_DIR" 2>/dev/null || true
 
-# history ディレクトリが未作成なら作成
-if [ ! -d "$GAS_DIR/history" ]; then
-    mkdir -p "$GAS_DIR/history"
-    chmod 700 "$GAS_DIR/history"
-fi
+# ---- 旧形式からの移行 ----
 
-# endpoint ファイルが未作成の場合は .env から移行
-if [ ! -f "$GAS_DIR/endpoint" ]; then
-    local_env="$TARGET_DIR/.env"
-    if [ -f "$local_env" ]; then
-        extracted_url=$(grep '^GMAIL_ENDPOINT=' "$local_env" | cut -d'=' -f2- | tr -d '[:space:]')
-        if [ -n "$extracted_url" ]; then
-            echo "$extracted_url" > "$GAS_DIR/endpoint"
-            echo -e "${GREEN}✓ Migrated GMAIL_ENDPOINT to $GAS_DIR/endpoint${NC}"
+# endpoint ファイル → .ccskill-metadata.json に統合
+if [ -f "$GAS_DIR/endpoint" ]; then
+    _endpoint_val=$(tr -d '[:space:]' < "$GAS_DIR/endpoint")
+    if [ -n "$_endpoint_val" ] && [ -f "$GAS_DIR/.ccskill-metadata.json" ]; then
+        _has_endpoint=$(jq -r '.endpoint // ""' "$GAS_DIR/.ccskill-metadata.json" 2>/dev/null)
+        if [ -z "$_has_endpoint" ]; then
+            tmp=$(mktemp)
+            jq --arg ep "$_endpoint_val" '. + {endpoint: $ep}' "$GAS_DIR/.ccskill-metadata.json" > "$tmp" && mv "$tmp" "$GAS_DIR/.ccskill-metadata.json"
+            echo -e "${GREEN}✓ Migrated endpoint to .ccskill-metadata.json${NC}"
         fi
     fi
+    rm -f "$GAS_DIR/endpoint"
 fi
 
-# 旧 api.sh を削除（新 api スクリプトに移行済み）
-if [ -f "$GAS_DIR/api.sh" ]; then
-    rm -f "$GAS_DIR/api.sh"
-    echo -e "${YELLOW}Removed legacy api.sh (replaced by standalone api script)${NC}"
-fi
+# 旧コピーファイルを削除（マスター参照方式に移行）
+for _legacy_file in auth.sh history.sh api.sh; do
+    if [ -f "$GAS_DIR/$_legacy_file" ]; then
+        rm -f "$GAS_DIR/$_legacy_file"
+        echo -e "${YELLOW}Removed legacy $_legacy_file${NC}"
+    fi
+done
 
 echo -e "${GREEN}✓ Skill definition and helpers updated${NC}"
 echo ""

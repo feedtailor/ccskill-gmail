@@ -178,23 +178,14 @@ echo -e "${GREEN}✓ Skill definition installed${NC}"
 echo ""
 
 # ========================================
-# 7. auth.sh / api をプロジェクトにコピー
+# 7. api スクリプトをコピー + ディレクトリ保護
 # ========================================
 
-/bin/cp "$CCSKILL_GMAIL_DIR/lib/auth.sh" "$GAS_DIR/auth.sh"
 /bin/cp "$CCSKILL_GMAIL_DIR/lib/api" "$GAS_DIR/api"
 chmod +x "$GAS_DIR/api"
+chmod 700 "$GAS_DIR"
 
-# history.sh をコピー
-if [ -f "$CCSKILL_GMAIL_DIR/lib/history.sh" ]; then
-    /bin/cp "$CCSKILL_GMAIL_DIR/lib/history.sh" "$GAS_DIR/history.sh"
-fi
-
-# history ディレクトリ作成
-mkdir -p "$GAS_DIR/history"
-chmod 700 "$GAS_DIR/history"
-
-echo -e "${GREEN}✓ auth.sh / api / history.sh copied${NC}"
+echo -e "${GREEN}✓ api script copied, directory secured${NC}"
 
 # ========================================
 # 8. clasp create
@@ -349,10 +340,6 @@ echo "Step 5: Saving endpoint..."
 
 ENV_FILE="$TARGET_DIR/.env"
 
-# .ccskill-gmail/endpoint ファイルに保存（api スクリプトが直接読み込む。sandbox の .env 制限を回避）
-echo "$ENDPOINT_URL" > "$GAS_DIR/endpoint"
-echo -e "${GREEN}✓ Endpoint saved to $GAS_DIR/endpoint${NC}"
-
 # .env にも保存（後方互換・人間向け）
 if [ -f "$ENV_FILE" ]; then
     if grep -q "^GMAIL_ENDPOINT=" "$ENV_FILE"; then
@@ -391,7 +378,8 @@ cat > "$GAS_DIR/.ccskill-metadata.json" << EOF
   "version": "$VERSION",
   "architecture": "master",
   "project_name": "$PROJECT_NAME",
-  "deployment_id": "$DEPLOYMENT_ID"
+  "deployment_id": "$DEPLOYMENT_ID",
+  "endpoint": "$ENDPOINT_URL"
 }
 EOF
 

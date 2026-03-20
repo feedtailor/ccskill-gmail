@@ -432,7 +432,7 @@ ccskill-gmail history clear --yes
 - **記録される情報**: アクション名、識別 ID（threadId 等）、成功/失敗、実行時間
 - **記録されない情報**: メール本文、宛先、件名、検索クエリの内容（セキュリティ上、意図的に記録しない）
 - **詳細の確認**: ユーザーから「何のメールだったか」等を聞かれた場合は、履歴の threadId / messageId を使って `get_thread` / `get_message` で自分で確認すること
-- **保存場所**: `.ccskill-gmail/history/audit.jsonl`（ローカルのみ、git 対象外推奨）
+- **保存場所**: `.ccskill-gmail/audit.jsonl`（ローカルのみ、git 対象外推奨）
 - **無効化**: `CCSKILL_GMAIL_HISTORY=off` 環境変数で記録を停止可能
 
 ---
