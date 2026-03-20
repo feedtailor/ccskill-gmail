@@ -55,18 +55,16 @@ flowchart LR
 
 Gmail を AI から操作するツールは複数存在します。
 
-| 機能 | ccskill-gmail | [Claude.ai コネクタ](https://claude.ai) | [Google MCP](https://github.com/googleworkspace/mcp-google-workspace) | [gogcli](https://github.com/steipete/gogcli) | GCP API 自前実装 |
-|---|---|---|---|---|---|
-| 送信 | 不可（下書きのみ） | 不可（下書きのみ） | 可能 | 可能 | 実装次第 |
-| 削除 | デフォルト無効 | 不可 | 可能 | 可能 | 実装次第 |
-| 下書き作成 | 可能 | 可能 | 可能 | 可能 | 実装次第 |
-| 添付ダウンロード | 可能 | 不可 | 可能 | 不明 | 実装次第 |
-| PDF 保存 | 可能 | 不可 | 不可 | 不可 | 実装次第 |
-| 監査ログ | ローカル自動記録 | なし | Google 側依存 | なし | 自前実装が必要 |
-| インジェクション対策 | GAS 側で実装 | モデル依存 | Google 側依存 | なし | 自前実装が必要 |
-| 一括操作 | 可能（dryRun 付き） | 不可 | 可能 | 可能 | 実装次第 |
-| Google アカウント | 対応 | 対応 | 対応 | 対応 | 対応 |
-| Google Workspace | 対応 | 対応 | 対応 | 対応 | 対応 |
+| 機能 | ccskill-gmail | [Claude.ai コネクタ](https://claude.ai) | [Google MCP](https://github.com/googleworkspace/mcp-google-workspace) | [gogcli](https://github.com/steipete/gogcli) |
+|---|---|---|---|---|
+| 送信 | x（下書きのみ） | x（下書きのみ） | o | o |
+| 削除 | x（デフォルト無効） | x | o | o |
+| 下書き作成 | o | o | o | o |
+| 添付ダウンロード | o | x | o | - |
+| PDF 保存 | o | x | x | x |
+| 監査ログ | o（ローカル自動記録） | x | -（Google 側依存） | x |
+| インジェクション対策 | o（GAS 側で実装） | -（モデル依存） | -（Google 側依存） | x |
+| 一括操作 | o（dryRun 付き） | x | o | o |
 
 ## 必要なもの
 
