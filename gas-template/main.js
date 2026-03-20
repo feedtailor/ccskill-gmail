@@ -180,9 +180,24 @@ function doPost(e) {
       case 'delete_draft':
         return handleDeleteDraft(body.draftId);
 
+      case 'bulk_mark_read':
+        return handleBulkMarkRead(body.threadIds, body.dryRun);
+
+      case 'bulk_mark_unread':
+        return handleBulkMarkUnread(body.threadIds, body.dryRun);
+
+      case 'bulk_add_label':
+        return handleBulkAddLabel(body.threadIds, body.label, body.dryRun);
+
+      case 'bulk_remove_label':
+        return handleBulkRemoveLabel(body.threadIds, body.label, body.dryRun);
+
+      case 'bulk_archive':
+        return handleBulkArchive(body.threadIds, body.dryRun);
+
       default:
         return errorResponse('Unknown action: ' + action,
-          { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。利用可能: create_draft, create_reply_draft, mark_read, mark_unread, add_label, remove_label, archive, move_to_trash, update_draft, delete_draft', retryable: false });
+          { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。利用可能: create_draft, create_reply_draft, mark_read, mark_unread, add_label, remove_label, archive, move_to_trash, update_draft, delete_draft, bulk_mark_read, bulk_mark_unread, bulk_add_label, bulk_remove_label, bulk_archive', retryable: false });
     }
   } catch (error) {
     var errMsg = error.message || String(error);
