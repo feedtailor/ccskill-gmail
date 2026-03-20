@@ -55,16 +55,18 @@ flowchart LR
 
 Gmail を AI から操作するツールは複数存在します。
 
-| 機能 | ccskill-gmail | [Claude.ai コネクタ](https://claude.ai) | [Google MCP](https://github.com/googleworkspace/mcp-google-workspace) | [gogcli](https://github.com/steipete/gogcli) |
+| 機能 | ccskill-gmail | [Claude Gmail コネクタ](https://support.claude.com/ja/articles/10166901-google-workspace-%E3%82%B3%E3%83%8D%E3%82%AF%E3%82%BF%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%99%E3%82%8B) | [Google Workspace CLI](https://github.com/googleworkspace/cli) | [gogcli](https://github.com/steipete/gogcli) |
 |---|---|---|---|---|
 | 送信 | x（下書きのみ） | x（下書きのみ） | o | o |
-| 削除 | x（デフォルト無効） | x | o | o |
-| 下書き作成 | o | o | o | o |
-| 添付ダウンロード | o | x | o | - |
-| PDF 保存 | o | x | x | x |
-| 監査ログ | o（ローカル自動記録） | x | -（Google 側依存） | x |
-| インジェクション対策 | o（GAS 側で実装） | -（モデル依存） | -（Google 側依存） | x |
-| 一括操作 | o（dryRun 付き） | x | o | o |
+| 削除 | x（デフォルト無効） | x | 不明 | o |
+| 下書き作成 | o | o | 不明 | o |
+| 添付ダウンロード | o | x（メタデータのみ） | 不明 | o |
+| メールPDF保存 | o | x | x | x |
+| 監査ログ | o（ローカル自動記録） | x | x | x |
+| インジェクション対策 | o（GAS 側で実装） | x | o（Model Armor） | x |
+| 一括操作 | o（dryRun 付き） | x | 不明 | o |
+| Google アカウント | o | o | x（要検証アプリ） | o |
+| Google Workspace | o | o | o | o |
 
 ## 必要なもの
 
