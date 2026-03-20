@@ -64,7 +64,11 @@ done
 # 3. Initialize registry
 # ========================================
 
-MASTER_VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+if [ -f "$CCSKILL_GMAIL_DIR/VERSION" ]; then
+    MASTER_VERSION=$(cat "$CCSKILL_GMAIL_DIR/VERSION")
+else
+    MASTER_VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+fi
 
 # --clean mode
 if [ "$CLEAN_MODE" = true ]; then

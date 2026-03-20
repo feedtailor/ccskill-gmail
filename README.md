@@ -60,11 +60,20 @@ flowchart LR
 
 ## セットアップ
 
-### 1. このリポジトリをクローン
+### 1. スキルを入手
+
+**git clone の場合:**
 
 ```bash
 cd ~/projects
 git clone https://github.com/feedtailor/ccskill-gmail.git
+```
+
+**zip 配布の場合:**
+
+```bash
+cd ~/projects
+unzip ccskill-gmail-XXXXXX.zip
 ```
 
 ### 2. PATH に追加
@@ -101,13 +110,20 @@ ccskill-gmail install
 
 ## 更新
 
-```bash
-# スキルを最新版に更新
-ccskill-gmail update
+**git clone の場合:**
 
-# 全プロジェクトを一括更新
-ccskill-gmail update-all
+```bash
+cd ~/projects/ccskill-gmail
+git pull
+
+# プロジェクトに反映
+ccskill-gmail update        # 個別
+ccskill-gmail update-all    # 一括
 ```
+
+**zip 配布の場合:**
+
+新しい zip を展開して上書きした後、`ccskill-gmail update` でプロジェクトに反映してください。
 
 ## アンインストール
 
