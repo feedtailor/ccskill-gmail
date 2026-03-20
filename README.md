@@ -51,6 +51,23 @@ flowchart LR
     style Gmail fill:#c5221f,stroke:#ea4335,color:#fff
 ```
 
+## 他のツールとの比較
+
+Gmail を AI から操作するツールは複数存在します。
+
+| 機能 | ccskill-gmail | [Claude.ai コネクタ](https://claude.ai) | [Google MCP](https://github.com/googleworkspace/mcp-google-workspace) | [gogcli](https://github.com/steipete/gogcli) | GCP API 自前実装 |
+|---|---|---|---|---|---|
+| 送信 | 不可（下書きのみ） | 不可（下書きのみ） | 可能 | 可能 | 実装次第 |
+| 削除 | デフォルト無効 | 不可 | 可能 | 可能 | 実装次第 |
+| 下書き作成 | 可能 | 可能 | 可能 | 可能 | 実装次第 |
+| 添付ダウンロード | 可能 | 不可 | 可能 | 不明 | 実装次第 |
+| PDF 保存 | 可能 | 不可 | 不可 | 不可 | 実装次第 |
+| 監査ログ | ローカル自動記録 | なし | Google 側依存 | なし | 自前実装が必要 |
+| インジェクション対策 | GAS 側で実装 | モデル依存 | Google 側依存 | なし | 自前実装が必要 |
+| 一括操作 | 可能（dryRun 付き） | 不可 | 可能 | 可能 | 実装次第 |
+| Google アカウント | 対応 | 対応 | 対応 | 対応 | 対応 |
+| Google Workspace | 対応 | 対応 | 対応 | 対応 | 対応 |
+
 ## 必要なもの
 
 - Google アカウント
