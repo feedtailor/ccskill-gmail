@@ -22,10 +22,30 @@
 
 ## セキュリティ
 
-- GAS Web App は **「自分のみ」(MYSELF)** でデプロイ
+### 設計原則
+
+- **送信機能なし** — 下書き作成のみ。誤送信を構造的に防止
+- **永久削除 API なし** — `move_to_trash` もデフォルト deny（config.js で制御）
+- **GAS Web App は「自分のみ」(MYSELF)** でデプロイ — 自分以外アクセス不可
+
+### 認証・通信
+
 - OAuth Bearer トークンによる認証（clasp login で取得）
 - エンドポイント URL は `script.google.com` のみ許可（ホワイトリスト）
+- `~/.clasprc.json` は `chmod 600` で保護
 - トークンの自動リフレッシュ対応
+
+### 間接プロンプトインジェクション対策
+
+- デフォルト応答ではプレーンテキストのみ返却（HTML 攻撃面の排除）
+- 不可視文字（ゼロ幅スペース等）の自動除去
+- メール本文の境界マーカーによる AI 判断補助
+- HTML が必要な場合は `get_message_html` で明示的に取得（opt-in）
+
+### 権限制御
+
+- `config.js` の `permissions.deny` / `allow` でアクション単位の制御が可能
+- 詳細な設計判断は `docs/security-decisions.md` を参照
 
 ## Prerequisites
 
