@@ -333,16 +333,12 @@ _ccskill_history_list() {
         return 0
     fi
 
-    # 末尾 N 行を取得
-    local lines
-    lines=$(printf '%s\n' "$combined_lines" | tail -n "$count")
-
-    if [ -z "$lines" ]; then
+    if [ -z "$combined_lines" ]; then
         printf '(no history)\n'
         return 0
     fi
 
-    # jq フィルターを構築
+    # jq フィルターを構築（フィルタを先に適用してから末尾 N 件を取る）
     local jq_filter='.'
 
     # --action フィルター
@@ -360,11 +356,20 @@ _ccskill_history_list() {
         jq_filter="${jq_filter} | select(.response_ok == false)"
     fi
 
+    # フィルタ適用後に末尾 N 件を取得
+    local lines
+    lines=$(printf '%s\n' "$combined_lines" | jq -c "$jq_filter" 2>/dev/null | tail -n "$count")
+
+    if [ -z "$lines" ]; then
+        printf '(no history)\n'
+        return 0
+    fi
+
     if [ "$format" = "json" ]; then
-        printf '%s\n' "$lines" | jq -c "$jq_filter" 2>/dev/null
+        printf '%s\n' "$lines"
     else
         # human-readable 形式
-        printf '%s\n' "$lines" | jq -r "$jq_filter | \
+        printf '%s\n' "$lines" | jq -r "
             ( .timestamp | split(\"T\") | .[0] + \" \" + (.[1] | .[0:5]) ) as \$dt |
             ( if .response_ok then \"OK\" else \"ERROR\" + (if .error then \": \" + .error else \"\" end) end ) as \$result |
             ( if .duration_ms != null then (.duration_ms / 1000 | . * 10 | round / 10 | tostring) + \"s\" else \"?s\" end ) as \$dur |
