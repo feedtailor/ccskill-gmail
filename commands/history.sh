@@ -25,18 +25,27 @@ fi
 # 2. カレントディレクトリのインストール確認
 # ========================================
 
-if [ ! -f ".ccskill-gmail/history.sh" ]; then
-    echo "Error: ccskill-gmail is not installed in this directory, or history.sh is missing."
+if [ ! -d ".ccskill-gmail" ]; then
+    echo "Error: ccskill-gmail is not installed in this directory."
     echo ""
     echo "To install: ccskill-gmail install"
-    echo "To update (add history support): ccskill-gmail update --force --yes ."
     exit 1
 fi
 
-CCSKILL_HISTORY_DIR=".ccskill-gmail/history"
+CCSKILL_HISTORY_DIR=".ccskill-gmail"
 
-# shellcheck source=/dev/null
-source ".ccskill-gmail/history.sh"
+# history.sh をマスターから読み込み（後方互換でローカルもフォールバック）
+if [ -f "$CCSKILL_GMAIL_DIR/lib/history.sh" ]; then
+    # shellcheck source=/dev/null
+    source "$CCSKILL_GMAIL_DIR/lib/history.sh"
+elif [ -f ".ccskill-gmail/history.sh" ]; then
+    # shellcheck source=/dev/null
+    source ".ccskill-gmail/history.sh"
+else
+    echo "Error: history.sh not found."
+    echo "To update: ccskill-gmail update --force --yes ."
+    exit 1
+fi
 
 # ========================================
 # 3. 引数パース
@@ -120,7 +129,7 @@ ccskill-gmail history - Gmail Skill 操作履歴の表示・管理
 プライバシーノート:
   記録される情報: アクション名、識別ID（threadId 等）、成功/失敗、実行時間
   記録されない情報: メール本文、宛先、件名、検索クエリの内容
-  保存場所: .ccskill-gmail/history/audit.jsonl（ローカルのみ、git 対象外）
+  保存場所: .ccskill-gmail/audit.jsonl（ローカルのみ、git 対象外）
   無効化: CCSKILL_GMAIL_HISTORY=off を設定
 EOF
         ;;

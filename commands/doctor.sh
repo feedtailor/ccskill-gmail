@@ -137,30 +137,48 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
-# endpoint
-if [ -f "$GAS_DIR/endpoint" ]; then
-    endpoint=$(cat "$GAS_DIR/endpoint")
-    echo -e "  $PASS endpoint file exists"
-    # URL 形式チェック
-    if echo "$endpoint" | grep -q "^https://script.google.com/"; then
-        echo -e "  $PASS endpoint URL format is valid"
+# endpoint（.ccskill-metadata.json 内）
+if [ -f "$GAS_DIR/.ccskill-metadata.json" ]; then
+    endpoint=$(jq -r '.endpoint // ""' "$GAS_DIR/.ccskill-metadata.json" 2>/dev/null)
+    if [ -n "$endpoint" ]; then
+        echo -e "  $PASS endpoint found in metadata"
+        if echo "$endpoint" | grep -q "^https://script.google.com/"; then
+            echo -e "  $PASS endpoint URL format is valid"
+        else
+            echo -e "  $FAIL endpoint URL format is invalid: $endpoint"
+            echo "       Expected: https://script.google.com/macros/s/.../exec"
+            ERRORS=$((ERRORS + 1))
+        fi
+    elif [ -f "$GAS_DIR/endpoint" ]; then
+        echo -e "  $WARN endpoint in legacy format (run: ccskill-gmail update)"
+        WARNINGS=$((WARNINGS + 1))
+        endpoint=$(tr -d '[:space:]' < "$GAS_DIR/endpoint")
     else
-        echo -e "  $FAIL endpoint URL format is invalid: $endpoint"
-        echo "       Expected: https://script.google.com/macros/s/.../exec"
+        echo -e "  $FAIL endpoint not found"
+        echo "       Fix: ccskill-gmail install"
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
+
+# マスターディレクトリ（installed_from）
+MASTER_DIR=""
+if [ -f "$GAS_DIR/.ccskill-metadata.json" ]; then
+    MASTER_DIR=$(jq -r '.installed_from // ""' "$GAS_DIR/.ccskill-metadata.json" 2>/dev/null)
+fi
+[ -z "$MASTER_DIR" ] && MASTER_DIR="${CCSKILL_GMAIL_DIR:-}"
+
+if [ -n "$MASTER_DIR" ] && [ -d "$MASTER_DIR" ]; then
+    echo -e "  $PASS master directory found ($MASTER_DIR)"
+    if [ -f "$MASTER_DIR/lib/auth.sh" ]; then
+        echo -e "  $PASS auth.sh found in master"
+    else
+        echo -e "  $FAIL auth.sh not found in master"
+        echo "       Fix: ccskill-gmail install"
         ERRORS=$((ERRORS + 1))
     fi
 else
-    echo -e "  $FAIL endpoint file not found"
-    echo "       Fix: ccskill-gmail install (or check .env for GMAIL_ENDPOINT)"
-    ERRORS=$((ERRORS + 1))
-fi
-
-# auth.sh
-if [ -f "$GAS_DIR/auth.sh" ]; then
-    echo -e "  $PASS auth.sh exists"
-else
-    echo -e "  $FAIL auth.sh not found"
-    echo "       Fix: ccskill-gmail update --force"
+    echo -e "  $FAIL master directory not found: $MASTER_DIR"
+    echo "       Fix: ccskill-gmail install"
     ERRORS=$((ERRORS + 1))
 fi
 
@@ -191,15 +209,6 @@ else
     WARNINGS=$((WARNINGS + 1))
 fi
 
-# history ディレクトリ
-if [ -d "$GAS_DIR/history" ]; then
-    echo -e "  $PASS history/ directory exists"
-else
-    echo -e "  $WARN history/ directory not found (audit log won't be recorded)"
-    echo "       Fix: mkdir -p $GAS_DIR/history && chmod 700 $GAS_DIR/history"
-    WARNINGS=$((WARNINGS + 1))
-fi
-
 # .gitignore チェック
 if [ -d "$TARGET_DIR/.git" ]; then
     gitignore="$TARGET_DIR/.gitignore"
@@ -218,11 +227,11 @@ echo ""
 # 4. 疎通チェック（endpoint が存在する場合のみ）
 # ========================================
 
-if [ -f "$GAS_DIR/endpoint" ] && [ -f "$GAS_DIR/auth.sh" ]; then
+if [ -n "${endpoint:-}" ] && [ -n "${MASTER_DIR:-}" ] && [ -f "${MASTER_DIR}/lib/auth.sh" ]; then
     echo "Connectivity"
     echo "----------------------------------------"
 
-    source "$GAS_DIR/auth.sh"
+    source "$MASTER_DIR/lib/auth.sh"
 
     # トークン取得
     token=$(gas_token 2>/dev/null || true)
@@ -230,7 +239,6 @@ if [ -f "$GAS_DIR/endpoint" ] && [ -f "$GAS_DIR/auth.sh" ]; then
         echo -e "  $PASS OAuth token obtained"
 
         # エンドポイント疎通
-        endpoint=$(cat "$GAS_DIR/endpoint")
         response=$(curl -sL --max-time 30 \
             -H "Authorization: Bearer $token" \
             "$endpoint" 2>/dev/null || true)

@@ -17,6 +17,8 @@ ccskill-gmail は**個人用ローカルツール**である。組織的な展�
 | 権限の既定値を read-only に変更 | 不採用 | 個人用ツールの主要ユースケース（検索→下書き返信→ラベル整理）が初期状態で動作しなくなる。`config.js` の `permissions.deny` で個別制限可能 |
 | HTML/添付取得を既定 deny に変更 | 不採用 | Gmail スキルの機能要件（メールの閲覧）と矛盾する。HTML はデフォルト応答から除外済み（`get_message_html` で opt-in） |
 | GAS 側に action 単位の監査ログ追加 | 不採用 | Stackdriver logging が有効。ローカル側の Audit Log（#050）で代替済み |
+| `installed_from` パスの検証（realpath、uid チェック等） | 不採用 | `.ccskill-metadata.json` を改ざんできる攻撃者は `api` スクリプト自体も改ざん可能（同一ディレクトリ・同一パーミッション）。間接参照のパス検証は攻撃面の縮小にならない。`.env` の `source` → `grep` 変更と同じ論理（#060 レビュー時に議論） |
+| `api` スクリプトへのマスターパスのハードコード | 不採用 | 上記と同じ理由で `installed_from` 間接参照と実質的な安全性は同等。metadata.json からの読み取りの方がメンテナンス性が高い |
 
 ## 採用した対策
 
