@@ -11,7 +11,11 @@ set -e
 CCSKILL_GMAIL_DIR="$(cd "$(dirname "$0")" && pwd)"
 export CCSKILL_GMAIL_DIR
 
-VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+if [ -f "$CCSKILL_GMAIL_DIR/VERSION" ]; then
+    VERSION=$(cat "$CCSKILL_GMAIL_DIR/VERSION")
+else
+    VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+fi
 
 show_help() {
     cat << EOF
@@ -29,6 +33,7 @@ Commands:
   status [--json] [--clean]        Show installation status
   history [list|clear] [args]      Show or clear operation history
   doctor [DIR]                     Diagnose environment and setup issues
+  release [OUTPUT_DIR]             Create a distributable zip file
   help                             Show this help
   version                          Show version
 
@@ -71,6 +76,9 @@ case "$COMMAND" in
         ;;
     doctor)
         exec "$CCSKILL_GMAIL_DIR/commands/doctor.sh" "$@"
+        ;;
+    release)
+        exec "$CCSKILL_GMAIL_DIR/commands/release.sh" "$@"
         ;;
     help|--help|-h)
         show_help

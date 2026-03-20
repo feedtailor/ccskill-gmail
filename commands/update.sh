@@ -114,7 +114,11 @@ else
 fi
 
 # グローバルリポジトリのバージョン
-GLOBAL_VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+if [ -f "$CCSKILL_GMAIL_DIR/VERSION" ]; then
+    GLOBAL_VERSION=$(cat "$CCSKILL_GMAIL_DIR/VERSION")
+else
+    GLOBAL_VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+fi
 
 echo "Current version: $CURRENT_VERSION"
 echo "Latest version:  $GLOBAL_VERSION"
@@ -138,8 +142,8 @@ if [ "$CURRENT_VERSION" = "$GLOBAL_VERSION" ] && [ "$NEEDS_MIGRATION" = false ] 
     exit 0
 fi
 
-# 変更内容表示
-if [ "$CURRENT_VERSION" != "unknown" ] && [ "$GLOBAL_VERSION" != "unknown" ]; then
+# 変更内容表示（git がある場合のみ）
+if [ "$CURRENT_VERSION" != "unknown" ] && [ "$GLOBAL_VERSION" != "unknown" ] && [ -d "$CCSKILL_GMAIL_DIR/.git" ]; then
     TOTAL_COMMITS=$(cd "$CCSKILL_GMAIL_DIR" && git rev-list --count "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null || echo "0")
     echo "Changes ($TOTAL_COMMITS commits):"
     echo "--------"

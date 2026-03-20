@@ -151,7 +151,11 @@ echo "Step 1: Setting up project files..."
 mkdir -p "$GAS_DIR"
 
 # バージョン情報とインストール時刻を取得
-VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+if [ -f "$CCSKILL_GMAIL_DIR/VERSION" ]; then
+    VERSION=$(cat "$CCSKILL_GMAIL_DIR/VERSION")
+else
+    VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+fi
 INSTALL_TIME=$(date '+%Y-%m-%d %H:%M:%S')
 
 # ========================================
