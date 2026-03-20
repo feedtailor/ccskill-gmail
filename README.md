@@ -1,69 +1,73 @@
-# Gmail Skill
+# ccskill-gmail
 
-エージェントAI（Claude Code等）が Gmail を検索・閲覧・下書き作成できるようにするスキルです。
+Claude Code に Gmail を操作させるためのスキルです。自然言語で指示するだけで、メールの確認・返信下書き・整理等ができます。API やコマンドを覚える必要はありません。
 
-## 概要
-
-本スキルを使うと、Claude Code が自然言語の指示だけで Gmail を操作できるようになります。メールの確認、返信下書きの作成、メール整理などに活用できます。
-
-**動作の流れ:**
-
-1. ユーザーが自然言語で指示（例：「未読メールを確認して返信を書いて」）
-2. Claude Code がスキル（SKILL.md）を参照し、適切な API を選択
-3. `ccskill-get` / `ccskill-post` で GAS Web App にリクエスト送信
-4. GAS が Gmail を操作し、結果を JSON で返却
-5. Claude Code が結果をユーザーに報告
+```
+「未読メールを見せて」
+「このメールに返信下書きを作って」
+「重要なメールを確認して、対応済ラベルを付けて」
+「今週届いた請求書メールを探して、添付PDFをダウンロードして」
+「メールを既読にしてアーカイブして」
+```
 
 ## 特徴
 
-- **簡単インストール**: `ccskill-gmail install` で任意のプロジェクトに導入可能
-- **自然言語操作**: ユーザーは API を意識せず、日本語で指示するだけ
-- **安全設計**: 送信機能はなし（下書き作成のみ）、誤送信を防止
+### メール操作
 
-## セキュリティ
+検索・閲覧・下書き作成・ラベル整理に加え、添付ファイルのダウンロードやメールの PDF 保存にも対応しています。
 
-### 設計原則
+### セキュリティポリシー
 
-- **送信機能なし** — 下書き作成のみ。誤送信を構造的に防止
-- **永久削除 API なし** — `move_to_trash` もデフォルト deny（config.js で制御）
-- **GAS Web App は「自分のみ」(MYSELF)** でデプロイ — 自分以外アクセス不可
+AIにメールを任せるリスクを鑑みて、安全寄りの設計を採用しています。
 
-### 認証・通信
+- **送信機能なし** — メール送信 API は実装していません。下書き作成まで。送信は人間が Gmail で確認してから行う想定です（Anthropic 公式の Claude.ai Gmail コネクタも同様の設計思想を採用しています）
+- **削除はオプトイン** — メール削除はデフォルトで無効です（config.js で変更可能）
+- **プロンプトインジェクション対策** — HTML メールに埋め込まれた隠し指示（CSS 非表示・ゼロ幅文字・白文字等）を GAS 側で無効化しています
+- **操作履歴の自動記録** — AI が行った全操作をローカルに記録。メールの件名や本文は保存せず、アクション名と ID のみです
 
-- OAuth Bearer トークンによる認証（clasp login で取得）
-- エンドポイント URL は `script.google.com` のみ許可（ホワイトリスト）
-- `~/.clasprc.json` は `chmod 600` で保護
-- トークンの自動リフレッシュ対応
+### 対応アカウント
 
-### 間接プロンプトインジェクション対策
+Google アカウント、Google Workspace アカウントの両方に対応しています。
 
-- デフォルト応答ではプレーンテキストのみ返却（HTML 攻撃面の排除）
-- 不可視文字（ゼロ幅スペース等）の自動除去
-- メール本文の境界マーカーによる AI 判断補助
-- HTML が必要な場合は `get_message_html` で明示的に取得（opt-in）
+## 構造
+GCP の Gmail API は使用せず、認証ユーザのみが使用できるブリッジAPIをGASプロジェクトとしてデプロイします。Claude Code は認証済みユーザ専用の Gmail API として機能します。
 
-### 権限制御
+```mermaid
+flowchart LR
+    You["🧑 ユーザ\n（自然言語で指示）"]
+    CC["🤖 Claude Code\n（本スキルを使用）"]
+    GAS["📡 GAS Web App\n（Google アカウント内）"]
+    Gmail["📧 Gmail"]
 
-- `config.js` の `permissions.deny` / `allow` でアクション単位の制御が可能
-- 詳細な設計判断は `docs/security-decisions.md` を参照
+    You -->|話しかける| CC
+    CC -->|API 呼び出し| GAS
+    GAS -->|GmailApp| Gmail
+    Gmail -->|結果| GAS
+    GAS -->|JSON| CC
+    CC -->|フィードバック| You
 
-## Prerequisites
+    style CC fill:#d97706,stroke:#f59e0b,color:#fff
+    style GAS fill:#1a73e8,stroke:#4285f4,color:#fff
+    style Gmail fill:#c5221f,stroke:#ea4335,color:#fff
+```
+
+## 必要なもの
 
 - Google アカウント
 - Node.js（clasp のため）
-- jq
-- Bash環境（Linux, macOS, WSL）
+- jq（`brew install jq`）
+- Bash 環境（macOS, Linux, WSL）
 
-## グローバルインストール（初回のみ）
+## セットアップ
 
-### 1. リポジトリのクローン
+### 1. このリポジトリをクローン
 
 ```bash
-cd ~/projects  # または任意のディレクトリ
+cd ~/projects
 git clone https://github.com/feedtailor/ccskill-gmail.git
 ```
 
-### 2. PATH の設定
+### 2. PATH に追加
 
 `~/.zshrc` または `~/.bashrc` に以下を追加:
 
@@ -71,171 +75,65 @@ git clone https://github.com/feedtailor/ccskill-gmail.git
 export PATH="$HOME/projects/ccskill-gmail:$PATH"
 ```
 
-再読み込み:
+有効化:
 
 ```bash
 source ~/.zshrc  # または source ~/.bashrc
 ```
 
-### 3. clasp のインストールとログイン（初回のみ）
+### 3. clasp のインストールとログイン
+
+[clasp](https://github.com/nicholaschiang/clasp) は Google Apps Script をコマンドラインから管理するツールです。このスキルでは GAS プロジェクトの作成・デプロイ・OAuth 認証に使用します。
 
 ```bash
 npm install -g @google/clasp
 clasp login
 ```
 
-これでグローバルインストールは完了です。
-
-## インストール
+### 4. プロジェクトにインストール
 
 ```bash
-ccskill-gmail install [プロジェクト名] [ターゲットディレクトリ]
-```
-
-### 例
-
-```bash
-# カレントディレクトリにインストール
-ccskill-gmail install my-project
-
-# 特定ディレクトリにインストール
-ccskill-gmail install my-project /path/to/project
-```
-
-インストーラーが以下を自動で行います:
-
-1. スキル定義を `.claude/skills/ccskill-gmail/` にコピー
-2. GAS プロジェクトの作成と自動デプロイ
-3. OAuth 認可フロー（ブラウザで1回のみ）
-4. エンドポイント URL の検証と `.env` への保存
-5. `auth.sh` / `api.sh` をプロジェクトにコピー
-6. Claude Code パーミッションの自動設定（opt-in）
-7. レジストリへの登録
-
-## コマンド
-
-| コマンド | 説明 |
-|----------|------|
-| `ccskill-gmail install` | プロジェクトにインストール |
-| `ccskill-gmail uninstall` | プロジェクトからアンインストール |
-| `ccskill-gmail update` | インストール済みスキルを更新 |
-| `ccskill-gmail update-all` | 全インストール先を一括更新 |
-| `ccskill-gmail apply-config` | config.js の変更を GAS に反映 |
-| `ccskill-gmail register` | 既存インストールをレジストリに登録 |
-| `ccskill-gmail status` | 全インストール先の状態を表示 |
-| `ccskill-gmail help` | ヘルプを表示 |
-| `ccskill-gmail version` | バージョンを表示 |
-
-## 使い方
-
-インストール完了後、Claude Code に自然言語で指示するだけです。
-
-### 基本的な使用例
-
-```
-「未読メールを見せて」
-
-「重要なメールを確認して」
-
-「このメールに返信下書きを作成して：承知いたしました」
-
-「メールを既読にしてアーカイブして」
-
-「対応済ラベルを付けて」
-```
-
-### API 一覧
-
-#### 読み取り系（GET）
-
-| API | 説明 |
-|-----|------|
-| search | メール検索 |
-| get_thread | スレッド取得 |
-| get_message | メッセージ詳細 |
-| list_labels | ラベル一覧 |
-| get_unread_count | 未読数取得 |
-
-#### 書き込み系（POST）
-
-| API | 説明 |
-|-----|------|
-| create_draft | 新規メール下書き作成 |
-| create_reply_draft | 返信下書き作成 |
-| update_draft | 下書き更新 |
-| delete_draft | 下書き削除 |
-| mark_read / mark_unread | 既読・未読操作 |
-| add_label / remove_label | ラベル操作 |
-| archive | アーカイブ |
-| move_to_trash | ゴミ箱に移動 |
-
-### より詳しい例
-
-`.claude/skills/ccskill-gmail/examples.md` に、メール確認、返信作成、メール整理などのワークフロー例があります。
-
-## スキルの更新
-
-```bash
-# 1. グローバルリポジトリを更新
-cd ~/projects/ccskill-gmail
-git pull
-
-# 2. プロジェクトのスキルを更新
 cd /path/to/your-project
+ccskill-gmail install
+```
+
+インストーラーが GAS プロジェクトの作成、デプロイ、OAuth 認可まで自動で行います。ブラウザが開いたら「許可」をクリックしてください。
+
+## 更新
+
+```bash
+# スキルを最新版に更新
 ccskill-gmail update
 
-# 3. 全プロジェクトを一括更新
+# 全プロジェクトを一括更新
 ccskill-gmail update-all
 ```
 
 ## アンインストール
 
 ```bash
-cd /path/to/your-project
 ccskill-gmail uninstall
 ```
 
-## プロジェクト構成
+ローカルファイル（`.ccskill-gmail/`、スキル定義、パーミッション設定）が削除されます。Google Apps Script のプロジェクトは自動削除されないため、完全に削除したい場合は [script.google.com](https://script.google.com) から手動で削除してください。
 
-```
-ccskill-gmail/
-├── ccskill-gmail              # メインコマンド（ディスパッチャ）
-├── commands/                   # サブコマンド
-│   ├── install.sh
-│   ├── uninstall.sh
-│   ├── update.sh
-│   ├── update-all.sh
-│   ├── apply-config.sh
-│   ├── register.sh
-│   └── status.sh
-├── lib/                        # 共通ライブラリ
-│   ├── auth.sh                # OAuth 認証
-│   ├── api.sh                 # API ラッパー
-│   ├── push-gas.sh            # GAS push/deploy
-│   ├── registry.sh            # レジストリ管理
-│   └── permissions.sh         # パーミッション設定
-├── gas-template/               # GAS ソースコード
-│   ├── appsscript.json
-│   ├── config.js.template
-│   ├── main.js
-│   ├── handlers/
-│   └── utils/
-└── .claude/skills/ccskill-gmail/  # スキル定義
-```
+## その他のコマンド
 
-## 関連ドキュメント
+`ccskill-gmail help` で全コマンドを確認できます。
 
-- [SKILL.md](.claude/skills/ccskill-gmail/SKILL.md) - スキル概要と API テンプレート
-- [reference/](.claude/skills/ccskill-gmail/reference/) - 全 API の詳細仕様
-- [examples.md](.claude/skills/ccskill-gmail/examples.md) - ワークフロー例
-- [troubleshooting.md](.claude/skills/ccskill-gmail/troubleshooting.md) - トラブルシューティング
+## 技術詳細
+
+API の仕様やトラブルシューティングは、スキル定義ドキュメントを参照してください:
+
+- [SKILL.md](.claude/skills/ccskill-gmail/SKILL.md) — API 仕様とルール
+- [examples.md](.claude/skills/ccskill-gmail/examples.md) — ワークフロー例
+- [troubleshooting.md](.claude/skills/ccskill-gmail/troubleshooting.md) — よくある問題と解決策
 
 ## 制限事項
 
-- **送信機能なし**: 下書き作成のみ（送信は Gmail UI で手動）
-- **GAS 実行時間制限**: 6分/実行
-- **日次実行時間制限**: 90分/日
-- **添付ファイル**: 現在は添付ファイルの追加・ダウンロードは未対応
+- 送信機能なし（下書き作成のみ、送信は Gmail UI で手動）
+- GAS 実行時間制限: 6分/実行、90分/日
+- 添付ファイル: 5MB まで対応
 
 ## ライセンス
 
