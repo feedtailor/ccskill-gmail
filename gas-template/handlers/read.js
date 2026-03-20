@@ -18,7 +18,8 @@ function handleGetThread(threadId) {
   const thread = GmailApp.getThreadById(threadId);
 
   if (!thread) {
-    return errorResponse(`Thread not found: ${threadId}`);
+    return errorResponse('Thread not found: ' + threadId,
+      { code: 'NOT_FOUND', hint: 'threadId が正しいか確認してください', retryable: false });
   }
 
   return successResponse(formatThreadWithMessages(thread));
@@ -38,7 +39,8 @@ function handleGetMessage(messageId) {
   const message = GmailApp.getMessageById(messageId);
 
   if (!message) {
-    return errorResponse(`Message not found: ${messageId}`);
+    return errorResponse('Message not found: ' + messageId,
+      { code: 'NOT_FOUND', hint: 'messageId が正しいか確認してください', retryable: false });
   }
 
   return successResponse(formatMessage(message));
@@ -74,7 +76,8 @@ function handleListAttachments(messageId) {
   var message = GmailApp.getMessageById(messageId);
 
   if (!message) {
-    return errorResponse('Message not found: ' + messageId);
+    return errorResponse('Message not found: ' + messageId,
+      { code: 'NOT_FOUND', hint: 'messageId が正しいか確認してください', retryable: false });
   }
 
   var attachments = message.getAttachments();
@@ -109,13 +112,15 @@ function handleGetAttachment(messageId, attachmentIndex) {
 
   var index = parseInt(attachmentIndex);
   if (isNaN(index) || index < 0) {
-    return errorResponse('attachmentIndex must be a non-negative integer');
+    return errorResponse('attachmentIndex must be a non-negative integer',
+      { code: 'INVALID_PARAM', hint: 'attachmentIndex は 0 以上の整数を指定してください', retryable: false });
   }
 
   var message = GmailApp.getMessageById(messageId);
 
   if (!message) {
-    return errorResponse('Message not found: ' + messageId);
+    return errorResponse('Message not found: ' + messageId,
+      { code: 'NOT_FOUND', hint: 'messageId が正しいか確認してください', retryable: false });
   }
 
   var attachments = message.getAttachments();
@@ -123,8 +128,8 @@ function handleGetAttachment(messageId, attachmentIndex) {
   if (index >= attachments.length) {
     return errorResponse(
       'Attachment index out of range: ' + index +
-      ' (message has ' + attachments.length + ' attachment(s))'
-    );
+      ' (message has ' + attachments.length + ' attachment(s))',
+      { code: 'INDEX_OUT_OF_RANGE', hint: 'list_attachments で添付ファイルの数を確認してください', retryable: false });
   }
 
   var attachment = attachments[index];
@@ -135,8 +140,8 @@ function handleGetAttachment(messageId, attachmentIndex) {
     return errorResponse(
       'Attachment too large: ' + attachment.getName() +
       ' (' + Math.round(size / 1024 / 1024 * 10) / 10 + 'MB). ' +
-      'Maximum supported size is 5MB.'
-    );
+      'Maximum supported size is 5MB.',
+      { code: 'SIZE_LIMIT', hint: '5MB を超える添付ファイルは GAS 経由ではダウンロードできません', retryable: false });
   }
 
   return successResponse({
@@ -162,7 +167,8 @@ function handleGetMessageHtml(messageId, includeHeaders) {
   var message = GmailApp.getMessageById(messageId);
 
   if (!message) {
-    return errorResponse('Message not found: ' + messageId);
+    return errorResponse('Message not found: ' + messageId,
+      { code: 'NOT_FOUND', hint: 'messageId が正しいか確認してください', retryable: false });
   }
 
   var html = message.getBody();
@@ -227,7 +233,8 @@ function handleGetUnreadCount(labelName) {
     // 特定ラベルの未読数
     const label = GmailApp.getUserLabelByName(labelName);
     if (!label) {
-      return errorResponse(`Label not found: ${labelName}`);
+      return errorResponse('Label not found: ' + labelName,
+        { code: 'NOT_FOUND', hint: 'list_labels でラベル名を確認してください', retryable: false });
     }
     unreadCount = label.getUnreadCount();
     targetLabel = labelName;

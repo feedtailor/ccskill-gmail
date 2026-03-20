@@ -17,7 +17,8 @@ function handleArchive(threadId) {
 
   const thread = GmailApp.getThreadById(threadId);
   if (!thread) {
-    return errorResponse(`Thread not found: ${threadId}`);
+    return errorResponse('Thread not found: ' + threadId,
+      { code: 'NOT_FOUND', hint: 'threadId が正しいか確認してください', retryable: false });
   }
 
   thread.moveToArchive();
@@ -42,7 +43,8 @@ function handleMoveToTrash(threadId) {
 
   const thread = GmailApp.getThreadById(threadId);
   if (!thread) {
-    return errorResponse(`Thread not found: ${threadId}`);
+    return errorResponse('Thread not found: ' + threadId,
+      { code: 'NOT_FOUND', hint: 'threadId が正しいか確認してください', retryable: false });
   }
 
   thread.moveToTrash();

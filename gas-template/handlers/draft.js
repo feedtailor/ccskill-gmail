@@ -122,7 +122,8 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, 
 
   const thread = GmailApp.getThreadById(threadId);
   if (!thread) {
-    return errorResponse(`Thread not found: ${threadId}`);
+    return errorResponse('Thread not found: ' + threadId,
+      { code: 'NOT_FOUND', hint: 'threadId が正しいか確認してください', retryable: false });
   }
 
   const messages = thread.getMessages();
@@ -195,7 +196,8 @@ function handleUpdateDraft(draftId, to, subject, body, cc, bcc, htmlBody) {
   const drafts = GmailApp.getDrafts();
   const draft = drafts.find(function(d) { return d.getId() === draftId; });
   if (!draft) {
-    return errorResponse(`Draft not found: ${draftId}`);
+    return errorResponse('Draft not found: ' + draftId,
+      { code: 'NOT_FOUND', hint: 'list_drafts で draftId を確認してください', retryable: false });
   }
 
   const message = draft.getMessage();
@@ -307,7 +309,8 @@ function handleDeleteDraft(draftId) {
   const draft = drafts.find(function(d) { return d.getId() === draftId; });
 
   if (!draft) {
-    return errorResponse(`Draft not found: ${draftId}`);
+    return errorResponse('Draft not found: ' + draftId,
+      { code: 'NOT_FOUND', hint: 'list_drafts で draftId を確認してください', retryable: false });
   }
 
   draft.deleteDraft();

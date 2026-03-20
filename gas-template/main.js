@@ -26,9 +26,10 @@ function doGet(e) {
     // Permission check
     if (!isActionAllowed(action)) {
       return errorResponse(
-        `Action "${action}" is denied by permissions config. ` +
-        `To enable, remove "${action}" from permissions.deny in config.js ` +
-        `and run: ccskill-gmail apply-config`
+        'Action "' + action + '" is denied by permissions config. ' +
+        'To enable, remove "' + action + '" from permissions.deny in config.js ' +
+        'and run: ccskill-gmail apply-config',
+        { code: 'PERMISSION_DENIED', hint: 'config.js の permissions.deny を確認してください', retryable: false }
       );
     }
 
@@ -76,10 +77,16 @@ function doGet(e) {
         return handleGetProfile();
 
       default:
-        return errorResponse(`Unknown action: ${action}`);
+        return errorResponse('Unknown action: ' + action,
+          { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。利用可能: search, get_thread, get_message, list_labels, get_unread_count, list_attachments, get_attachment, get_message_html, list_drafts, get_profile', retryable: false });
     }
   } catch (error) {
-    return errorResponse(error.message);
+    // requireParam の throw はパラメータ不足
+    var errMsg = error.message || String(error);
+    if (errMsg.indexOf('Missing required parameter') === 0) {
+      return errorResponse(errMsg, { code: 'MISSING_PARAM', hint: '必須パラメータが不足しています', retryable: false });
+    }
+    return errorResponse(errMsg, { code: 'INTERNAL_ERROR', retryable: true });
   }
 }
 
@@ -95,21 +102,24 @@ function doPost(e) {
     try {
       body = JSON.parse(e.postData.contents);
     } catch (parseError) {
-      return errorResponse('Invalid JSON in request body');
+      return errorResponse('Invalid JSON in request body',
+        { code: 'INVALID_JSON', hint: 'リクエストボディが正しい JSON か確認してください', retryable: false });
     }
 
     const action = body.action;
 
     if (!action) {
-      return errorResponse('Missing required field: action');
+      return errorResponse('Missing required field: action',
+        { code: 'MISSING_PARAM', hint: 'JSON に "action" フィールドを含めてください', retryable: false });
     }
 
     // Permission check
     if (!isActionAllowed(action)) {
       return errorResponse(
-        `Action "${action}" is denied by permissions config. ` +
-        `To enable, remove "${action}" from permissions.deny in config.js ` +
-        `and run: ccskill-gmail apply-config`
+        'Action "' + action + '" is denied by permissions config. ' +
+        'To enable, remove "' + action + '" from permissions.deny in config.js ' +
+        'and run: ccskill-gmail apply-config',
+        { code: 'PERMISSION_DENIED', hint: 'config.js の permissions.deny を確認してください', retryable: false }
       );
     }
 
@@ -171,9 +181,14 @@ function doPost(e) {
         return handleDeleteDraft(body.draftId);
 
       default:
-        return errorResponse(`Unknown action: ${action}`);
+        return errorResponse('Unknown action: ' + action,
+          { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。利用可能: create_draft, create_reply_draft, mark_read, mark_unread, add_label, remove_label, archive, move_to_trash, update_draft, delete_draft', retryable: false });
     }
   } catch (error) {
-    return errorResponse(error.message);
+    var errMsg = error.message || String(error);
+    if (errMsg.indexOf('Missing required parameter') === 0) {
+      return errorResponse(errMsg, { code: 'MISSING_PARAM', hint: '必須パラメータが不足しています', retryable: false });
+    }
+    return errorResponse(errMsg, { code: 'INTERNAL_ERROR', retryable: true });
   }
 }
