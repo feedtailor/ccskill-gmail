@@ -354,24 +354,61 @@ shift
 # 初期化（共通）
 _api_init || exit 1
 
+# ========================================
+# Audit Log 初期化
+# ========================================
+
+CCSKILL_HISTORY_DIR="$SCRIPT_DIR/history"
+if [ -f "$SCRIPT_DIR/history.sh" ]; then
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/history.sh"
+fi
+
+# 開始時刻（ミリ秒）
+if command -v python3 &>/dev/null; then
+    _LOG_START_MS=$(python3 -c "import time; print(int(time.time()*1000))" 2>/dev/null || echo 0)
+else
+    _LOG_START_MS=0
+fi
+
+# stdout をキャプチャしつつそのまま出力するための一時ファイル
+_LOG_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/ccskill-log.XXXXXX")
+
+_LOG_EXIT_CODE=0
+
 case "$SUBCOMMAND" in
     get)
-        cmd_get "$@"
+        cmd_get "$@" | tee "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=${PIPESTATUS[0]}
         ;;
     post)
-        cmd_post "$@"
+        cmd_post "$@" | tee "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=${PIPESTATUS[0]}
         ;;
     download)
-        cmd_download "$@"
+        cmd_download "$@" | tee "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=${PIPESTATUS[0]}
         ;;
     save-html)
-        cmd_save_html "$@"
+        cmd_save_html "$@" | tee "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=${PIPESTATUS[0]}
         ;;
     save-pdf)
-        cmd_save_pdf "$@"
+        cmd_save_pdf "$@" | tee "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=${PIPESTATUS[0]}
         ;;
     *)
-        echo "{\"ok\":false,\"error\":\"Unknown subcommand: ${SUBCOMMAND}. Use: get, post, download, save-html, save-pdf\"}"
-        exit 1
+        echo "{\"ok\":false,\"error\":\"Unknown subcommand: ${SUBCOMMAND}. Use: get, post, download, save-html, save-pdf\"}" | tee "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=1
         ;;
 esac
+
+_LOG_RESPONSE=$(cat "$_LOG_TMPFILE" 2>/dev/null)
+rm -f "$_LOG_TMPFILE"
+
+# Audit Log に記録（history.sh が読み込まれている場合のみ）
+if type _ccskill_history_record &>/dev/null; then
+    _ccskill_history_record "$SUBCOMMAND" "$_LOG_EXIT_CODE" "$_LOG_RESPONSE" "$@"
+fi
+
+exit "${_LOG_EXIT_CODE:-0}"

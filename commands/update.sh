@@ -197,6 +197,17 @@ if [ -f "$CCSKILL_GMAIL_DIR/lib/api" ]; then
     chmod +x "$GAS_DIR/api"
 fi
 
+# history.sh を更新コピー
+if [ -f "$CCSKILL_GMAIL_DIR/lib/history.sh" ]; then
+    /bin/cp "$CCSKILL_GMAIL_DIR/lib/history.sh" "$GAS_DIR/history.sh"
+fi
+
+# history ディレクトリが未作成なら作成
+if [ ! -d "$GAS_DIR/history" ]; then
+    mkdir -p "$GAS_DIR/history"
+    chmod 700 "$GAS_DIR/history"
+fi
+
 # endpoint ファイルが未作成の場合は .env から移行
 if [ ! -f "$GAS_DIR/endpoint" ]; then
     local_env="$TARGET_DIR/.env"

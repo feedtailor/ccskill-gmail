@@ -27,6 +27,7 @@ Commands:
   apply-config [DIR]               Apply config.js changes to GAS
   register <PATH> [PATH...]        Register existing installations
   status [--json] [--clean]        Show installation status
+  history [list|clear] [args]      Show or clear operation history
   help                             Show this help
   version                          Show version
 
@@ -63,6 +64,9 @@ case "$COMMAND" in
         ;;
     status)
         exec "$CCSKILL_GMAIL_DIR/commands/status.sh" "$@"
+        ;;
+    history)
+        exec "$CCSKILL_GMAIL_DIR/commands/history.sh" "$@"
         ;;
     help|--help|-h)
         show_help

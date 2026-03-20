@@ -16,24 +16,29 @@ Gmail の検索・閲覧・下書き作成を行うための Claude Code Skill �
 
 **セキュリティ**: Web App は「自分のみ (Only myself)」で公開されており、clasp の OAuth トークンによる認証が必要です。`.ccskill-gmail/api` スクリプトがトークンの自動取得・リフレッシュを行います。
 
-## 重要なルール
+<important if="you are calling .ccskill-gmail/api or constructing a Bash command for Gmail">
 
-**以下のルールは必ず守ってください。違反すると Claude Code のセキュリティ確認プロンプトが発生し、ユーザー体験を大きく損ないます。**
+## Bash コマンド構築ルール（確認プロンプト防止）
 
-1. **1回の Bash ツール呼び出しにつき API コールは1つだけ**
-   - 複数の API 結果が必要な場合は、Bash ツールを複数回（並列可）呼び出す
-   - 1つの Bash コマンド内に複数の `get` / `post` を `&&` や `;` で連結しない
+以下のルールに1つでも違反すると、ユーザーにセキュリティ確認プロンプトが表示され操作が中断する。**例外なく全ルールを守ること。**
 
-2. **`$()` コマンド置換の中に API コールを入れない**
-   - `messageId=$(.ccskill-gmail/api get ...)` のようなネストは禁止
-   - まず検索結果を取得し、次の Bash 呼び出しで ID を使う
+**MUST（必須）:**
+- 1回の Bash 呼び出しにつき API コールは1つだけ（複数必要なら Bash を並列で複数回呼ぶ）
+- ファイル保存は専用サブコマンド（`download` / `save-pdf` / `save-html`）を使う
+- 長い JSON は Write ツールでファイルに書き出し、`post @/tmp/payload.json` で送る
+- API レスポンスの JSON は Claude が直接読んで情報を抽出する（パイプ処理は不要）
 
-3. **ファイル保存には専用サブコマンドを使う（`>` リダイレクト禁止）**
-   - 添付ファイル保存: `download` サブコマンドを使う（`.ccskill-gmail/api get ... | jq | base64 -d > file` は禁止）
-   - メール PDF 化: `save-pdf` サブコマンドを使う（HTML 取得 → PDF 変換を一括実行）
-   - HTML 保存: `save-html` サブコマンドを使う（`.ccskill-gmail/api get ... | jq -r > file` は禁止）
-   - 理由1: `>` リダイレクトは Claude Code のセキュリティ確認プロンプトを発生させる
-   - 理由2: 大きなレスポンスをパイプで直接処理するとデータが途切れる問題がある
+**NEVER（厳禁）:**
+- NEVER use `$()` or backticks anywhere in the command — **no exceptions, even for simple values like `$(echo '...')`**. Variable values must be written inline as literals.
+- NEVER chain: `.ccskill-gmail/api get ... && .ccskill-gmail/api get ...`
+- NEVER redirect: `.ccskill-gmail/api get ... > file`
+- NEVER pipe to scripts: `.ccskill-gmail/api get ... | python3 -c "..."`
+- NEVER pipe to text processors: `.ccskill-gmail/api get ... | awk/sed/perl`
+- NEVER use cat heredoc: `cat <<EOF` で JSON を作らない
+
+**唯一の例外**: `| jq '...'` による簡易フィルタのみ許可（レスポンスが大きい場合の出力削減用）
+
+### OK / NG 例
 
 ```bash
 # OK: 別々の Bash ツール呼び出しで実行
@@ -48,6 +53,9 @@ Gmail の検索・閲覧・下書き作成を行うための Claude Code Skill �
 # NG: 1つの Bash に複数 API を詰め込む
 .ccskill-gmail/api get ... && .ccskill-gmail/api get ...
 
+# NG: $() を使っている（値がリテラルでも禁止）
+.ccskill-gmail/api get action=get_message messageId=$(echo '19cad22f211cf5b1')
+
 # NG: $() 内に API コール
 .ccskill-gmail/api get action=get_message messageId=$(.ccskill-gmail/api get ... | jq -r ...)
 ```
@@ -61,6 +69,22 @@ Gmail の検索・閲覧・下書き作成を行うための Claude Code Skill �
 # NG: パイプ + リダイレクトでファイル保存（確認プロンプト発生・大きなファイルでデータ途切れ）
 .ccskill-gmail/api get action=get_attachment messageId=MSG attachmentIndex=0 | jq -r '.data.content' | base64 -d > ./report.pdf
 ```
+
+```bash
+# OK（推奨）: パイプなしで API を呼び、Claude がレスポンス JSON を直接読む
+.ccskill-gmail/api get action=get_thread threadId=19cadf598c49fb2c
+
+# OK: jq で出力を絞る（レスポンスが大きい場合）
+.ccskill-gmail/api get action=get_thread threadId=19cadf598c49fb2c | jq '.data.messages[] | {from, to, date, subject}'
+
+# NG: python3 でパース（確認プロンプト発生）
+.ccskill-gmail/api get action=get_thread threadId=... | python3 -c "import json, sys; ..."
+
+# NG: awk/sed でパース（確認プロンプト発生）
+.ccskill-gmail/api get action=get_thread threadId=... | awk '{...}'
+```
+
+</important>
 
 ---
 
@@ -86,8 +110,7 @@ Gmail の検索・閲覧・下書き作成を行うための Claude Code Skill �
 .ccskill-gmail/api post '{"action":"create_draft","to":"user@example.com","subject":"件名","body":"本文"}'
 ```
 
-**長い JSON は Write ツール + `@file` パターンを使用してください。**
-`cat` heredoc は使用禁止です（`Bash(cat:*)` の `*` は改行にマッチせず、毎回許可プロンプトが出るため）。
+**長い JSON は MUST: Write ツール + `@file` パターンを使う。** `cat` heredoc は NEVER 使わないこと（確認プロンプトが発生する）。
 
 ```
 # Step 1: Write ツールで JSON ファイルを作成（許可プロンプト不要）
@@ -292,9 +315,14 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 {"ok": false, "error": "エラーメッセージ"}
 ```
 
+**Claude は出力された JSON を直接読んで必要な情報を抽出できる。** 基本的にパイプ処理は不要。レスポンスが大きすぎて出力が途切れる場合のみ、jq で出力を絞ることを検討する。
+
 ```bash
-# jq でパース（Bash 1回の呼び出しで完結）
-.ccskill-gmail/api get action=search query="is:unread" | jq '.data.threads[].subject'
+# 推奨: パイプなしで実行し、Claude がレスポンスを直接読む
+.ccskill-gmail/api get action=search query="is:unread"
+
+# レスポンスが大きい場合のみ: jq で出力を絞る
+.ccskill-gmail/api get action=search query="is:unread" | jq '.data.threads[] | {subject, from, date}'
 ```
 
 ---
@@ -343,6 +371,49 @@ API 呼び出しでエラーが発生した場合は、まず再試行してく�
 - **添付ファイル**: ダウンロード（`list_attachments` / `get_attachment`）、下書き作成時の添付（`create_draft` / `create_reply_draft` の `attachments` パラメータ）に対応
 - **添付ファイルサイズ制限**: `get_attachment` は 5MB 超のファイルをエラーにします。下書き作成時の添付も合計 5MB が上限です。大きなファイルは Gmail UI で操作してください
 - **返信下書きの宛先変更不可**: `update_draft` で返信下書きの to（宛先）は変更できません（GmailApp API の制約）。cc / bcc / body / subject は変更可能です。宛先の変更が必要な場合は、ユーザーに「Gmail の下書き確認時に手動で宛先を変更してください」と案内してください
+
+---
+
+---
+
+## 操作履歴
+
+Gmail Skill の全操作はローカルに自動記録されます。
+
+### 履歴の確認
+
+```bash
+# 最近の操作を確認（デフォルト: 最新20件、人間可読形式）
+ccskill-gmail history
+
+# エラーのみ表示
+ccskill-gmail history list --errors
+
+# JSON 形式で出力（Claude や jq での処理用）
+ccskill-gmail history list --json
+
+# 最新 50 件
+ccskill-gmail history list 50
+
+# 特定アクションのみ
+ccskill-gmail history list --action create_draft
+
+# 指定日以降
+ccskill-gmail history list --since 2026-03-17
+
+# ログをクリア（--yes 必須）
+ccskill-gmail history clear --yes
+```
+
+ユーザーに「AI が何をしたか」を聞かれた場合はこのコマンドで確認できます。
+
+### プライバシーノート
+
+- **記録される情報**: アクション名、識別 ID（threadId 等）、成功/失敗、実行時間
+- **記録されない情報**: メール本文、宛先、件名、検索クエリの内容（セキュリティ上、意図的に記録しない）
+- **詳細の確認**: ユーザーから「何のメールだったか」等を聞かれた場合は、履歴の threadId / messageId を使って `get_thread` / `get_message` で自分で確認すること
+- **保存場所**: `.ccskill-gmail/history/audit.jsonl`（ローカルのみ、git 対象外推奨）
+- **無効化**: `CCSKILL_GMAIL_HISTORY=off` 環境変数で記録を停止可能
 
 ---
 
