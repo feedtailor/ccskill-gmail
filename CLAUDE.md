@@ -56,6 +56,10 @@ ccskill-gmail/
     └── reference/
 ```
 
+## セキュリティ設計判断
+
+不採用にした対策とその理由は `docs/security-decisions.md` を参照。
+
 ## API 設計
 
 ### GET（読み取り）

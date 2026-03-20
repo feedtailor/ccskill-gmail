@@ -54,6 +54,17 @@ function formatThreadWithMessages(thread) {
 }
 
 /**
+ * Strip invisible characters (indirect prompt injection mitigation)
+ * Removes zero-width spaces, joiners, direction control chars, etc.
+ * @param {string} str - Input string
+ * @returns {string} Sanitized string
+ */
+function stripInvisibleChars(str) {
+  if (!str) return '';
+  return str.replace(/[\u200B-\u200F\u2028-\u202F\u2060-\u206F\uFEFF]/g, '');
+}
+
+/**
  * Format a Gmail message for API response
  * @param {GmailMessage} message - Gmail message object
  * @returns {Object} Formatted message data
@@ -68,8 +79,10 @@ function formatMessage(message) {
     bcc: message.getBcc(),
     replyTo: message.getReplyTo(),
     subject: message.getSubject(),
-    body: message.getPlainBody(),
-    htmlBody: message.getBody(),
+    body: '--- EMAIL CONTENT START ---\n' +
+          stripInvisibleChars(message.getPlainBody()) +
+          '\n--- EMAIL CONTENT END ---',
+    // htmlBody is intentionally excluded — use get_message_html for HTML access
     date: message.getDate().toISOString(),
     isUnread: message.isUnread(),
     isStarred: message.isStarred(),

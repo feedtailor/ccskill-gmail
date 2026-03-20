@@ -415,21 +415,35 @@ echo -e "${GREEN}✓ Registered in ccskill-gmail registry${NC}"
 echo ""
 
 # ========================================
-# 17. .gitignore 推奨表示
+# 17. .gitignore 自動設定
 # ========================================
 
-echo "================================================"
-echo "  .gitignore Recommendation"
-echo "================================================"
-echo ""
-echo "Add the following to your project's .gitignore:"
-echo ""
-echo -e "${YELLOW}# Gmail Skill${NC}"
-echo -e "${YELLOW}.ccskill-gmail/${NC}"
-echo -e "${YELLOW}.env${NC}"
-echo ""
-echo "The .ccskill-gmail/history/ directory contains your operation audit log."
-echo "It is recommended to keep it out of version control."
+GITIGNORE="$TARGET_DIR/.gitignore"
+if [ -d "$TARGET_DIR/.git" ]; then
+    GITIGNORE_UPDATED=false
+    for entry in ".ccskill-gmail/" ".env"; do
+        if [ ! -f "$GITIGNORE" ] || ! grep -qF "$entry" "$GITIGNORE"; then
+            echo "$entry" >> "$GITIGNORE"
+            GITIGNORE_UPDATED=true
+        fi
+    done
+    if [ "$GITIGNORE_UPDATED" = true ]; then
+        echo -e "${GREEN}✓ .gitignore updated (added .ccskill-gmail/ and .env)${NC}"
+    else
+        echo -e "${GREEN}✓ .gitignore already contains required entries${NC}"
+    fi
+else
+    echo "================================================"
+    echo "  .gitignore Recommendation"
+    echo "================================================"
+    echo ""
+    echo "This directory is not a git repository."
+    echo "If you initialize git later, add the following to .gitignore:"
+    echo ""
+    echo -e "${YELLOW}# Gmail Skill${NC}"
+    echo -e "${YELLOW}.ccskill-gmail/${NC}"
+    echo -e "${YELLOW}.env${NC}"
+fi
 echo ""
 
 # ========================================
