@@ -185,7 +185,16 @@ echo ""
 /bin/cp "$CCSKILL_GMAIL_DIR/lib/api" "$GAS_DIR/api"
 chmod +x "$GAS_DIR/api"
 
-echo -e "${GREEN}✓ auth.sh / api copied${NC}"
+# history.sh をコピー
+if [ -f "$CCSKILL_GMAIL_DIR/lib/history.sh" ]; then
+    /bin/cp "$CCSKILL_GMAIL_DIR/lib/history.sh" "$GAS_DIR/history.sh"
+fi
+
+# history ディレクトリ作成
+mkdir -p "$GAS_DIR/history"
+chmod 700 "$GAS_DIR/history"
+
+echo -e "${GREEN}✓ auth.sh / api / history.sh copied${NC}"
 
 # ========================================
 # 8. clasp create
@@ -418,6 +427,9 @@ echo ""
 echo -e "${YELLOW}# Gmail Skill${NC}"
 echo -e "${YELLOW}.ccskill-gmail/${NC}"
 echo -e "${YELLOW}.env${NC}"
+echo ""
+echo "The .ccskill-gmail/history/ directory contains your operation audit log."
+echo "It is recommended to keep it out of version control."
 echo ""
 
 # ========================================
