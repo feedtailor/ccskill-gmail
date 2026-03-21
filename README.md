@@ -51,23 +51,6 @@ flowchart LR
     style Gmail fill:#c5221f,stroke:#ea4335,color:#fff
 ```
 
-## 他のツールとの比較
-
-Gmail を AI から操作するツールは複数存在します。
-
-| 機能 | ccskill-gmail | [Claude Gmail コネクタ](https://support.claude.com/ja/articles/10166901-google-workspace-%E3%82%B3%E3%83%8D%E3%82%AF%E3%82%BF%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%99%E3%82%8B) | [Google Workspace CLI](https://github.com/googleworkspace/cli) | [gogcli](https://github.com/steipete/gogcli) |
-|---|---|---|---|---|
-| 送信 | x（下書きのみ） | x（下書きのみ） | o | o |
-| 削除 | x（デフォルト無効） | x | o | o |
-| 下書き作成 | o | o | o | o |
-| 添付ダウンロード | o | x（メタデータのみ） | o | o |
-| メールPDF保存 | o | x | x | x |
-| 監査ログ | o（ローカル自動記録） | x | x | x |
-| インジェクション対策 | o（GAS 側で実装） | x | x | x |
-| 一括操作 | o（dryRun 付き） | x | o | o |
-| Google アカウント | o | o | x（Workspace 専用） | o |
-| Google Workspace | o | o | o | o |
-
 ## 必要なもの
 
 - Google アカウント
@@ -161,6 +144,20 @@ API の仕様やトラブルシューティングは、スキル定義ドキュ�
 - [SKILL.md](.claude/skills/ccskill-gmail/SKILL.md) — API 仕様とルール
 - [examples.md](.claude/skills/ccskill-gmail/examples.md) — ワークフロー例
 - [troubleshooting.md](.claude/skills/ccskill-gmail/troubleshooting.md) — よくある問題と解決策
+
+## 他のツールとの比較
+
+Gmail を AI から操作するツールは複数存在します。
+
+| 機能 | ccskill-gmail | [Claude Gmail コネクタ](https://support.claude.com/ja/articles/10166901-google-workspace-%E3%82%B3%E3%83%8D%E3%82%AF%E3%82%BF%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%99%E3%82%8B) | [Google Workspace CLI](https://github.com/googleworkspace/cli) | [gogcli](https://github.com/steipete/gogcli) |
+|---|---|---|---|---|
+| 送信 | x（下書きのみ） | x（下書きのみ） | o | o |
+| 削除 | x（デフォルト無効） | x | o | o |
+| 下書き作成 | o | o | o | o |
+| 添付ダウンロード | o | x（メタデータのみ） | o | o |
+| メールPDF保存 | o | x | x | x |
+| 監査ログ | o（ローカル自動記録） | x | x | x |
+| インジェクション対策 | o（GAS 側で実装） | x | x | x |
 
 ## 制限事項
 
