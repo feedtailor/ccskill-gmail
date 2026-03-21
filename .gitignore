@@ -17,3 +17,6 @@
 # IDE
 .idea/
 .vscode/
+
+# Local settings
+.claude/settings.local.json

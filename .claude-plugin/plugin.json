@@ -1,0 +1,13 @@
+{
+  "name": "ccskill-gmail",
+  "version": "1.0.0",
+  "description": "Gmail skill for Claude Code - Search, read, draft, and organize emails via GAS Web App",
+  "author": {
+    "name": "feedtailor Inc.",
+    "url": "https://github.com/feedtailor"
+  },
+  "repository": "https://github.com/feedtailor/ccskill-gmail",
+  "license": "MIT",
+  "keywords": ["gmail", "email", "ccskill"],
+  "skills": "./.claude/skills/ccskill-gmail/"
+}
