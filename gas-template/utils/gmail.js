@@ -16,7 +16,7 @@ function formatThread(thread) {
 
   return {
     id: thread.getId(),
-    subject: firstMessage.getSubject(),
+    subject: stripInvisibleChars(firstMessage.getSubject()),
     from: firstMessage.getFrom(),
     date: lastMessage.getDate().toISOString(),
     messageCount: messages.length,
@@ -40,7 +40,7 @@ function formatThreadWithMessages(thread) {
 
   return {
     id: thread.getId(),
-    subject: messages[0].getSubject(),
+    subject: stripInvisibleChars(messages[0].getSubject()),
     messageCount: messages.length,
     isUnread: thread.isUnread(),
     isImportant: thread.isImportant(),
@@ -78,7 +78,7 @@ function formatMessage(message) {
     cc: message.getCc(),
     bcc: message.getBcc(),
     replyTo: message.getReplyTo(),
-    subject: message.getSubject(),
+    subject: stripInvisibleChars(message.getSubject()),
     body: '--- EMAIL CONTENT START ---\n' +
           stripInvisibleChars(message.getPlainBody()) +
           '\n--- EMAIL CONTENT END ---',
