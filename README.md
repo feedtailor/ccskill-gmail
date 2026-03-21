@@ -12,6 +12,32 @@ A Claude Code skill for Gmail. Just tell Claude what you want in natural languag
 
 [日本語版 README はこちら](README.ja.md)
 
+## Use Cases
+
+Not just one-shot commands — describe a complex workflow in plain language and let Claude handle the rest.
+
+### Accounting & Administration
+
+> "Find all receipt emails from ACME Corp in the last 6 months and save the attached PDFs as `20260401_VendorName_TotalWithTax_receipt.pdf`"
+
+> "Collect all quote emails from multiple vendors and create a comparison table with vendor name, item, price, and delivery date"
+
+### Handover & Knowledge Base
+
+> "Trace the entire email history with John at ACME Corp and create a handover document including background, open tasks, and work in progress. Export the list as Excel"
+
+> "Search all incident response emails for the XYZ system from the past year and create a table of occurrence date, root cause, and resolution"
+
+### Missed Response Detection & Follow-up
+
+> "Find all external emails from the past month that I haven't replied to. List them with sender, subject, and days since received. Draft follow-up replies for the important ones"
+
+### Recurring Task Automation
+
+> "Review all external emails received this week, categorize them as needs-reply / FYI / resolved, and compile a weekly report"
+
+> "List all mailing lists and automated notifications by sender, frequency, and last received date. Archive any I haven't read in over 3 months"
+
 ## Features
 
 ### Email Operations
