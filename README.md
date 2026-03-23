@@ -2,14 +2,6 @@
 
 A Claude Code skill for Gmail. Just tell Claude what you want in natural language — search, read, draft replies, organize emails, and more.
 
-```
-"Show me unread emails"
-"Draft a reply to this email"
-"Check important emails and add the 'handled' label"
-"Find invoice emails from this week and download the attached PDFs"
-"Mark these emails as read and archive them"
-```
-
 [日本語版 README はこちら](README.ja.md)
 
 ## Features
@@ -30,6 +22,46 @@ Designed with safety in mind for AI-driven email operations:
 ### Account Support
 
 Works with both personal Google accounts and Google Workspace accounts.
+
+## Examples
+
+### One-shot Requests
+
+> "Show me unread emails"
+
+> "Draft a reply to this email"
+
+> "Check important emails and add the 'handled' label"
+
+> "Find invoice emails from this week and download the attached PDFs"
+
+> "Mark these emails as read and archive them"
+
+### Advanced Workflows
+
+Describe a complex, multi-step workflow in plain language and let Claude handle the rest.
+
+**Accounting & Administration**
+
+> "Find all receipt emails from ACME Corp in the last 6 months and save the attached PDFs as `20260401_VendorName_TotalWithTax_receipt.pdf`"
+
+> "Collect all quote emails from multiple vendors and create a comparison table with vendor name, item, price, and delivery date"
+
+**Handover & Knowledge Base**
+
+> "Trace the entire email history with John at ACME Corp and create a handover document including background, open tasks, and work in progress. Export the list as Excel"
+
+> "Search all incident response emails for the XYZ system from the past year and create a table of occurrence date, root cause, and resolution"
+
+**Missed Response Detection & Follow-up**
+
+> "Find all external emails from the past month that I haven't replied to. List them with sender, subject, and days since received. Draft follow-up replies for the important ones"
+
+**Recurring Task Automation** — works great with the `/loop` command
+
+> "Review all external emails received this week, categorize them as needs-reply / FYI / resolved, and compile a weekly report"
+
+> "List all mailing lists and automated notifications by sender, frequency, and last received date. Archive any I haven't read in over 3 months"
 
 ## Architecture
 
@@ -57,9 +89,8 @@ flowchart LR
 ## Requirements
 
 - Google account
-- Node.js (for clasp)
-- jq (`brew install jq`)
-- Bash environment (macOS, Linux, WSL)
+- clasp
+- jq
 
 ## Installation
 
