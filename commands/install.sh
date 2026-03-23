@@ -2,9 +2,10 @@
 #
 # Gmail Skill - Installer
 #
-# Usage: ccskill-gmail install [PROJECT_NAME] [TARGET_DIR]
+# Usage: ccskill-gmail install [--user NAME] [PROJECT_NAME] [TARGET_DIR]
 #
 # Arguments:
+#   --user NAME   Clasp user name for multi-account support (optional)
 #   PROJECT_NAME  Custom project name (optional, defaults to directory name)
 #                 Use '-' to explicitly use directory name
 #   TARGET_DIR    Target directory (optional, defaults to current directory)
@@ -14,6 +15,7 @@
 #   ccskill-gmail install "MyProject"
 #   ccskill-gmail install "MyProject" /path/to/project
 #   ccskill-gmail install - /path/to/project
+#   ccskill-gmail install --user work "WorkProject" /path/to/work
 #
 
 set -e
@@ -55,8 +57,28 @@ source "$CCSKILL_GMAIL_DIR/lib/permissions.sh"
 # 1. 引数パース
 # ========================================
 
-PROJECT_NAME_INPUT="${1:-}"
-TARGET_DIR="${2:-.}"
+# フラグのパース
+CLASP_USER=""
+positional_args=()
+
+for arg in "$@"; do
+    case "$arg" in
+        --user)
+            _next_is_user=true
+            ;;
+        *)
+            if [ "${_next_is_user:-}" = true ]; then
+                CLASP_USER="$arg"
+                _next_is_user=false
+            else
+                positional_args+=("$arg")
+            fi
+            ;;
+    esac
+done
+
+PROJECT_NAME_INPUT="${positional_args[0]:-}"
+TARGET_DIR="${positional_args[1]:-.}"
 
 # 絶対パスに変換
 if [ ! -d "$TARGET_DIR" ]; then
@@ -77,11 +99,20 @@ GAS_PROJECT_TITLE="Gmail Skill - $PROJECT_NAME"
 
 echo "Installing to: $TARGET_DIR"
 echo "GAS Project Title: $GAS_PROJECT_TITLE"
+if [ -n "$CLASP_USER" ]; then
+    echo "Clasp user: $CLASP_USER"
+fi
 echo ""
 
 # ========================================
 # 2. 前提条件チェック
 # ========================================
+
+# clasp --user 引数の組み立て
+clasp_user_args=()
+if [ -n "$CLASP_USER" ]; then
+    clasp_user_args=(--user "$CLASP_USER")
+fi
 
 echo "Checking prerequisites..."
 
@@ -107,10 +138,10 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # clasp ログインチェック
-if ! clasp login --status &> /dev/null; then
+if ! clasp "${clasp_user_args[@]}" login --status &> /dev/null; then
     echo -e "${YELLOW}You need to login to Google first.${NC}"
-    echo "Running: clasp login"
-    clasp login
+    echo "Running: clasp ${clasp_user_args[*]} login"
+    clasp "${clasp_user_args[@]}" login
 fi
 
 echo -e "${GREEN}✓ Prerequisites checked${NC}"
@@ -202,7 +233,7 @@ echo ""
 CLASP_TMPDIR=$(mktemp -d)
 /bin/cp "$CCSKILL_GMAIL_DIR/gas-template/appsscript.json" "$CLASP_TMPDIR/"
 
-(cd "$CLASP_TMPDIR" && clasp create --type standalone --title "$GAS_PROJECT_TITLE")
+(cd "$CLASP_TMPDIR" && clasp "${clasp_user_args[@]}" create --type standalone --title "$GAS_PROJECT_TITLE")
 
 # 生成された .clasp.json を $GAS_DIR に保存
 if [ -f "$CLASP_TMPDIR/.clasp.json" ]; then
@@ -386,6 +417,13 @@ cat > "$GAS_DIR/.ccskill-metadata.json" << EOF
   "endpoint": "$ENDPOINT_URL"
 }
 EOF
+
+# マルチアカウント: clasp_user を metadata に追加
+if [ -n "$CLASP_USER" ]; then
+    tmp=$(mktemp)
+    jq --arg user "$CLASP_USER" '. + {clasp_user: $user}' "$GAS_DIR/.ccskill-metadata.json" > "$tmp"
+    /bin/mv "$tmp" "$GAS_DIR/.ccskill-metadata.json"
+fi
 
 echo -e "${GREEN}✓ Metadata saved${NC}"
 echo ""

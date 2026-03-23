@@ -21,7 +21,7 @@ Designed with safety in mind for AI-driven email operations:
 
 ### Account Support
 
-Works with both personal Google accounts and Google Workspace accounts.
+Works with both personal Google accounts and Google Workspace accounts. Multi-account usage is supported — each project directory can use a different account, and switching happens automatically by `cd`.
 
 ## Examples
 
@@ -144,6 +144,23 @@ ccskill-gmail install
 ```
 
 The installer will automatically create a GAS project, deploy it, and handle OAuth authorization. When a browser window opens, click "Allow".
+
+#### Multi-account Setup
+
+Without `--user`, the default account from `clasp login` is used. No additional setup is needed for single-account usage.
+
+To use different Google accounts for different projects, use the `--user` option. Switching happens automatically when you `cd` into the project directory.
+
+```bash
+# 1. Login with another account
+clasp --user work login
+
+# 2. Install with that account
+cd /path/to/work-project
+ccskill-gmail install --user work
+
+# This directory now uses the work account's Gmail
+```
 
 ## Update
 

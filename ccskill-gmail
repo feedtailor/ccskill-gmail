@@ -24,7 +24,7 @@ ccskill-gmail - Gmail Skill for Claude Code
 Usage: ccskill-gmail <command> [args...]
 
 Commands:
-  install [NAME] [DIR]             Install to a project
+  install [--user NAME] [NAME] [DIR]  Install to a project
   uninstall [DIR]                  Uninstall from a project
   update [--force] [--yes] [DIR]   Update an installation
   update-all                       Update all installations
