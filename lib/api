@@ -68,6 +68,15 @@ _api_init() {
         return 1
     fi
 
+    # マルチアカウント: metadata から clasp_user を読み取り（auth.sh の gas_token が参照）
+    if [ -f "$metadata_file" ] && command -v jq &>/dev/null; then
+        local clasp_user
+        clasp_user=$(jq -r '.clasp_user // empty' "$metadata_file" 2>/dev/null)
+        if [ -n "$clasp_user" ]; then
+            CLASP_USER="$clasp_user"
+        fi
+    fi
+
     # auth.sh を読み込み（マスターの lib/ → 後方互換でローカルもフォールバック）
     if [ -f "$_MASTER_DIR/lib/auth.sh" ]; then
         # shellcheck source=/dev/null

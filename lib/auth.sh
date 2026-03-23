@@ -27,9 +27,10 @@ gas_token() {
     fi
 
     # 現在のトークン情報を読み取り
+    local user="${CLASP_USER:-default}"
     local access_token expiry_date
-    access_token=$(jq -r '.tokens.default.access_token // empty' "$RC_FILE")
-    expiry_date=$(jq -r '.tokens.default.expiry_date // 0' "$RC_FILE")
+    access_token=$(jq -r --arg user "$user" '.tokens[$user].access_token // empty' "$RC_FILE")
+    expiry_date=$(jq -r --arg user "$user" '.tokens[$user].expiry_date // 0' "$RC_FILE")
 
     if [ -z "$access_token" ]; then
         echo "ERROR: No access_token in $RC_FILE. Run 'clasp login' first." >&2
@@ -48,9 +49,9 @@ gas_token() {
 
     # 期限切れ → リフレッシュ
     local client_id client_secret refresh_token
-    client_id=$(jq -r '.tokens.default.client_id // empty' "$RC_FILE")
-    client_secret=$(jq -r '.tokens.default.client_secret // empty' "$RC_FILE")
-    refresh_token=$(jq -r '.tokens.default.refresh_token // empty' "$RC_FILE")
+    client_id=$(jq -r --arg user "$user" '.tokens[$user].client_id // empty' "$RC_FILE")
+    client_secret=$(jq -r --arg user "$user" '.tokens[$user].client_secret // empty' "$RC_FILE")
+    refresh_token=$(jq -r --arg user "$user" '.tokens[$user].refresh_token // empty' "$RC_FILE")
 
     if [ -z "$refresh_token" ] || [ -z "$client_id" ] || [ -z "$client_secret" ]; then
         echo "ERROR: Missing credentials in $RC_FILE. Run 'clasp login' first." >&2
@@ -81,8 +82,8 @@ gas_token() {
 
     local tmp
     tmp=$(mktemp)
-    if jq --arg token "$new_token" --argjson expiry "$new_expiry" \
-        '.tokens.default.access_token = $token | .tokens.default.expiry_date = $expiry' \
+    if jq --arg token "$new_token" --argjson expiry "$new_expiry" --arg user "$user" \
+        '.tokens[$user].access_token = $token | .tokens[$user].expiry_date = $expiry' \
         "$RC_FILE" > "$tmp"; then
         /bin/mv "$tmp" "$RC_FILE"
         chmod 600 "$RC_FILE"

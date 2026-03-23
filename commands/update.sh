@@ -100,6 +100,7 @@ if [ ! -f "$METADATA_FILE" ] && [ -f "$OLD_METADATA_FILE" ]; then
 fi
 
 CURRENT_VERSION="unknown"
+CLASP_USER=""
 
 if [ ! -f "$METADATA_FILE" ]; then
     echo -e "${YELLOW}Warning: Metadata file not found${NC}"
@@ -108,6 +109,7 @@ if [ ! -f "$METADATA_FILE" ]; then
 else
     if command -v jq &> /dev/null; then
         CURRENT_VERSION=$(jq -r '.version' "$METADATA_FILE" 2>/dev/null || echo "unknown")
+        CLASP_USER=$(jq -r '.clasp_user // empty' "$METADATA_FILE" 2>/dev/null)
     else
         CURRENT_VERSION=$(grep -o '"version": "[^"]*"' "$METADATA_FILE" | cut -d'"' -f4 || echo "unknown")
     fi

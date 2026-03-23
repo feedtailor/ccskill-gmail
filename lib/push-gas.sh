@@ -74,7 +74,11 @@ push_gas() {
     fi
 
     # 5. clasp push from temp directory
-    (cd "$TMPDIR" && clasp push --force)
+    local clasp_user_args=()
+    if [ -n "${CLASP_USER:-}" ]; then
+        clasp_user_args=(--user "$CLASP_USER")
+    fi
+    (cd "$TMPDIR" && clasp "${clasp_user_args[@]}" push --force)
 }
 
 deploy_gas() {
@@ -104,13 +108,18 @@ deploy_gas() {
         /bin/cp "$GAS_DIR/.clasp.json" "$TMPDIR/"
     fi
 
+    local clasp_user_args=()
+    if [ -n "${CLASP_USER:-}" ]; then
+        clasp_user_args=(--user "$CLASP_USER")
+    fi
+
     local OUTPUT
     local EXIT_CODE
     if [ -n "$DEPLOYMENT_ID" ]; then
-        OUTPUT=$(cd "$TMPDIR" && clasp deploy -i "$DEPLOYMENT_ID" --description "$DESCRIPTION" 2>&1)
+        OUTPUT=$(cd "$TMPDIR" && clasp "${clasp_user_args[@]}" deploy -i "$DEPLOYMENT_ID" --description "$DESCRIPTION" 2>&1)
         EXIT_CODE=$?
     else
-        OUTPUT=$(cd "$TMPDIR" && clasp deploy --description "$DESCRIPTION" 2>&1)
+        OUTPUT=$(cd "$TMPDIR" && clasp "${clasp_user_args[@]}" deploy --description "$DESCRIPTION" 2>&1)
         EXIT_CODE=$?
     fi
 
