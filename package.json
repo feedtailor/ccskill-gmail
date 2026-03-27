@@ -1,0 +1,7 @@
+{
+  "name": "ccskill-gmail",
+  "private": true,
+  "dependencies": {
+    "@google/clasp": "^3.3.0"
+  }
+}

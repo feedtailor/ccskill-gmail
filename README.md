@@ -16,7 +16,7 @@ Designed with safety in mind for AI-driven email operations:
 
 - **No send capability** — No send API is implemented. Only draft creation. Users review and send manually from Gmail (this is the same approach as Anthropic's official Claude.ai Gmail connector)
 - **Delete is opt-in** — Email deletion is disabled by default (configurable in config.js)
-- **Prompt injection protection** — Hidden instructions embedded in HTML emails (CSS hiding, zero-width characters, white-on-white text, etc.) are neutralized on the GAS side
+- **Prompt injection protection** — Hidden instructions embedded in HTML emails (CSS hiding, zero-width characters, white-on-white text, etc.) are neutralized
 - **Automatic audit logging** — All AI operations are logged locally. Only action names and IDs are recorded — no email subjects or body content
 
 ### Account Support
@@ -89,8 +89,9 @@ flowchart LR
 ## Requirements
 
 - Google account
-- clasp
+- Node.js / npm
 - jq
+- Bash (macOS, Linux, WSL)
 
 ## Installation
 
@@ -113,30 +114,16 @@ cd ~/projects
 git clone https://github.com/feedtailor/ccskill-gmail.git
 ```
 
-#### 2. Add to PATH
+#### 2. Setup
 
-Add to `~/.zshrc` or `~/.bashrc`:
-
-```bash
-export PATH="$HOME/projects/ccskill-gmail:$PATH"
-```
-
-Then reload:
+Installs clasp locally, registers PATH, and handles Google login in one command.
 
 ```bash
-source ~/.zshrc  # or source ~/.bashrc
+cd ~/projects/ccskill-gmail
+./ccskill-gmail setup
 ```
 
-#### 3. Install and login to clasp
-
-[clasp](https://github.com/nicholaschiang/clasp) is a CLI tool for managing Google Apps Script. This skill uses it for GAS project creation, deployment, and OAuth authorization.
-
-```bash
-npm install -g @google/clasp
-clasp login
-```
-
-#### 4. Install to your project
+#### 3. Install to your project
 
 ```bash
 cd /path/to/your-project

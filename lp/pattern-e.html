@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ccskill — Claude Code Skills by feedtailor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,800&family=Geist+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fefcf9;
+  --surface: #fff;
+  --text: #1a1816;
+  --text-dim: #9a9490;
+  --border: #eae5dd;
+  --orange: #ff6b35;
+  --purple: #7b61ff;
+  --teal: #00c2a8;
+  --font-display: 'Bricolage Grotesque', 'Noto Sans JP', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  --font-body: 'Bricolage Grotesque', 'Noto Sans JP', sans-serif;
+  --radius: 24px;
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-weight: 300; line-height: 1.7; overflow-x: hidden; }
+
+/* ── Nav ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 2.5rem;
+  background: rgba(254,252,249,0.88);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; }
+.nav-logo .dot { color: var(--orange); }
+.nav-right { display: flex; align-items: center; gap: 1rem; }
+.lang-btn {
+  font-family: var(--font-mono); font-size: 0.72rem; padding: 0.4rem 1rem;
+  border-radius: 100px; border: 1px solid var(--border); background: none;
+  cursor: pointer; color: var(--text); transition: all 0.2s;
+}
+.lang-btn:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+.gh-btn {
+  font-family: var(--font-mono); font-size: 0.72rem; padding: 0.4rem 1rem;
+  border-radius: 100px; border: none; background: var(--text); color: var(--bg);
+  text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+  transition: all 0.2s;
+}
+.gh-btn:hover { background: var(--orange); }
+.gh-btn svg { width: 14px; height: 14px; }
+
+/* ── Hero ── */
+.hero {
+  padding: 10rem 2.5rem 2rem;
+  text-align: center;
+  position: relative;
+}
+.hero-img {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 70vh; overflow: hidden; z-index: -1;
+}
+.hero-img img { width: 100%; height: 100%; object-fit: cover; }
+.hero-img::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(254,252,249,0.3) 0%, var(--bg) 85%);
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: var(--font-mono); font-size: 0.7rem;
+  padding: 0.45rem 1rem; border-radius: 100px;
+  background: rgba(123,97,255,0.08); color: var(--purple);
+  margin-bottom: 1.5rem;
+  opacity: 0; animation: slideUp 0.6s 0.2s forwards;
+}
+.hero h1 {
+  font-family: var(--font-display); font-size: clamp(3rem, 7vw, 5.5rem);
+  font-weight: 800; line-height: 1.05; letter-spacing: -0.03em;
+  max-width: 750px; margin: 0 auto;
+  opacity: 0; animation: slideUp 0.6s 0.3s forwards;
+}
+.hero h1 .gradient {
+  background: linear-gradient(135deg, var(--orange), var(--purple), var(--teal));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero-sub {
+  font-size: 1.15rem; color: var(--text-dim); margin: 1.5rem auto 0;
+  max-width: 480px;
+  opacity: 0; animation: slideUp 0.6s 0.45s forwards;
+}
+.hero-actions {
+  display: flex; gap: 0.8rem; justify-content: center; margin-top: 2rem;
+  opacity: 0; animation: slideUp 0.6s 0.55s forwards;
+}
+.btn-primary {
+  font-family: var(--font-display); font-weight: 600; font-size: 0.95rem;
+  padding: 0.8rem 2rem; border-radius: 100px; border: none;
+  background: var(--text); color: var(--bg); text-decoration: none;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  transition: all 0.2s; cursor: pointer;
+}
+.btn-primary:hover { background: var(--orange); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+.btn-primary svg { width: 16px; height: 16px; }
+.btn-secondary {
+  font-family: var(--font-display); font-weight: 600; font-size: 0.95rem;
+  padding: 0.8rem 2rem; border-radius: 100px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); text-decoration: none;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--text); }
+
+/* ── Skills ── */
+.skills { padding: 4rem 2.5rem; max-width: 1100px; margin: 0 auto; }
+.skills-label {
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-dim); text-align: center;
+  margin-bottom: 2rem;
+}
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 2.5rem;
+  position: relative; overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.card:hover { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0,0,0,0.06); border-color: transparent; }
+.card-accent {
+  position: absolute; top: -1px; left: 2rem; right: 2rem;
+  height: 3px; border-radius: 0 0 4px 4px;
+}
+.card-gmail .card-accent { background: linear-gradient(90deg, var(--orange), #ff9f1c); }
+.card-banana .card-accent { background: linear-gradient(90deg, var(--purple), var(--teal)); }
+
+.card-emoji { font-size: 2rem; margin-bottom: 1rem; }
+.card h3 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; margin-bottom: 0.4rem; }
+.card-desc { color: var(--text-dim); font-size: 0.92rem; margin-bottom: 1.5rem; }
+.card-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.8rem; }
+.tag {
+  font-family: var(--font-mono); font-size: 0.65rem; padding: 0.3rem 0.7rem;
+  border-radius: 100px; background: var(--bg); color: var(--text-dim);
+}
+.card-link {
+  font-family: var(--font-display); font-weight: 600; font-size: 0.9rem;
+  text-decoration: none; color: var(--text);
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  transition: color 0.2s;
+}
+.card-gmail .card-link:hover { color: var(--orange); }
+.card-banana .card-link:hover { color: var(--purple); }
+
+/* ── Showcase (image + text) ── */
+.showcase {
+  padding: 4rem 2.5rem;
+  max-width: 1100px; margin: 0 auto;
+}
+.showcase-block {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 3rem; align-items: center;
+  margin-bottom: 4rem;
+}
+.showcase-block.reverse { direction: rtl; }
+.showcase-block.reverse > * { direction: ltr; }
+
+.showcase-img {
+  border-radius: var(--radius);
+  overflow: hidden; aspect-ratio: 16/9;
+  border: 1px solid var(--border);
+}
+.showcase-img img { width: 100%; height: 100%; object-fit: cover; }
+
+.showcase-text h3 {
+  font-family: var(--font-display); font-size: 1.8rem; font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+.showcase-text h3 .hl-orange { color: var(--orange); }
+.showcase-text h3 .hl-purple { color: var(--purple); }
+.showcase-text p { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 1rem; }
+.showcase-text blockquote {
+  font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-dim);
+  border-left: 3px solid var(--border); padding-left: 1rem;
+  font-style: italic;
+}
+
+/* ── Coming soon ── */
+.coming {
+  text-align: center; padding: 6rem 2.5rem;
+  background: var(--text); color: var(--bg); border-radius: 32px;
+  margin: 0 1rem 3rem;
+}
+.coming h2 { font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; }
+.coming h2 .gradient {
+  background: linear-gradient(135deg, var(--orange), var(--purple), var(--teal));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.coming p { color: rgba(255,255,255,0.5); max-width: 420px; margin: 1rem auto 2rem; font-size: 0.95rem; }
+.coming-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: var(--font-display); font-weight: 600; font-size: 0.95rem;
+  text-decoration: none; color: var(--text); background: var(--bg);
+  padding: 0.8rem 2rem; border-radius: 100px;
+  transition: all 0.2s;
+}
+.coming-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+.coming-btn svg { width: 16px; height: 16px; }
+
+/* ── Footer ── */
+footer {
+  padding: 2rem 2.5rem; text-align: center;
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-dim);
+}
+footer a { color: var(--text-dim); text-decoration: none; }
+footer a:hover { color: var(--text); }
+
+/* ── Animations ── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(25px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.reveal { opacity: 0; transform: translateY(25px); transition: all 0.6s cubic-bezier(0.16,1,0.3,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .hero { padding: 8rem 1.5rem 2rem; }
+  .cards { grid-template-columns: 1fr; }
+  .showcase-block, .showcase-block.reverse { grid-template-columns: 1fr; direction: ltr; }
+  .coming { margin: 0 0.5rem 2rem; border-radius: 20px; padding: 4rem 1.5rem; }
+  .hero-actions { flex-direction: column; align-items: center; }
+  nav { padding: 0.8rem 1.2rem; }
+}
+
+[data-lang="en"] .ja { display: none; }
+[data-lang="ja"] .en { display: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">ccskill<span class="dot">.</span></div>
+  <div class="nav-right">
+    <button class="lang-btn" onclick="toggleLang()">
+      <span class="en">日本語</span><span class="ja">English</span>
+    </button>
+    <a class="gh-btn" href="https://github.com/feedtailor" target="_blank">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-img">
+    <img src="assets/hero-soft.jpg" alt="ccskill">
+  </div>
+  <div class="hero-badge">
+    <span class="en">Open Source &middot; feedtailor</span>
+    <span class="ja">オープンソース &middot; feedtailor</span>
+  </div>
+  <h1>
+    <span class="en">Give Claude Code<br><span class="gradient">new abilities.</span></span>
+    <span class="ja">Claude Code に<br><span class="gradient">新しい能力を。</span></span>
+  </h1>
+  <p class="hero-sub">
+    <span class="en">A growing collection of production-grade skills. Gmail, image generation, and more to come.</span>
+    <span class="ja">本番品質のスキルコレクション。Gmail 操作、画像生成、そしてその先へ。</span>
+  </p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="https://github.com/feedtailor" target="_blank">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      <span class="en">Get Started</span><span class="ja">始める</span>
+    </a>
+    <a class="btn-secondary" href="#skills">
+      <span class="en">See Skills</span><span class="ja">スキルを見る</span>
+    </a>
+  </div>
+</section>
+
+<section class="skills" id="skills">
+  <div class="skills-label">
+    <span class="en">Available Skills</span><span class="ja">公開中のスキル</span>
+  </div>
+  <div class="cards">
+    <div class="card card-gmail reveal">
+      <div class="card-accent"></div>
+      <div class="card-emoji">&#x2709;&#xFE0F;</div>
+      <h3>ccskill-gmail</h3>
+      <p class="card-desc">
+        <span class="en">Search, read, draft, organize — Gmail through natural language. Safe by design: no send API, opt-in delete, injection protection.</span>
+        <span class="ja">検索・閲覧・下書き・整理——自然言語で Gmail を操作。送信なし設計、インジェクション対策済み。</span>
+      </p>
+      <div class="card-tags">
+        <span class="tag"><span class="en">Search</span><span class="ja">検索</span></span>
+        <span class="tag"><span class="en">Draft</span><span class="ja">下書き</span></span>
+        <span class="tag"><span class="en">Attachments</span><span class="ja">添付DL</span></span>
+        <span class="tag"><span class="en">PDF Export</span><span class="ja">PDF保存</span></span>
+        <span class="tag"><span class="en">Audit Log</span><span class="ja">監査ログ</span></span>
+        <span class="tag"><span class="en">Safe</span><span class="ja">安全設計</span></span>
+      </div>
+      <a class="card-link" href="https://github.com/feedtailor/ccskill-gmail" target="_blank">
+        <span class="en">View on GitHub</span><span class="ja">GitHub で見る</span> &rarr;
+      </a>
+    </div>
+    <div class="card card-banana reveal">
+      <div class="card-accent"></div>
+      <div class="card-emoji">&#x1F3A8;</div>
+      <h3>ccskill-nanobanana</h3>
+      <p class="card-desc">
+        <span class="en">Image generation powered by Gemini — text-to-image, style transfer, in-painting, up to 4K. All from Claude Code.</span>
+        <span class="ja">Gemini による高品質画像生成。テキスト→画像、スタイル転写、インペインティング、最大4K。</span>
+      </p>
+      <div class="card-tags">
+        <span class="tag"><span class="en">Text to Image</span><span class="ja">テキスト→画像</span></span>
+        <span class="tag"><span class="en">Up to 4K</span><span class="ja">最大4K</span></span>
+        <span class="tag"><span class="en">Style Transfer</span><span class="ja">スタイル転写</span></span>
+        <span class="tag"><span class="en">In-painting</span><span class="ja">インペインティング</span></span>
+        <span class="tag"><span class="en">Identity Lock</span><span class="ja">キャラ一貫性</span></span>
+      </div>
+      <a class="card-link" href="https://github.com/feedtailor/ccskill-nanobanana" target="_blank">
+        <span class="en">View on GitHub</span><span class="ja">GitHub で見る</span> &rarr;
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="showcase">
+  <div class="showcase-block reveal">
+    <div class="showcase-img">
+      <img src="assets/hero-editorial.jpg" alt="Gmail skill in action">
+    </div>
+    <div class="showcase-text">
+      <h3>
+        <span class="en"><span class="hl-orange">Gmail</span> meets AI</span>
+        <span class="ja"><span class="hl-orange">Gmail</span> x AI</span>
+      </h3>
+      <p>
+        <span class="en">Search across hundreds of emails, download attachments in bulk, create handover documents — all with a single sentence.</span>
+        <span class="ja">数百通のメールを横断検索、添付を一括ダウンロード、引き継ぎ資料を作成——全て一言で。</span>
+      </p>
+      <blockquote>
+        <span class="en">"Find all receipt emails from the last 6 months and save the attached PDFs with standardized filenames"</span>
+        <span class="ja">「直近半年の領収書メールを探して、添付PDFを命名規則に沿って保存して」</span>
+      </blockquote>
+    </div>
+  </div>
+  <div class="showcase-block reverse reveal">
+    <div class="showcase-img">
+      <img src="assets/hero-dark.jpg" alt="Image generation">
+    </div>
+    <div class="showcase-text">
+      <h3>
+        <span class="en"><span class="hl-purple">Image gen</span> in your workflow</span>
+        <span class="ja">ワークフローに<span class="hl-purple">画像生成</span>を</span>
+      </h3>
+      <p>
+        <span class="en">Gemini-powered image generation, right inside Claude Code. Logos, illustrations, hero images — no context switching.</span>
+        <span class="ja">Gemini の画像生成をClaude Codeから直接。ロゴ、イラスト、ヒーロー画像——コンテキストスイッチ不要。</span>
+      </p>
+      <blockquote>
+        <span class="en">"Create a hero image — modern, bold, 16:9 in 4K"</span>
+        <span class="ja">「ヒーロー画像を作って——モダンで大胆に、16:9の4Kで」</span>
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<div class="coming reveal">
+  <h2>
+    <span class="en">More <span class="gradient">coming soon.</span></span>
+    <span class="ja"><span class="gradient">続々</span>公開予定。</span>
+  </h2>
+  <p>
+    <span class="en">We're building a growing library of Claude Code skills. All open source. All production-grade.</span>
+    <span class="ja">Claude Code スキルのライブラリを拡充中。全てオープンソース、全て本番品質。</span>
+  </p>
+  <a class="coming-btn" href="https://github.com/feedtailor" target="_blank">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    <span class="en">Follow on GitHub</span><span class="ja">GitHub をフォロー</span>
+  </a>
+</div>
+
+<footer>&copy; feedtailor Inc. &middot; <a href="https://github.com/feedtailor" target="_blank">github.com/feedtailor</a></footer>
+
+<script>
+function toggleLang() {
+  const h = document.documentElement;
+  h.dataset.lang = h.dataset.lang === 'en' ? 'ja' : 'en';
+}
+const obs = new IntersectionObserver(es => {
+  es.forEach((e, i) => {
+    if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80);
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

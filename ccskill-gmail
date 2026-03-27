@@ -7,8 +7,16 @@
 
 set -e
 
-# Resolve CCSKILL_GMAIL_DIR from this script's location
-CCSKILL_GMAIL_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Resolve CCSKILL_GMAIL_DIR from this script's location (follow symlinks)
+SCRIPT_PATH="$0"
+while [ -L "$SCRIPT_PATH" ]; do
+    LINK_TARGET=$(readlink "$SCRIPT_PATH")
+    case "$LINK_TARGET" in
+        /*) SCRIPT_PATH="$LINK_TARGET" ;;
+        *)  SCRIPT_PATH="$(dirname "$SCRIPT_PATH")/$LINK_TARGET" ;;
+    esac
+done
+CCSKILL_GMAIL_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 export CCSKILL_GMAIL_DIR
 
 if [ -f "$CCSKILL_GMAIL_DIR/VERSION" ]; then
@@ -24,6 +32,7 @@ ccskill-gmail - Gmail Skill for Claude Code
 Usage: ccskill-gmail <command> [args...]
 
 Commands:
+  setup                            One-time setup (clasp + symlink)
   install [--user NAME] [NAME] [DIR]  Install to a project
   uninstall [DIR]                  Uninstall from a project
   update [--force] [--yes] [DIR]   Update an installation
@@ -50,6 +59,9 @@ COMMAND="$1"
 shift
 
 case "$COMMAND" in
+    setup)
+        exec "$CCSKILL_GMAIL_DIR/commands/setup.sh" "$@"
+        ;;
     install)
         exec "$CCSKILL_GMAIL_DIR/commands/install.sh" "$@"
         ;;

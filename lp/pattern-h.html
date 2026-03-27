@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ccskill — Claude Code Skills by feedtailor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Geist+Mono:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* === Reset & Base === */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Bricolage Grotesque', 'Noto Sans JP', sans-serif;
+  background: #fefcf9;
+  color: #1a1a1a;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: 'Geist Mono', monospace; }
+
+/* === Colors === */
+:root {
+  --orange: #ff6b35;
+  --purple: #7b61ff;
+  --teal: #00c2a8;
+  --bg: #fefcf9;
+  --bg-alt: #f6f3ee;
+  --dark: #1a1a1a;
+  --gray: #6b6b6b;
+  --light-gray: #e8e4df;
+  --radius: 24px;
+  --radius-sm: 12px;
+}
+
+/* === Utility === */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* === Scroll Reveal === */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* === Nav === */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(254, 252, 249, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  padding: 14px 0;
+}
+nav .container {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 1.35rem; font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.nav-logo span { color: var(--orange); }
+.nav-right { display: flex; align-items: center; gap: 10px; }
+.lang-toggle {
+  display: flex; background: var(--light-gray); border-radius: 50px;
+  overflow: hidden; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+}
+.lang-toggle button {
+  border: none; background: transparent; padding: 6px 14px;
+  cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 600;
+  color: var(--gray); transition: all 0.25s;
+}
+.lang-toggle button.active {
+  background: var(--dark); color: #fff; border-radius: 50px;
+}
+.nav-gh {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--dark); color: #fff; padding: 7px 16px;
+  border-radius: 50px; font-size: 0.8rem; font-weight: 600;
+  transition: background 0.2s;
+}
+.nav-gh:hover { background: #333; }
+.nav-gh svg { width: 16px; height: 16px; fill: #fff; }
+
+/* === Hero === */
+.hero {
+  position: relative; padding: 160px 0 100px;
+  text-align: center; overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background: url('assets/hero-soft.jpg') center/cover no-repeat;
+  opacity: 0.12;
+}
+.hero .container { position: relative; z-index: 1; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(123, 97, 255, 0.08); color: var(--purple);
+  padding: 8px 20px; border-radius: 50px;
+  font-size: 0.85rem; font-weight: 600;
+  margin-bottom: 28px;
+}
+.hero-badge::before {
+  content: ''; width: 8px; height: 8px;
+  background: var(--teal); border-radius: 50%;
+}
+.hero h1 {
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  font-weight: 800; line-height: 1.12;
+  letter-spacing: -1.5px; max-width: 800px; margin: 0 auto 24px;
+}
+.hero h1 .gradient {
+  background: linear-gradient(135deg, var(--orange) 0%, var(--purple) 60%, var(--teal) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero .subtitle {
+  font-size: 1.2rem; color: var(--gray); max-width: 560px;
+  margin: 0 auto 40px; line-height: 1.7;
+}
+.hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--orange); color: #fff;
+  padding: 14px 32px; border-radius: 50px;
+  font-size: 1rem; font-weight: 600;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: none; cursor: pointer; font-family: inherit;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,107,53,0.3); }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; color: var(--dark);
+  padding: 14px 32px; border-radius: 50px;
+  font-size: 1rem; font-weight: 600;
+  border: 2px solid var(--light-gray);
+  transition: border-color 0.2s; cursor: pointer; font-family: inherit;
+}
+.btn-secondary:hover { border-color: var(--dark); }
+
+/* === Section Shared === */
+.section { padding: 100px 0; }
+.section-alt { background: var(--bg-alt); }
+.section-tag {
+  display: inline-block; font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2px;
+  color: var(--purple); margin-bottom: 12px;
+}
+.section-title {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 800; letter-spacing: -1px;
+  line-height: 1.2; margin-bottom: 16px;
+}
+.section-desc {
+  font-size: 1.05rem; color: var(--gray);
+  line-height: 1.8; margin-bottom: 28px; max-width: 540px;
+}
+
+/* === Feature Tags === */
+.feature-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+.feature-tag {
+  background: rgba(123,97,255,0.07); color: var(--purple);
+  padding: 6px 16px; border-radius: 50px;
+  font-size: 0.8rem; font-weight: 600;
+}
+.feature-tag.teal { background: rgba(0,194,168,0.08); color: var(--teal); }
+.feature-tag.orange { background: rgba(255,107,53,0.08); color: var(--orange); }
+
+/* === Skill Nanobanana === */
+.skill-nano .skill-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start;
+}
+.skill-nano .skill-text { padding-top: 20px; }
+
+/* Gallery */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 16px;
+}
+.gallery-item {
+  position: relative; overflow: hidden;
+  border-radius: 16px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.gallery-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+}
+.gallery-item img {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block;
+}
+.gallery-item:first-child {
+  grid-row: 1 / 3;
+}
+.gallery-caption {
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.75rem; color: var(--gray);
+  padding: 10px 0 0; line-height: 1.5;
+  font-style: italic;
+}
+
+/* === Prompt Examples === */
+.prompt-examples { margin-top: 32px; }
+.prompt-examples h4 {
+  font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--gray); margin-bottom: 16px;
+}
+blockquote {
+  border-left: 3px solid var(--orange);
+  padding: 10px 0 10px 20px;
+  margin: 0 0 12px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #444;
+  line-height: 1.6;
+}
+
+/* === Skill Gmail === */
+.skill-gmail .skill-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+}
+.skill-gmail .skill-image {
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+}
+.skill-gmail .skill-image img {
+  width: 100%; display: block;
+}
+
+/* === GitHub Link === */
+.gh-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--orange); font-weight: 600; font-size: 0.95rem;
+  margin-top: 8px; transition: gap 0.2s;
+}
+.gh-link:hover { gap: 12px; }
+
+/* === Coming Soon === */
+.coming-soon {
+  background: var(--dark); color: #fff;
+  border-radius: var(--radius); padding: 64px;
+  text-align: center; margin: 0 24px;
+  max-width: 1200px; margin-left: auto; margin-right: auto;
+}
+.coming-soon .section-tag { color: var(--teal); }
+.coming-soon h2 {
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  font-weight: 800; letter-spacing: -0.5px; margin-bottom: 16px;
+}
+.coming-soon p { color: #999; font-size: 1.05rem; max-width: 480px; margin: 0 auto; }
+
+/* === Footer === */
+footer {
+  padding: 60px 0 40px; text-align: center;
+  border-top: 1px solid var(--light-gray); margin-top: 80px;
+}
+footer .footer-logo { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; }
+footer .footer-logo span { color: var(--orange); }
+footer p { color: var(--gray); font-size: 0.85rem; }
+footer .footer-links {
+  display: flex; gap: 24px; justify-content: center;
+  margin-top: 16px;
+}
+footer .footer-links a {
+  color: var(--gray); font-size: 0.85rem; font-weight: 500;
+  transition: color 0.2s;
+}
+footer .footer-links a:hover { color: var(--dark); }
+
+/* === Responsive === */
+@media (max-width: 860px) {
+  .skill-nano .skill-grid,
+  .skill-gmail .skill-grid {
+    grid-template-columns: 1fr; gap: 40px;
+  }
+  .skill-gmail .skill-grid { direction: ltr; }
+  .gallery-grid { grid-template-columns: 1fr 1fr; }
+  .gallery-item:first-child { grid-row: auto; }
+  .coming-soon { padding: 48px 28px; margin: 0 16px; }
+}
+@media (max-width: 540px) {
+  .hero { padding: 130px 0 70px; }
+  .hero h1 { font-size: 2.2rem; }
+  .gallery-grid { grid-template-columns: 1fr; }
+  .hero-btns { flex-direction: column; align-items: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="container">
+    <div class="nav-logo">cc<span>skill.</span></div>
+    <div class="nav-right">
+      <div class="lang-toggle">
+        <button class="active" data-lang="en">EN</button>
+        <button data-lang="ja">JA</button>
+      </div>
+      <a href="https://github.com/feedtailor" target="_blank" class="nav-gh">
+        <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.31 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.02 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58C20.56 21.8 24 17.3 24 12 24 5.37 18.63 0 12 0z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="container">
+    <div class="reveal">
+      <div class="hero-badge">
+        <span data-en="Open Source" data-ja="Open Source">Open Source</span>&nbsp;&middot;&nbsp;feedtailor
+      </div>
+      <h1>
+        <span class="gradient" data-en="Your workflow, supercharged." data-ja="ワークフローを、加速する。">Your workflow, supercharged.</span>
+      </h1>
+      <p class="subtitle" data-en="A growing collection of open-source skills that plug into Claude Code — designed to handle real tasks so you can focus on what matters." data-ja="Claude Code にプラグインするオープンソースのスキル群。実務タスクを任せて、あなたは本質に集中できます。">A growing collection of open-source skills that plug into Claude Code — designed to handle real tasks so you can focus on what matters.</p>
+      <div class="hero-btns">
+        <a href="#skills" class="btn-primary" data-en="Get Started" data-ja="はじめる">Get Started</a>
+        <a href="#nano" class="btn-secondary" data-en="See Skills" data-ja="スキル一覧">See Skills</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Skill 1: nanobanana -->
+<section class="section skill-nano" id="nano">
+  <div class="container">
+    <div class="skill-grid">
+      <div class="skill-text reveal">
+        <div class="section-tag">Skill</div>
+        <h2 class="section-title">ccskill-nanobanana</h2>
+        <p class="section-desc" data-en="Generate production-ready images directly from Claude Code. Logos, hero images, illustrations, product photography — just describe what you need." data-ja="Claude Code から直接、本番品質の画像を生成。ロゴ、ヒーロー画像、イラスト、プロダクトフォト——必要なものを言葉で伝えるだけ。">Generate production-ready images directly from Claude Code. Logos, hero images, illustrations, product photography — just describe what you need.</p>
+        <div class="feature-tags">
+          <span class="feature-tag orange" data-en="Image Generation" data-ja="画像生成">Image Generation</span>
+          <span class="feature-tag" data-en="Multiple Aspect Ratios" data-ja="複数アスペクト比">Multiple Aspect Ratios</span>
+          <span class="feature-tag teal" data-en="Auto-Save to Project" data-ja="プロジェクトに自動保存">Auto-Save to Project</span>
+        </div>
+        <div class="prompt-examples">
+          <h4 data-en="Prompt Examples" data-ja="プロンプト例">Prompt Examples</h4>
+          <blockquote data-en="&ldquo;Create a logo for our new coffee brand — minimal, warm tones&rdquo;" data-ja="「新しいコーヒーブランドのロゴを作って——ミニマルで暖色系」">&ldquo;Create a logo for our new coffee brand — minimal, warm tones&rdquo;</blockquote>
+          <blockquote data-en="&ldquo;Generate a hero image for the landing page — modern, 16:9, 4K&rdquo;" data-ja="「LPのヒーロー画像を生成して——モダン、16:9、4K」">&ldquo;Generate a hero image for the landing page — modern, 16:9, 4K&rdquo;</blockquote>
+          <blockquote data-en="&ldquo;Make an isometric illustration of a home office workspace&rdquo;" data-ja="「ホームオフィスのアイソメトリックイラストを作って」">&ldquo;Make an isometric illustration of a home office workspace&rdquo;</blockquote>
+          <blockquote data-en="&ldquo;Product photo of wireless earbuds — dramatic lighting on dark marble&rdquo;" data-ja="「ワイヤレスイヤホンのプロダクトフォト——ダークマーブルに劇的な照明で」">&ldquo;Product photo of wireless earbuds — dramatic lighting on dark marble&rdquo;</blockquote>
+        </div>
+        <a href="https://github.com/feedtailor/ccskill-nanobanana" target="_blank" class="gh-link">View on GitHub &rarr;</a>
+      </div>
+      <div class="reveal">
+        <div class="gallery-grid">
+          <div class="gallery-item">
+            <img src="assets/showcase-logo.jpg" alt="Minimal coffee brand logo">
+            <div class="gallery-caption" data-en="&ldquo;A minimal logo for a coffee brand called MORGEN&rdquo;" data-ja="「MOGENというコーヒーブランドのミニマルなロゴ」">&ldquo;A minimal logo for a coffee brand called MORGEN&rdquo;</div>
+          </div>
+          <div class="gallery-item">
+            <img src="assets/showcase-illustration.jpg" alt="Isometric home office illustration">
+            <div class="gallery-caption" data-en="&ldquo;Isometric illustration of a cozy home office&rdquo;" data-ja="「居心地のよいホームオフィスのアイソメトリックイラスト」">&ldquo;Isometric illustration of a cozy home office&rdquo;</div>
+          </div>
+          <div class="gallery-item">
+            <img src="assets/showcase-product.jpg" alt="Wireless earbuds product photo">
+            <div class="gallery-caption" data-en="&ldquo;Product photo of wireless earbuds on dark marble&rdquo;" data-ja="「ダークマーブルの上のワイヤレスイヤホンのプロダクトフォト」">&ldquo;Product photo of wireless earbuds on dark marble&rdquo;</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Skill 2: Gmail -->
+<section class="section section-alt skill-gmail" id="gmail">
+  <div class="container">
+    <div class="skill-grid">
+      <div class="skill-image reveal">
+        <img src="assets/hero-editorial.jpg" alt="ccskill-gmail">
+      </div>
+      <div class="skill-text reveal">
+        <div class="section-tag">Skill</div>
+        <h2 class="section-title">ccskill-gmail</h2>
+        <p class="section-desc" data-en="Search, read, organize, and draft replies — all from Claude Code. Read-first design with draft-only sending keeps you in full control." data-ja="検索、閲覧、整理、返信下書き——すべて Claude Code から。読み取り優先設計と下書きのみの送信で、あなたが常にコントロール。">Search, read, organize, and draft replies — all from Claude Code. Read-first design with draft-only sending keeps you in full control.</p>
+        <div class="feature-tags">
+          <span class="feature-tag orange" data-en="Search & Read" data-ja="検索 & 閲覧">Search & Read</span>
+          <span class="feature-tag" data-en="Draft-Only Sending" data-ja="下書きのみの送信">Draft-Only Sending</span>
+          <span class="feature-tag teal" data-en="Labels & Organize" data-ja="ラベル & 整理">Labels & Organize</span>
+          <span class="feature-tag" data-en="Safe by Design" data-ja="安全設計">Safe by Design</span>
+        </div>
+        <div class="prompt-examples">
+          <h4 data-en="Prompt Examples" data-ja="プロンプト例">Prompt Examples</h4>
+          <blockquote data-en="&ldquo;Show me unread emails from today&rdquo;" data-ja="「今日の未読メールを見せて」">&ldquo;Show me unread emails from today&rdquo;</blockquote>
+          <blockquote data-en="&ldquo;Find receipt emails from ACME Corp, last 6 months, save attached PDFs with standardized filenames&rdquo;" data-ja="「ACME社からの領収書メールを直近半年分探して、添付PDFを命名規則で保存して」">&ldquo;Find receipt emails from ACME Corp, last 6 months, save attached PDFs with standardized filenames&rdquo;</blockquote>
+          <blockquote data-en="&ldquo;Trace all emails with John at ACME, create a handover doc with open tasks, export as Excel&rdquo;" data-ja="「ACME社のJohnさんとのやり取りを全て遡り、引き継ぎ資料を作成して。一覧はExcelで」">&ldquo;Trace all emails with John at ACME, create a handover doc with open tasks, export as Excel&rdquo;</blockquote>
+          <blockquote data-en="&ldquo;Find unreplied external emails from past month, list by sender/subject/days, draft follow-ups&rdquo;" data-ja="「過去1ヶ月の未返信メールを洗い出して一覧化。重要なものにはフォローアップの下書きも」">&ldquo;Find unreplied external emails from past month, list by sender/subject/days, draft follow-ups&rdquo;</blockquote>
+          <blockquote data-en="&ldquo;Review all external emails this week, categorize as needs-reply/FYI/resolved, compile weekly report&rdquo;" data-ja="「今週の社外メールを全件レビュー、分類して週次レポートに」">&ldquo;Review all external emails this week, categorize as needs-reply/FYI/resolved, compile weekly report&rdquo;</blockquote>
+        </div>
+        <a href="https://github.com/feedtailor/ccskill-gmail" target="_blank" class="gh-link">View on GitHub &rarr;</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Coming Soon -->
+<section class="section" id="coming-soon">
+  <div class="coming-soon reveal">
+    <div class="section-tag" data-en="Coming Soon" data-ja="Coming Soon">Coming Soon</div>
+    <h2 data-en="More skills on the way." data-ja="さらなるスキルを準備中。">More skills on the way.</h2>
+    <p data-en="We're building more skills to extend Claude Code into new domains. Stay tuned — or contribute your own." data-ja="Claude Code の可能性を広げるスキルを開発中。フォローして最新情報をチェック、あるいはコントリビュートも歓迎です。">We're building more skills to extend Claude Code into new domains. Stay tuned — or contribute your own.</p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-logo">cc<span>skill.</span></div>
+    <p data-en="Open-source Claude Code skills by feedtailor Inc." data-ja="feedtailor Inc. によるオープンソース Claude Code スキル">Open-source Claude Code skills by feedtailor Inc.</p>
+    <div class="footer-links">
+      <a href="https://github.com/feedtailor" target="_blank">GitHub</a>
+      <a href="https://github.com/feedtailor/ccskill-nanobanana" target="_blank">nanobanana</a>
+      <a href="https://github.com/feedtailor/ccskill-gmail" target="_blank">gmail</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// === Language Toggle ===
+const langBtns = document.querySelectorAll('.lang-toggle button');
+let currentLang = 'en';
+
+langBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const lang = btn.dataset.lang;
+    if (lang === currentLang) return;
+    currentLang = lang;
+    langBtns.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+    document.querySelectorAll('[data-en]').forEach(el => {
+      el.innerHTML = el.getAttribute('data-' + lang);
+    });
+    document.documentElement.lang = lang;
+  });
+});
+
+// === Scroll Reveal ===
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+reveals.forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

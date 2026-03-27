@@ -109,7 +109,7 @@ if [ ! -f "$METADATA_FILE" ]; then
 else
     if command -v jq &> /dev/null; then
         CURRENT_VERSION=$(jq -r '.version' "$METADATA_FILE" 2>/dev/null || echo "unknown")
-        CLASP_USER=$(jq -r '.clasp_user // empty' "$METADATA_FILE" 2>/dev/null)
+        _CLASP_USER=$(jq -r '.clasp_user // empty' "$METADATA_FILE" 2>/dev/null)
     else
         CURRENT_VERSION=$(grep -o '"version": "[^"]*"' "$METADATA_FILE" | cut -d'"' -f4 || echo "unknown")
     fi
@@ -194,6 +194,15 @@ fi
 if [ -f "$CCSKILL_GMAIL_DIR/lib/api" ]; then
     /bin/cp "$CCSKILL_GMAIL_DIR/lib/api" "$GAS_DIR/api"
     chmod +x "$GAS_DIR/api"
+fi
+
+# clasp --user 名を設定（メタデータから取得）
+if [ -f "$METADATA_FILE" ] && command -v jq &>/dev/null; then
+    _clasp_user_val=$(jq -r '.clasp_user // empty' "$METADATA_FILE" 2>/dev/null)
+    if [ -n "$_clasp_user_val" ]; then
+        _CLASP_USER="$_clasp_user_val"
+        export _CLASP_USER
+    fi
 fi
 
 # ディレクトリ保護
