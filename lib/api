@@ -68,6 +68,15 @@ _api_init() {
         return 1
     fi
 
+    # _CLASP_USER をメタデータから設定（auth.sh が ~/.clasprc.json の該当エントリを参照）
+    if [ -z "${_CLASP_USER:-}" ] && [ -f "$metadata_file" ] && command -v jq &>/dev/null; then
+        local _clasp_user_val
+        _clasp_user_val=$(jq -r '.clasp_user // empty' "$metadata_file" 2>/dev/null)
+        if [ -n "$_clasp_user_val" ]; then
+            export _CLASP_USER="$_clasp_user_val"
+        fi
+    fi
+
     # auth.sh を読み込み（マスターの lib/ → 後方互換でローカルもフォールバック）
     if [ -f "$_MASTER_DIR/lib/auth.sh" ]; then
         # shellcheck source=/dev/null

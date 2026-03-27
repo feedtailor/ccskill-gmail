@@ -54,7 +54,7 @@ flowchart LR
 ## 必要なもの
 
 - Google アカウント
-- Node.js（clasp のため）
+- Node.js / npm
 - jq（`brew install jq`）
 - Bash 環境（macOS, Linux, WSL）
 
@@ -76,30 +76,16 @@ cd ~/projects
 unzip ccskill-gmail-XXXXXX.zip
 ```
 
-### 2. PATH に追加
+### 2. セットアップ
 
-`~/.zshrc` または `~/.bashrc` に以下を追加:
-
-```bash
-export PATH="$HOME/projects/ccskill-gmail:$PATH"
-```
-
-有効化:
+clasp のローカルインストール、PATH への登録、Google ログインを一括で行います。
 
 ```bash
-source ~/.zshrc  # または source ~/.bashrc
+cd ~/projects/ccskill-gmail
+./ccskill-gmail setup
 ```
 
-### 3. clasp のインストールとログイン
-
-[clasp](https://github.com/nicholaschiang/clasp) は Google Apps Script をコマンドラインから管理するツールです。このスキルでは GAS プロジェクトの作成・デプロイ・OAuth 認証に使用します。
-
-```bash
-npm install -g @google/clasp
-clasp login
-```
-
-### 4. プロジェクトにインストール
+### 3. プロジェクトにインストール
 
 ```bash
 cd /path/to/your-project

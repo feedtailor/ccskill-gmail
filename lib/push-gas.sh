@@ -18,6 +18,9 @@
 #   $4 - RESULT_FILE: File path to write deployment ID to (optional)
 #
 
+# Load clasp helper
+source "$CCSKILL_GMAIL_DIR/lib/clasp.sh"
+
 push_gas() {
     local GAS_DIR="$1"
     local MASTER_DIR="$2"
@@ -74,7 +77,7 @@ push_gas() {
     fi
 
     # 5. clasp push from temp directory
-    (cd "$TMPDIR" && clasp push --force)
+    (cd "$TMPDIR" && _clasp push --force)
 }
 
 deploy_gas() {
@@ -107,10 +110,10 @@ deploy_gas() {
     local OUTPUT
     local EXIT_CODE
     if [ -n "$DEPLOYMENT_ID" ]; then
-        OUTPUT=$(cd "$TMPDIR" && clasp deploy -i "$DEPLOYMENT_ID" --description "$DESCRIPTION" 2>&1)
+        OUTPUT=$(cd "$TMPDIR" && _clasp deploy -i "$DEPLOYMENT_ID" --description "$DESCRIPTION" 2>&1)
         EXIT_CODE=$?
     else
-        OUTPUT=$(cd "$TMPDIR" && clasp deploy --description "$DESCRIPTION" 2>&1)
+        OUTPUT=$(cd "$TMPDIR" && _clasp deploy --description "$DESCRIPTION" 2>&1)
         EXIT_CODE=$?
     fi
 
@@ -124,9 +127,12 @@ deploy_gas() {
         return 1
     fi
 
-    # Extract deployment ID from clasp output (format: "Deployed DEPLOY_ID @VERSION")
+    # Extract deployment ID from clasp output
+    # Old format: "Deployed DEPLOY_ID @VERSION"
+    # New format: "- DEPLOY_ID @VERSION."
+    # Filter to lines containing "@N" (version marker) to avoid matching status lines like "- Deploying project…"
     local DEPLOY_ID
-    DEPLOY_ID=$(echo "$OUTPUT" | grep -oE '^Deployed [^ ]+' | head -1 | sed 's/^Deployed //')
+    DEPLOY_ID=$(echo "$OUTPUT" | grep '@[0-9]' | grep -oE '(^Deployed |^- )[A-Za-z0-9_-]+' | head -1 | sed 's/^Deployed //; s/^- //')
 
     if [ -z "$DEPLOY_ID" ]; then
         echo "Error: Could not extract deployment ID from clasp output"
