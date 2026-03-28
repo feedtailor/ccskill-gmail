@@ -20,7 +20,10 @@ setup_permissions() {
     local target_dir="$1"
     local auto_yes="${2:-}"
     local settings_file="$target_dir/.claude/settings.local.json"
-    local patterns=("Bash(.ccskill-gmail/api *)")
+    local patterns=(
+        "Bash(.ccskill-gmail/api *)"
+        "Write(/tmp/*)"
+    )
     local missing_patterns=()
 
     # jq が必要
