@@ -73,6 +73,8 @@ ccskill-gmail/
 - `add_label` / `remove_label` / `mark_read` / `mark_unread`
 - `archive` / `move_to_trash`
 
+**注意**: アクション追加時は `main.js` 先頭の `GET_ACTIONS` / `POST_ACTIONS` 定数も更新すること（WRONG_METHOD エラー検出に使用）
+
 ## GAS スコープ
 
 ```json

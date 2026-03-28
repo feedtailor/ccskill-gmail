@@ -5,6 +5,22 @@
  * Phase 1: search, get_thread, get_message, list_labels, create_draft
  */
 
+/** GET アクション名一覧 */
+var GET_ACTIONS = [
+  'search', 'get_thread', 'get_message', 'list_labels',
+  'get_unread_count', 'list_attachments', 'get_attachment',
+  'get_message_html', 'list_drafts', 'get_profile'
+];
+
+/** POST アクション名一覧 */
+var POST_ACTIONS = [
+  'create_draft', 'create_reply_draft', 'mark_read', 'mark_unread',
+  'add_label', 'remove_label', 'archive', 'move_to_trash',
+  'update_draft', 'delete_draft',
+  'bulk_mark_read', 'bulk_mark_unread', 'bulk_add_label',
+  'bulk_remove_label', 'bulk_archive'
+];
+
 /**
  * Handle GET requests (read operations)
  * @param {Object} e - Event object with query parameters
@@ -77,8 +93,12 @@ function doGet(e) {
         return handleGetProfile();
 
       default:
+        if (POST_ACTIONS.indexOf(action) !== -1) {
+          return errorResponse(action + ' は POST メソッドで呼び出してください',
+            { code: 'WRONG_METHOD', hint: '使い方: .ccskill-gmail/api post \'{"action":"' + action + '",...}\'', retryable: false });
+        }
         return errorResponse('Unknown action: ' + action,
-          { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。利用可能: search, get_thread, get_message, list_labels, get_unread_count, list_attachments, get_attachment, get_message_html, list_drafts, get_profile', retryable: false });
+          { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。GET で利用可能: ' + GET_ACTIONS.join(', ') + ' / POST で利用可能: ' + POST_ACTIONS.join(', '), retryable: false });
     }
   } catch (error) {
     // requireParam の throw はパラメータ不足
@@ -196,8 +216,12 @@ function doPost(e) {
         return handleBulkArchive(body.threadIds, body.dryRun);
 
       default:
+        if (GET_ACTIONS.indexOf(action) !== -1) {
+          return errorResponse(action + ' は GET メソッドで呼び出してください',
+            { code: 'WRONG_METHOD', hint: '使い方: .ccskill-gmail/api get action=' + action, retryable: false });
+        }
         return errorResponse('Unknown action: ' + action,
-          { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。利用可能: create_draft, create_reply_draft, mark_read, mark_unread, add_label, remove_label, archive, move_to_trash, update_draft, delete_draft, bulk_mark_read, bulk_mark_unread, bulk_add_label, bulk_remove_label, bulk_archive', retryable: false });
+          { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。GET で利用可能: ' + GET_ACTIONS.join(', ') + ' / POST で利用可能: ' + POST_ACTIONS.join(', '), retryable: false });
     }
   } catch (error) {
     var errMsg = error.message || String(error);
