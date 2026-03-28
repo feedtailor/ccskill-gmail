@@ -124,6 +124,12 @@ cd ~/projects/ftgmail
 - Bash ツールでは `$()` を避けてパイプで繋ぐ（`$()` は sandbox の確認プロンプトを発生させる）
 - curl の exit code 56 やレスポンスが HTML の場合、まず OAuth トークン期限切れを疑う（`auth.sh` の `gas_token` が自動リフレッシュする仕組みがある。sandbox でリフレッシュがブロックされる場合は sandbox 無効化が必要）
 
+## コミットメッセージ規約
+
+1行目は `type: 概要 (#issue番号)` 形式とする。`ccskill-gmail update` 時の履歴表示でパースされるため、1行目は簡潔に。
+
+- type: `feat` / `fix` / `docs` / `refactor` / `chore`
+
 ## コード規約
 
 - シェルスクリプト: `cp` ではなく `/bin/cp` を使用（macOS alias 対策）
