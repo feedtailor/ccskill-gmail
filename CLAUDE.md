@@ -73,6 +73,8 @@ ccskill-gmail/
 - `add_label` / `remove_label` / `mark_read` / `mark_unread`
 - `archive` / `move_to_trash`
 
+**注意**: アクション追加時は `main.js` 先頭の `GET_ROUTES` / `POST_ROUTES` テーブルにハンドラを追加すること。switch 文は存在しない（テーブル駆動方式）。ルーティング・WRONG_METHOD 検出・アクション一覧はすべてテーブルから自動生成される。
+
 ## GAS スコープ
 
 ```json
