@@ -128,9 +128,18 @@ cd ~/projects/ftgmail
 
 ## コミットメッセージ規約
 
-1行目は `type: 概要 (#issue番号)` 形式とする。`ccskill-gmail update` 時の履歴表示でパースされるため、1行目は簡潔に。
+1行目は `type: 概要 (#issue番号)` 形式（Conventional Commits）。
 
-- type: `feat` / `fix` / `docs` / `refactor` / `chore`
+| type | 用途 | update 時の履歴表示 |
+|------|------|-------------------|
+| `feat` | 新機能 | 表示される |
+| `fix` | バグ修正 | 表示される |
+| `docs` | ドキュメントのみ | 表示されない |
+| `refactor` | リファクタ | 表示されない |
+| `chore` | 雑務（CI、依存更新等） | 表示されない |
+| `test` | テスト | 表示されない |
+
+`ccskill-gmail update` の履歴表示は `feat:` と `fix:` のみ抽出する（マージコミットも除外）。ユーザーに影響する変更だけを見せるため。
 
 ## コード規約
 

@@ -146,10 +146,10 @@ fi
 
 # 変更内容表示（git がある場合のみ）
 if [ "$CURRENT_VERSION" != "unknown" ] && [ "$GLOBAL_VERSION" != "unknown" ] && [ -d "$CCSKILL_GMAIL_DIR/.git" ]; then
-    TOTAL_COMMITS=$(cd "$CCSKILL_GMAIL_DIR" && git rev-list --count "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null || echo "0")
-    echo "Changes ($TOTAL_COMMITS commits):"
+    TOTAL_COMMITS=$(cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --no-merges --format="%s" "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null | grep -cE "^(feat|fix):" || echo "0")
+    echo "Changes ($TOTAL_COMMITS):"
     echo "--------"
-    (cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --format="  %cd  %s" --date=short "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null) || echo "  (Unable to show changes)"
+    (cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --no-merges --format="  %cd  %s" --date=short "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null | grep -E "^  [0-9]{4}-[0-9]{2}-[0-9]{2}  (feat|fix):") || echo "  (Unable to show changes)"
     echo ""
 fi
 
