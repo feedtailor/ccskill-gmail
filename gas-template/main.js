@@ -5,21 +5,41 @@
  * Phase 1: search, get_thread, get_message, list_labels, create_draft
  */
 
-/** GET アクション名一覧 */
-var GET_ACTIONS = [
-  'search', 'get_thread', 'get_message', 'list_labels',
-  'get_unread_count', 'list_attachments', 'get_attachment',
-  'get_message_html', 'list_drafts', 'get_profile'
-];
+/** GET ルーティングテーブル: アクション名 → ハンドラ関数 */
+var GET_ROUTES = {
+  search:           function(e) { return handleSearch(e.parameter.query, parseInt(e.parameter.maxResults) || 20); },
+  get_thread:       function(e) { return handleGetThread(e.parameter.threadId); },
+  get_message:      function(e) { return handleGetMessage(e.parameter.messageId); },
+  list_labels:      function(e) { return handleListLabels(); },
+  get_unread_count: function(e) { return handleGetUnreadCount(e.parameter.label); },
+  list_attachments: function(e) { return handleListAttachments(e.parameter.messageId); },
+  get_attachment:   function(e) { return handleGetAttachment(e.parameter.messageId, e.parameter.attachmentIndex); },
+  get_message_html: function(e) { return handleGetMessageHtml(e.parameter.messageId, e.parameter.includeHeaders); },
+  list_drafts:      function(e) { return handleListDrafts(parseInt(e.parameter.maxResults) || 20); },
+  get_profile:      function(e) { return handleGetProfile(); }
+};
 
-/** POST アクション名一覧 */
-var POST_ACTIONS = [
-  'create_draft', 'create_reply_draft', 'mark_read', 'mark_unread',
-  'add_label', 'remove_label', 'archive', 'move_to_trash',
-  'update_draft', 'delete_draft',
-  'bulk_mark_read', 'bulk_mark_unread', 'bulk_add_label',
-  'bulk_remove_label', 'bulk_archive'
-];
+/** POST ルーティングテーブル: アクション名 → ハンドラ関数 */
+var POST_ROUTES = {
+  create_draft:       function(b) { return handleCreateDraft(b.to, b.subject, b.body, b.cc, b.bcc, b.htmlBody, b.attachments); },
+  create_reply_draft: function(b) { return handleCreateReplyDraft(b.threadId, b.body, b.cc, b.bcc, b.htmlBody, b.attachments, b.skipSelf, b.replyAll); },
+  mark_read:          function(b) { return handleMarkRead(b.threadId, b.messageId); },
+  mark_unread:        function(b) { return handleMarkUnread(b.threadId, b.messageId); },
+  add_label:          function(b) { return handleAddLabel(b.threadId, b.messageId, b.label); },
+  remove_label:       function(b) { return handleRemoveLabel(b.threadId, b.messageId, b.label); },
+  archive:            function(b) { return handleArchive(b.threadId); },
+  move_to_trash:      function(b) { return handleMoveToTrash(b.threadId); },
+  update_draft:       function(b) { return handleUpdateDraft(b.draftId, b.to, b.subject, b.body, b.cc, b.bcc, b.htmlBody); },
+  delete_draft:       function(b) { return handleDeleteDraft(b.draftId); },
+  bulk_mark_read:     function(b) { return handleBulkMarkRead(b.threadIds, b.dryRun); },
+  bulk_mark_unread:   function(b) { return handleBulkMarkUnread(b.threadIds, b.dryRun); },
+  bulk_add_label:     function(b) { return handleBulkAddLabel(b.threadIds, b.label, b.dryRun); },
+  bulk_remove_label:  function(b) { return handleBulkRemoveLabel(b.threadIds, b.label, b.dryRun); },
+  bulk_archive:       function(b) { return handleBulkArchive(b.threadIds, b.dryRun); }
+};
+
+var GET_ACTIONS = Object.keys(GET_ROUTES);
+var POST_ACTIONS = Object.keys(POST_ROUTES);
 
 /**
  * Handle GET requests (read operations)
@@ -50,56 +70,16 @@ function doGet(e) {
     }
 
     // Route to appropriate handler
-    switch (action) {
-      case 'search':
-        return handleSearch(
-          e.parameter.query,
-          parseInt(e.parameter.maxResults) || 20
-        );
-
-      case 'get_thread':
-        return handleGetThread(e.parameter.threadId);
-
-      case 'get_message':
-        return handleGetMessage(e.parameter.messageId);
-
-      case 'list_labels':
-        return handleListLabels();
-
-      case 'get_unread_count':
-        return handleGetUnreadCount(e.parameter.label);
-
-      case 'list_attachments':
-        return handleListAttachments(e.parameter.messageId);
-
-      case 'get_attachment':
-        return handleGetAttachment(
-          e.parameter.messageId,
-          e.parameter.attachmentIndex
-        );
-
-      case 'get_message_html':
-        return handleGetMessageHtml(
-          e.parameter.messageId,
-          e.parameter.includeHeaders
-        );
-
-      case 'list_drafts':
-        return handleListDrafts(
-          parseInt(e.parameter.maxResults) || 20
-        );
-
-      case 'get_profile':
-        return handleGetProfile();
-
-      default:
-        if (POST_ACTIONS.indexOf(action) !== -1) {
-          return errorResponse(action + ' は POST メソッドで呼び出してください',
-            { code: 'WRONG_METHOD', hint: '使い方: .ccskill-gmail/api post \'{"action":"' + action + '",...}\'', retryable: false });
-        }
-        return errorResponse('Unknown action: ' + action,
-          { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。GET で利用可能: ' + GET_ACTIONS.join(', ') + ' / POST で利用可能: ' + POST_ACTIONS.join(', '), retryable: false });
+    var handler = GET_ROUTES[action];
+    if (handler) {
+      return handler(e);
     }
+    if (POST_ROUTES[action]) {
+      return errorResponse(action + ' は POST メソッドで呼び出してください',
+        { code: 'WRONG_METHOD', hint: '使い方: .ccskill-gmail/api post \'{"action":"' + action + '",...}\'', retryable: false });
+    }
+    return errorResponse('Unknown action: ' + action,
+      { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。GET で利用可能: ' + GET_ACTIONS.join(', ') + ' / POST で利用可能: ' + POST_ACTIONS.join(', '), retryable: false });
   } catch (error) {
     // requireParam の throw はパラメータ不足
     var errMsg = error.message || String(error);
@@ -144,85 +124,16 @@ function doPost(e) {
     }
 
     // Route to appropriate handler
-    switch (action) {
-      case 'create_draft':
-        return handleCreateDraft(
-          body.to,
-          body.subject,
-          body.body,
-          body.cc,
-          body.bcc,
-          body.htmlBody,
-          body.attachments
-        );
-
-      case 'create_reply_draft':
-        return handleCreateReplyDraft(
-          body.threadId,
-          body.body,
-          body.cc,
-          body.bcc,
-          body.htmlBody,
-          body.attachments,
-          body.skipSelf,
-          body.replyAll
-        );
-
-      case 'mark_read':
-        return handleMarkRead(body.threadId, body.messageId);
-
-      case 'mark_unread':
-        return handleMarkUnread(body.threadId, body.messageId);
-
-      case 'add_label':
-        return handleAddLabel(body.threadId, body.messageId, body.label);
-
-      case 'remove_label':
-        return handleRemoveLabel(body.threadId, body.messageId, body.label);
-
-      case 'archive':
-        return handleArchive(body.threadId);
-
-      case 'move_to_trash':
-        return handleMoveToTrash(body.threadId);
-
-      case 'update_draft':
-        return handleUpdateDraft(
-          body.draftId,
-          body.to,
-          body.subject,
-          body.body,
-          body.cc,
-          body.bcc,
-          body.htmlBody
-        );
-
-      case 'delete_draft':
-        return handleDeleteDraft(body.draftId);
-
-      case 'bulk_mark_read':
-        return handleBulkMarkRead(body.threadIds, body.dryRun);
-
-      case 'bulk_mark_unread':
-        return handleBulkMarkUnread(body.threadIds, body.dryRun);
-
-      case 'bulk_add_label':
-        return handleBulkAddLabel(body.threadIds, body.label, body.dryRun);
-
-      case 'bulk_remove_label':
-        return handleBulkRemoveLabel(body.threadIds, body.label, body.dryRun);
-
-      case 'bulk_archive':
-        return handleBulkArchive(body.threadIds, body.dryRun);
-
-      default:
-        if (GET_ACTIONS.indexOf(action) !== -1) {
-          return errorResponse(action + ' は GET メソッドで呼び出してください',
-            { code: 'WRONG_METHOD', hint: '使い方: .ccskill-gmail/api get action=' + action, retryable: false });
-        }
-        return errorResponse('Unknown action: ' + action,
-          { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。GET で利用可能: ' + GET_ACTIONS.join(', ') + ' / POST で利用可能: ' + POST_ACTIONS.join(', '), retryable: false });
+    var postHandler = POST_ROUTES[action];
+    if (postHandler) {
+      return postHandler(body);
     }
+    if (GET_ROUTES[action]) {
+      return errorResponse(action + ' は GET メソッドで呼び出してください',
+        { code: 'WRONG_METHOD', hint: '使い方: .ccskill-gmail/api get action=' + action, retryable: false });
+    }
+    return errorResponse('Unknown action: ' + action,
+      { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。GET で利用可能: ' + GET_ACTIONS.join(', ') + ' / POST で利用可能: ' + POST_ACTIONS.join(', '), retryable: false });
   } catch (error) {
     var errMsg = error.message || String(error);
     if (errMsg.indexOf('Missing required parameter') === 0) {
