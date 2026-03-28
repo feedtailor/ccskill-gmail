@@ -149,10 +149,7 @@ if [ "$CURRENT_VERSION" != "unknown" ] && [ "$GLOBAL_VERSION" != "unknown" ] && 
     TOTAL_COMMITS=$(cd "$CCSKILL_GMAIL_DIR" && git rev-list --count "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null || echo "0")
     echo "Changes ($TOTAL_COMMITS commits):"
     echo "--------"
-    (cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --oneline -n 5 "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null) || echo "  (Unable to show changes)"
-    if [ "$TOTAL_COMMITS" -gt 5 ] 2>/dev/null; then
-        echo "  ... and $((TOTAL_COMMITS - 5)) more"
-    fi
+    (cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --format="  %cd  %s" --date=short "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null) || echo "  (Unable to show changes)"
     echo ""
 fi
 
