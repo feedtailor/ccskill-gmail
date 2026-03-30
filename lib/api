@@ -68,12 +68,12 @@ _api_init() {
         return 1
     fi
 
-    # マルチアカウント: metadata から clasp_user を読み取り（auth.sh の gas_token が参照）
-    if [ -f "$metadata_file" ] && command -v jq &>/dev/null; then
-        local clasp_user
-        clasp_user=$(jq -r '.clasp_user // empty' "$metadata_file" 2>/dev/null)
-        if [ -n "$clasp_user" ]; then
-            CLASP_USER="$clasp_user"
+    # _CLASP_USER をメタデータから設定（auth.sh が ~/.clasprc.json の該当エントリを参照）
+    if [ -z "${_CLASP_USER:-}" ] && [ -f "$metadata_file" ] && command -v jq &>/dev/null; then
+        local _clasp_user_val
+        _clasp_user_val=$(jq -r '.clasp_user // empty' "$metadata_file" 2>/dev/null)
+        if [ -n "$_clasp_user_val" ]; then
+            export _CLASP_USER="$_clasp_user_val"
         fi
     fi
 

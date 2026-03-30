@@ -92,6 +92,9 @@ ccskill-gmail/
 ## 開発コマンド
 
 ```bash
+# 初回セットアップ（clasp ローカルインストール + PATH 登録）
+./ccskill-gmail setup
+
 # インストール
 ccskill-gmail install [NAME] [DIR]
 

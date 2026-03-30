@@ -8,6 +8,10 @@
 # Runtime
 .registry.json
 
+# Node.js (local clasp)
+node_modules/
+package-lock.json
+
 # OS
 .DS_Store
 

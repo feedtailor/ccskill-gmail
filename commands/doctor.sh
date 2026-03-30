@@ -28,6 +28,8 @@ if [ -z "$CCSKILL_GMAIL_DIR" ]; then
     exit 1
 fi
 
+source "$CCSKILL_GMAIL_DIR/lib/clasp.sh"
+
 # ========================================
 # 1. 対象ディレクトリの決定
 # ========================================
@@ -56,22 +58,27 @@ echo "Global Environment"
 echo "----------------------------------------"
 
 # clasp
-if command -v clasp &>/dev/null; then
-    clasp_version=$(clasp --version 2>/dev/null || echo "unknown")
-    echo -e "  $PASS clasp installed ($clasp_version)"
+if _clasp --version &>/dev/null 2>&1; then
+    clasp_version=$(_clasp --version 2>/dev/null || echo "unknown")
+    local_clasp="$CCSKILL_GMAIL_DIR/node_modules/.bin/clasp"
+    if [ -x "$local_clasp" ]; then
+        echo -e "  $PASS clasp installed - local ($clasp_version)"
+    else
+        echo -e "  $PASS clasp installed - global ($clasp_version)"
+    fi
 else
-    echo -e "  $FAIL clasp not installed"
-    echo "       Fix: npm install -g @google/clasp"
+    echo -e "  $FAIL clasp not available"
+    echo "       Fix: ccskill-gmail setup"
     ERRORS=$((ERRORS + 1))
 fi
 
-# clasp login
-if clasp login --status &>/dev/null 2>&1; then
-    echo -e "  $PASS clasp logged in"
-else
+# clasp login（v3: show-authorized-user で判定）
+if _clasp show-authorized-user 2>&1 | grep -qi "not logged in"; then
     echo -e "  $FAIL clasp not logged in"
-    echo "       Fix: clasp login"
+    echo "       Fix: ccskill-gmail install (will prompt for login)"
     ERRORS=$((ERRORS + 1))
+else
+    echo -e "  $PASS clasp logged in"
 fi
 
 # jq
@@ -247,7 +254,7 @@ if [ -n "${endpoint:-}" ] && [ -n "${MASTER_DIR:-}" ] && [ -f "${MASTER_DIR}/lib
             echo -e "  $PASS Endpoint is responding correctly"
         elif echo "$response" | grep -q "<!DOCTYPE html>" 2>/dev/null; then
             echo -e "  $FAIL Endpoint returned HTML (OAuth token may be expired)"
-            echo "       Fix: clasp login (re-authenticate)"
+            echo "       Fix: ccskill-gmail setup (re-authenticate)"
             ERRORS=$((ERRORS + 1))
         elif [ -z "$response" ]; then
             echo -e "  $FAIL Endpoint did not respond (timeout)"
@@ -260,7 +267,7 @@ if [ -n "${endpoint:-}" ] && [ -n "${MASTER_DIR:-}" ] && [ -f "${MASTER_DIR}/lib
         fi
     else
         echo -e "  $FAIL Could not obtain OAuth token"
-        echo "       Fix: clasp login"
+        echo "       Fix: ccskill-gmail setup"
         ERRORS=$((ERRORS + 1))
     fi
 
