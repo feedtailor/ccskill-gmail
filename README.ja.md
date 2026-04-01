@@ -86,8 +86,10 @@ flowchart LR
 ## 必要なもの
 
 - Google アカウント
-- clasp
-- jq
+- Node.js / npm
+- jq（JSON 処理ツール）
+- Bash (macOS, Linux, WSL)
+- Apps Script API の有効化 — 初めて GAS を使う場合には https://script.google.com/home/usersettings で「Google Apps Script API」をオンにしてください
 
 ## セットアップ
 
@@ -107,54 +109,24 @@ cd ~/projects
 unzip ccskill-gmail-XXXXXX.zip
 ```
 
-### 2. PATH に追加
+### 2. セットアップ
 
-`~/.zshrc` または `~/.bashrc` に以下を追加:
-
-```bash
-export PATH="$HOME/projects/ccskill-gmail:$PATH"
-```
-
-有効化:
+clasp のローカルインストール、PATH 登録、Google ログインを一括で行います。
 
 ```bash
-source ~/.zshrc  # または source ~/.bashrc
+cd ~/projects/ccskill-gmail
+./ccskill-gmail setup
 ```
 
-### 3. clasp のインストールとログイン
-
-[clasp](https://github.com/nicholaschiang/clasp) は Google Apps Script をコマンドラインから管理するツールです。このスキルでは GAS プロジェクトの作成・デプロイ・OAuth 認証に使用します。
-
-```bash
-npm install -g @google/clasp
-clasp login
-```
-
-### 4. プロジェクトにインストール
+### 3. プロジェクトにインストール
 
 ```bash
 cd /path/to/your-project
 ccskill-gmail install
 ```
 
-インストーラーが GAS プロジェクトの作成、デプロイ、OAuth 認可まで自動で行います。ブラウザが開いたら「許可」をクリックしてください。
+インストーラーが GAS プロジェクトの作成、デプロイ、Google 認可まで自動で行います。ブラウザが開いたら「許可」をクリックしてください。
 
-#### 複数アカウントで使う場合
-
-`--user` を指定しない場合は `clasp login` でログインしたデフォルトアカウントが使われます。単一アカウントで使う場合は指定不要です。
-
-プロジェクトごとに異なる Google アカウントを使い分けたい場合は、`--user` オプションを使います。`cd` するだけでアカウントが自動的に切り替わります。
-
-```bash
-# 1. 別アカウントで clasp にログイン
-clasp --user work login
-
-# 2. そのアカウントでインストール
-cd /path/to/work-project
-ccskill-gmail install --user work
-
-# 以降、このディレクトリでは work アカウントの Gmail が使われる
-```
 
 ## 更新
 
@@ -165,7 +137,7 @@ cd ~/projects/ccskill-gmail
 git pull
 
 # プロジェクトに反映
-ccskill-gmail update        # 個別
+ccskill-gmail update        # 個別(プロジェクト配下で)
 ccskill-gmail update-all    # 一括
 ```
 
@@ -185,7 +157,67 @@ ccskill-gmail uninstall
 
 `ccskill-gmail help` で全コマンドを確認できます。
 
+## トラブルシューティング
+
+### install が途中で失敗した場合
+
+`ccskill-gmail install` を再度実行してください。「Overwrite?」と聞かれるので `y` で上書きすれば最初からやり直せます。
+
+### Google 認証で「ファイルを開くことができません」エラー
+
+ブラウザでログイン中の Google アカウントと、セットアップ時に認証したアカウントが異なる場合に発生します。以下のいずれかで解決できます:
+
+- 認証 URL を**シークレットウィンドウ**で開き、正しいアカウントでログインする
+- ブラウザで正しいアカウントに切り替えてから認証リンクをクリックする
+
+### 複数 Google / Workspace アカウント使用時
+
+複数アカウントでブラウザにログインしていると、Google 認証時にブラウザがデフォルトアカウントを使おうとすることがあります。シークレットウィンドウを使うのが最も確実です。
+
 ## 技術詳細
+
+### 権限について
+
+セットアップ中、Google から権限の許可を求められます。
+
+**clasp 関連の権限（セットアップ時）**
+
+| 権限 | 用途 |
+|---|---|
+| Google Drive ファイルの参照・管理 | GAS プロジェクトファイルの作成・更新 |
+| Apps Script プロジェクトの参照・管理 | GAS プロジェクトの作成・コード push |
+| デプロイの参照・管理 | Web App のデプロイ |
+
+clasp（GAS を CLI で扱うための Google 公式ツール）が要求する標準的な権限です。本スキルでは clasp を使用するために必要となります。
+
+**Gmail の権限（初回利用時）**
+
+| 権限（OAuth スコープ） | 用途 |
+|---|---|
+| `gmail.readonly` | メール検索・閲覧、ラベル一覧、添付ファイルのダウンロード |
+| `gmail.compose` | 下書きの作成・編集 |
+| `gmail.modify` | 既読/未読、ラベル追加/削除、アーカイブ、ゴミ箱移動 |
+
+必要最小限のスコープのみ要求しています。`gmail.send` スコープは要求しません。
+
+### 複数アカウントで使う場合
+
+`--user` を指定しない場合は `clasp login` でログインしたデフォルトアカウントが使われます。単一アカウントで使う場合は指定不要です。
+
+プロジェクトごとに異なる Google アカウントを使い分けたい場合は、`--user` オプションを使います。`cd` するだけでアカウントが自動的に切り替わります。
+
+```bash
+# 1. 別アカウントで clasp にログイン
+clasp --user work login
+
+# 2. そのアカウントでインストール
+cd /path/to/work-project
+ccskill-gmail install --user work
+
+# 以降、このディレクトリでは work アカウントの Gmail が使われる
+```
+
+### スキル定義ドキュメント
 
 API の仕様やトラブルシューティングは、スキル定義ドキュメントを参照してください:
 

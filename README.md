@@ -90,31 +90,20 @@ flowchart LR
 
 - Google account
 - Node.js / npm
-- jq
+- jq (command-line JSON processor)
 - Bash (macOS, Linux, WSL)
+- Apps Script API enabled — visit https://script.google.com/home/usersettings and turn on "Google Apps Script API" (required for first-time GAS users)
 
 ## Installation
 
-### As a Claude Code Plugin
-
-```bash
-# Add the feedtailor ccskill marketplace
-/plugin marketplace add feedtailor/ccskill
-
-# Install the Gmail skill
-/plugin install ccskill-gmail@ccskill
-```
-
-### Manual Installation
-
-#### 1. Get the skill
+### 1. Get the skill
 
 ```bash
 cd ~/projects
 git clone https://github.com/feedtailor/ccskill-gmail.git
 ```
 
-#### 2. Setup
+### 2. Setup
 
 Installs clasp locally, registers PATH, and handles Google login in one command.
 
@@ -123,31 +112,14 @@ cd ~/projects/ccskill-gmail
 ./ccskill-gmail setup
 ```
 
-#### 3. Install to your project
+### 3. Install to your project
 
 ```bash
 cd /path/to/your-project
 ccskill-gmail install
 ```
 
-The installer will automatically create a GAS project, deploy it, and handle OAuth authorization. When a browser window opens, click "Allow".
-
-#### Multi-account Setup
-
-Without `--user`, the default account from `clasp login` is used. No additional setup is needed for single-account usage.
-
-To use different Google accounts for different projects, use the `--user` option. Switching happens automatically when you `cd` into the project directory.
-
-```bash
-# 1. Login with another account
-clasp --user work login
-
-# 2. Install with that account
-cd /path/to/work-project
-ccskill-gmail install --user work
-
-# This directory now uses the work account's Gmail
-```
+The installer will automatically create a GAS project, deploy it, and handle Google authorization. When a browser window opens, click "Allow".
 
 ## Update
 
@@ -172,7 +144,67 @@ This removes local files (`.ccskill-gmail/`, skill definitions, permission setti
 
 Run `ccskill-gmail help` to see all available commands.
 
-## Using with Codex CLI
+## Troubleshooting
+
+### Installation fails midway
+
+Re-run `ccskill-gmail install`. You'll be asked "Overwrite?" — answer `y` to overwrite the previous partial installation.
+
+### "Unable to open file" error during Google authorization
+
+This typically happens when your browser is logged into a different Google account than the one used during setup. Try one of:
+
+- Open the authorization URL in an **incognito/private window** and log in with the correct account
+- Switch to the correct account in your browser before clicking the authorization link
+
+### Multiple Google / Workspace accounts
+
+When using multiple accounts, the browser may default to the wrong one during Google authorization. Using an incognito window is the most reliable workaround — it avoids account confusion entirely.
+
+## Technical Details
+
+### Permissions Explained
+
+During setup, Google will ask you to grant permissions at two stages:
+
+**Stage 1: Permissions for managing GAS projects (during `setup`)**
+
+| Permission | Why it's needed |
+|---|---|
+| View and manage Google Drive files | Create and update the GAS project files |
+| View and manage Apps Script projects | Create the GAS project and push code |
+| View and manage deployments | Deploy the Web App |
+
+These are standard clasp (GAS CLI tool) permissions. They do **not** grant access to your email.
+
+**Stage 2: Permissions for Gmail access (during first use)**
+
+| Permission (OAuth scope) | Why it's needed |
+|---|---|
+| `gmail.readonly` | Search and read emails, list labels, download attachments |
+| `gmail.compose` | Create and edit drafts |
+| `gmail.modify` | Mark read/unread, add/remove labels, archive, move to trash |
+
+These are the minimum scopes required for the skill's features. No `gmail.send` scope is requested.
+
+### Multi-account Setup
+
+Without `--user`, the default account from `clasp login` is used. No additional setup is needed for single-account usage.
+
+To use different Google accounts for different projects, use the `--user` option. Switching happens automatically when you `cd` into the project directory.
+
+```bash
+# 1. Login with another account
+clasp --user work login
+
+# 2. Install with that account
+cd /path/to/work-project
+ccskill-gmail install --user work
+
+# This directory now uses the work account's Gmail
+```
+
+### Using with Codex CLI
 
 Codex CLI does not support Claude Code plugins, but you can use the skill definition directly:
 
@@ -184,7 +216,7 @@ cp .claude/skills/ccskill-gmail/SKILL.md .agents/skills/ccskill-gmail/SKILL.md
 
 Note: The GAS Web App setup (`ccskill-gmail install`) is still required.
 
-## Technical Details
+### Skill Definition Documents
 
 For API specifications and troubleshooting, see the skill definition documents:
 
