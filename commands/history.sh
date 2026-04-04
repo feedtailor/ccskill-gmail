@@ -100,37 +100,37 @@ case "$SUBCMD" in
 
     --help|-h|help)
         cat << 'EOF'
-ccskill-gmail history - Gmail Skill 操作履歴の表示・管理
+ccskill-gmail history - View and manage audit log
 
-使用方法:
-  ccskill-gmail history [list] [N] [オプション]
+Usage:
+  ccskill-gmail history [list] [N] [OPTIONS]
   ccskill-gmail history clear --yes
 
-サブコマンド:
-  list (省略可)        最新 N 件の履歴を表示（デフォルト: 20件）
-  clear                履歴をクリア（--yes フラグ必須）
+Subcommands:
+  list (default)       Show latest N entries (default: 20)
+  clear                Clear audit log (requires --yes)
 
-オプション (list):
-  N                    表示件数（数値）
-  --json               JSONL 形式で出力（jq での処理に適する）
-  --action ACTION      指定アクションのみ表示（例: create_draft）
-  --since DATE         指定日以降のみ表示（例: 2026-03-17）
-  --errors             エラーのみ表示
+Options (list):
+  N                    Number of entries to show
+  --json               Output in JSONL format (suitable for jq)
+  --action ACTION      Filter by action (e.g. create_draft)
+  --since DATE         Show entries since date (e.g. 2026-03-17)
+  --errors             Show errors only
 
-例:
-  ccskill-gmail history                           # 最新20件（人間可読）
-  ccskill-gmail history list 50                   # 最新50件
-  ccskill-gmail history list --json               # JSONL 形式
-  ccskill-gmail history list --action search      # search のみ
-  ccskill-gmail history list --since 2026-03-17   # 指定日以降
-  ccskill-gmail history list --errors             # エラーのみ
-  ccskill-gmail history clear --yes               # 履歴クリア
+Examples:
+  ccskill-gmail history                           # Latest 20 (human-readable)
+  ccskill-gmail history list 50                   # Latest 50
+  ccskill-gmail history list --json               # JSONL format
+  ccskill-gmail history list --action search      # search only
+  ccskill-gmail history list --since 2026-03-17   # Since date
+  ccskill-gmail history list --errors             # Errors only
+  ccskill-gmail history clear --yes               # Clear log
 
-プライバシーノート:
-  記録される情報: アクション名、識別ID（threadId 等）、成功/失敗、実行時間
-  記録されない情報: メール本文、宛先、件名、検索クエリの内容
-  保存場所: .ccskill-gmail/audit.jsonl（ローカルのみ、git 対象外）
-  無効化: CCSKILL_GMAIL_HISTORY=off を設定
+Privacy:
+  Recorded: action name, IDs (threadId etc.), success/failure, execution time
+  NOT recorded: email body, recipients, subject, search query content
+  Location: .ccskill-gmail/audit.jsonl (local only, excluded from git)
+  Disable: set CCSKILL_GMAIL_HISTORY=off
 EOF
         ;;
 

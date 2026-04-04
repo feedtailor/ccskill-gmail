@@ -101,9 +101,19 @@ GAS_PROJECT_TITLE="Gmail Skill - $PROJECT_NAME"
 # clasp --user 名を設定（プロジェクトごとに認証を分離）
 # --user オプションがあればそれを使用、なければプロジェクト名から自動生成
 if [ -n "$_USER_OVERRIDE" ]; then
+    if [[ ! "$_USER_OVERRIDE" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo -e "${RED}Error: --user accepts only alphanumeric characters, hyphens, and underscores${NC}"
+        echo ""
+        echo "  Example: ccskill-gmail install --user work"
+        echo ""
+        echo "  Note: Use a profile name, not an email address."
+        echo "  The installer will prompt for Google login automatically."
+        exit 1
+    fi
     _CLASP_USER="$_USER_OVERRIDE"
 else
-    _CLASP_USER="ccskill-gmail-${PROJECT_NAME}"
+    # ディレクトリ名から安全な clasp user 名を生成（英数字・ハイフン・アンダースコアのみ）
+    _CLASP_USER="ccskill-gmail-$(echo "$PROJECT_NAME" | tr -cd 'a-zA-Z0-9_-')"
 fi
 export _CLASP_USER
 
@@ -236,9 +246,13 @@ if ! (cd "$CLASP_TMPDIR" && _clasp create --type standalone --title "$GAS_PROJEC
     echo ""
     echo -e "${RED}Error: clasp create failed${NC}"
     echo ""
-    echo "This usually means your Google credentials have expired."
-    echo "Run the following to re-authenticate:"
-    echo "  ccskill-gmail setup"
+    echo "Possible causes:"
+    echo "  1. Apps Script API is not enabled for this account"
+    echo "     → Enable it at: https://script.google.com/home/usersettings"
+    echo "  2. Google credentials have expired"
+    echo "     → Run: ccskill-gmail setup"
+    echo ""
+    echo "After fixing, re-run: ccskill-gmail install"
     rm -rf "$CLASP_TMPDIR"
     exit 1
 fi
@@ -308,7 +322,7 @@ echo ""
 # ========================================
 
 echo "================================================"
-echo "  OAuth Authorization Required (one-time only)"
+echo "  Google Authorization Required (one-time only)"
 echo "================================================"
 echo ""
 echo "The Web App needs your permission to access Gmail."
@@ -318,16 +332,26 @@ echo -e "${YELLOW}NOTE: You may see 'This app isn't verified' warning.${NC}"
 echo "  Click 'Advanced' > 'Go to ... (unsafe)' > 'Allow'"
 echo ""
 
+echo "Authorization URL:"
+echo -e "  ${BLUE}$ENDPOINT_URL${NC}"
+echo ""
+echo "If the browser doesn't open automatically (e.g. SSH environment),"
+echo "open the URL above in your browser manually."
+echo ""
+echo -e "${YELLOW}If you see 'Unable to open file' or a redirect loop:${NC}"
+echo "  1. Open a private/incognito window"
+echo "  2. Go to https://accounts.google.com and sign in with"
+echo "     the Google account you want to use for this project"
+echo "  3. In the same window, paste this URL:"
+echo -e "     ${BLUE}$ENDPOINT_URL${NC}"
+echo ""
+
 read -p "Press Enter to open the authorization page..."
 
-open "$ENDPOINT_URL" 2>/dev/null || xdg-open "$ENDPOINT_URL" 2>/dev/null || {
-    echo ""
-    echo "Could not open browser. Please open this URL manually:"
-    echo -e "  ${BLUE}$ENDPOINT_URL${NC}"
-}
+open "$ENDPOINT_URL" 2>/dev/null || xdg-open "$ENDPOINT_URL" 2>/dev/null || true
 
 echo ""
-read -p "Press Enter after completing the authorization..."
+read -p "After the browser shows {\"ok\":true,...}, press Enter to continue..."
 
 # ========================================
 # 12. エンドポイント検証（Bearer トークン付き）
@@ -358,8 +382,12 @@ while [ $VERIFY_ATTEMPTS -lt 3 ]; do
         echo -e "${YELLOW}Endpoint not ready yet. This may happen if authorization is not complete.${NC}"
         echo ""
         echo "Please make sure you:"
-        echo "  1. Opened the endpoint URL in your browser"
-        echo "  2. Clicked 'Allow' to authorize the script"
+        echo "  1. Opened a private/incognito window"
+        echo "  2. Signed in at https://accounts.google.com with the correct account"
+        echo "  3. Pasted this URL in the same window:"
+        echo -e "     ${BLUE}$ENDPOINT_URL${NC}"
+        echo "  4. Clicked 'Allow' to authorize the script"
+        echo "  5. The browser shows {\"ok\":true,...}"
         echo ""
         read -p "Press Enter to retry (attempt $((VERIFY_ATTEMPTS + 1))/3)..."
     fi
@@ -370,10 +398,13 @@ if [ "$VERIFY_OK" = false ]; then
     echo "The deployment was created but authorization may not be complete."
     echo ""
     echo "To complete setup later:"
-    echo "  1. Open $ENDPOINT_URL in your browser"
-    echo "  2. Complete the authorization flow"
-    echo "  3. Test with:"
-    echo "     source $GAS_DIR/auth.sh && curl -sL --max-time 60 -H \"Authorization: Bearer \$(gas_token)\" \"$ENDPOINT_URL\" | jq ."
+    echo "  1. Open a private/incognito browser window"
+    echo "  2. Sign in to your Google account at https://accounts.google.com"
+    echo "  3. In the same window, open this URL:"
+    echo -e "     ${BLUE}$ENDPOINT_URL${NC}"
+    echo "  4. Click 'Allow' to authorize the script"
+    echo "  5. Verify with:"
+    echo "     .ccskill-gmail/api get action=get_profile"
 fi
 
 echo ""
@@ -445,8 +476,14 @@ echo "  \"Search for unread emails\""
 echo "  \"Show me emails from boss@company.com\""
 echo "  \"Create a draft reply to the latest email\""
 echo ""
+echo "Verify the installation:"
+echo -e "  ${BLUE}.ccskill-gmail/api get action=get_profile${NC}"
+echo ""
 echo "For more examples:"
 echo "  $SKILL_DIR/examples.md"
+echo ""
+echo "To run a full API test (for developers):"
+echo -e "  ${BLUE}$CCSKILL_GMAIL_DIR/tests/smoke-test.sh .${NC}"
 echo ""
 echo "To update this skill later:"
 echo "  cd $TARGET_DIR"

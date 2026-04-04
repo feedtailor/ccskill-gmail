@@ -1,43 +1,43 @@
-# トラブルシューティング
+# Troubleshooting
 
-Gmail Skill でよくある問題と解決策です。
+Common issues and solutions for the Gmail Skill.
 
-> **推奨**: `.ccskill-gmail/api` スタンドアロンスクリプトを使用すると、`-L`、`--max-time 60`、`--data`、Bearer 認証が自動適用されるため、以下のトラブルの大半を回避できます。
-
----
-
-## クイックリファレンス
-
-| 症状 | 原因 | 解決策 |
-|------|------|--------|
-| HTML が返る（ログインページ） | 認証なし / トークン期限切れ | `clasp login` を実行 |
-| タイムアウト | コールドスタート | 再試行（`--max-time 60` は自動適用済み） |
-| Unknown action | GET/POST の使い分け誤り | get / post サブコマンドを正しく使用 |
-| Invalid JSON | JSON 構文エラー | JSON を事前検証 |
-| Thread/Message not found | ID の誤りまたは削除済み | `search` で最新の ID を取得 |
-| 日本語検索が動かない | 直接 curl 使用時のエンコード漏れ | get サブコマンドを使用（自動エンコード） |
-| エンドポイント未設定 | endpoint ファイルなし / install 未完了 | `ccskill-gmail update` を実行 |
-| Action "xxx" is denied by permissions config | パーミッション設定で拒否 | `config.js` の `permissions.deny` から該当アクションを削除 |
+> **Recommended**: Using the `.ccskill-gmail/api` standalone script automatically applies `-L`, `--max-time 60`, `--data`, and Bearer authentication, which avoids most of the issues described below.
 
 ---
 
-## 詳細な解決策
+## Quick Reference
+
+| Symptom | Cause | Solution |
+|---------|-------|----------|
+| HTML returned (login page) | No authentication / token expired | Run `clasp login` |
+| Timeout | Cold start | Retry (`--max-time 60` is already applied automatically) |
+| Unknown action | Incorrect GET/POST usage | Use the correct get / post subcommand |
+| Invalid JSON | JSON syntax error | Validate JSON beforehand |
+| Thread/Message not found | Wrong ID or deleted | Get the latest ID with `search` |
+| Japanese search not working | Encoding issue when using curl directly | Use the get subcommand (auto-encodes) |
+| Endpoint not set | Missing endpoint file / install not completed | Run `ccskill-gmail update` |
+| Action "xxx" is denied by permissions config | Denied by permissions setting | Remove the action from `permissions.deny` in `config.js` |
+
+---
+
+## Detailed Solutions
 
 ### Action denied by permissions config
 
-**症状**: `{"ok":false,"error":"Action \"move_to_trash\" is denied by permissions config. ..."}`
+**Symptom**: `{"ok":false,"error":"Action \"move_to_trash\" is denied by permissions config. ..."}`
 
-**原因**: `config.js` の `permissions.deny` にそのアクションが含まれている（`move_to_trash` はデフォルトで無効）
+**Cause**: The action is included in `permissions.deny` in `config.js` (`move_to_trash` is disabled by default)
 
-**解決策**:
+**Solution**:
 
-1. インストール先の `config.js` を編集し、`permissions.deny` 配列から該当アクションを削除
-2. 再デプロイ
+1. Edit `config.js` at the install location and remove the action from the `permissions.deny` array
+2. Redeploy
    ```bash
    ccskill-gmail apply-config
    ```
 
-**例**: `move_to_trash` を有効にする場合
+**Example**: Enabling `move_to_trash`
 ```javascript
 // Before
 permissions: {
@@ -49,94 +49,94 @@ permissions: {
 // After
 permissions: {
   deny: [
-    // 'move_to_trash',  // コメントアウトまたは削除
+    // 'move_to_trash',  // Comment out or remove
   ]
 }
 ```
 
 ---
 
-### 認証エラー (401 / アクセス拒否)
+### Authentication Error (401 / Access Denied)
 
-**症状**:
-- レスポンスが HTML（Google ログインページ）
-- `{"ok":false,"error":"Authorization required"}` のようなエラー
+**Symptom**:
+- Response is HTML (Google login page)
+- Error like `{"ok":false,"error":"Authorization required"}`
 
-**原因と対処**:
+**Causes and Solutions**:
 
-1. **clasp にログインしていない**
+1. **Not logged into clasp**
    ```bash
    clasp login
    ```
 
-2. **トークンが期限切れ（自動リフレッシュ失敗）**
+2. **Token expired (auto-refresh failed)**
    ```bash
-   # ~/.clasprc.json を確認
+   # Check ~/.clasprc.json
    jq '.tokens.default.expiry_date' ~/.clasprc.json
-   # 再ログイン
+   # Re-login
    clasp login
    ```
 
-3. **デプロイが "Anyone" のまま**
-   - GAS エディタでデプロイ設定を確認
-   - 「自分のみ」(MYSELF) に変更して再デプロイ
+3. **Deployment is still set to "Anyone"**
+   - Check the deployment settings in the GAS editor
+   - Change to "Only myself" (MYSELF) and redeploy
 
-4. **api スクリプトを使わずに直接 curl している**
+4. **Using curl directly instead of the api script**
    ```bash
-   # NG: 直接 curl（Bearer トークンなし）
+   # NG: Direct curl (no Bearer token)
    curl -sL "https://script.google.com/.../exec?action=list_labels"
 
-   # OK: api スクリプト経由（自動認証）
+   # OK: Via api script (auto-authentication)
    .ccskill-gmail/api get action=list_labels
    ```
 
 ---
 
-### タイムアウトエラー
+### Timeout Error
 
-**症状**: リクエストが応答なしでハングする
+**Symptom**: Request hangs with no response
 
-**原因**: GAS のコールドスタート（初回起動の遅延）
+**Cause**: GAS cold start (initial startup delay)
 
-**解決策**: api スクリプトは内部で `--max-time 60` を設定済みです。それでもタイムアウトする場合は再試行してください。
+**Solution**: The api script already sets `--max-time 60` internally. If it still times out, retry.
 
 ```bash
-# 再試行
+# Retry
 .ccskill-gmail/api get action=list_labels
 ```
 
 ---
 
-### Unknown action エラー
+### Unknown action Error
 
-**症状**: `{"ok":false,"error":"Unknown action: search"}`
+**Symptom**: `{"ok":false,"error":"Unknown action: search"}`
 
-**原因**: GET/POST の使い分けが間違っている
+**Cause**: Incorrect GET/POST usage
 
-**解決策**: 読み取り系は `get`、書き込み系は `post` サブコマンドを使用
+**Solution**: Use the `get` subcommand for read operations and `post` for write operations
 
 ```bash
-# OK: get で search
+# OK: search with get
 .ccskill-gmail/api get action=search query="is:unread"
 
-# NG: post で search を呼んでいる
+# NG: calling search with post
 .ccskill-gmail/api post '{"action":"search","query":"is:unread"}'
 ```
 
 ---
 
-### Invalid JSON エラー
+### Invalid JSON Error
 
-**症状**: `{"ok":false,"error":"Invalid JSON in request body"}`
+**Symptom**: `{"ok":false,"error":"Invalid JSON in request body"}`
 
-**原因**: JSON の構文エラー（クォート、カンマ等）
+**Cause**: JSON syntax error (quotes, commas, etc.)
 
-**解決策**:
+**Solution**:
 ```bash
-# JSON を事前に検証
+# Validate JSON beforehand
 echo '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"Hello"}' | jq .
 
-# シングルクォートで囲む（シェル変数展開を防ぐ）
+# Wrap in single quotes (prevents shell variable expansion)
 .ccskill-gmail/api post '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"Hello"}'
 ```
 
@@ -144,13 +144,13 @@ echo '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"
 
 ### Thread not found / Message not found
 
-**症状**: `{"ok":false,"error":"Thread not found: xxx"}`
+**Symptom**: `{"ok":false,"error":"Thread not found: xxx"}`
 
-**原因**:
-- スレッド/メッセージ ID が間違っている
-- 該当メールが削除済み
+**Cause**:
+- Incorrect thread/message ID
+- The email has been deleted
 
-**解決策**: `search` で最新の ID を取得し直す
+**Solution**: Re-fetch the latest ID using `search`
 
 ```bash
 .ccskill-gmail/api get action=search query="is:unread" maxResults=5
@@ -158,79 +158,79 @@ echo '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"
 
 ---
 
-### 日本語検索の問題
+### Japanese Search Issues
 
-**症状**: 日本語を含む検索が正しく動作しない
+**Symptom**: Searches containing Japanese do not work correctly
 
-**以前の問題**: 日本語を URL エンコードする必要があった
+**Previous issue**: Japanese text needed to be URL-encoded
 
-**現在の対処**: get サブコマンドは値を自動的に URL エンコードするため、日本語をそのまま渡せます:
+**Current solution**: The get subcommand automatically URL-encodes values, so you can pass Japanese text as-is:
 
 ```bash
-# OK: そのまま日本語を使える
+# OK: Japanese can be used directly
 .ccskill-gmail/api get action=search query="from:田中太郎"
 
-# 手動エンコードは不要
+# Manual encoding is not needed
 ```
 
 ---
 
-### 権限エラー
+### Permission Error
 
-**症状**: デプロイ時に権限エラー、または API 呼び出しで 403 エラー
+**Symptom**: Permission error during deployment, or 403 error on API calls
 
-**原因**: Gmail へのアクセス権限が承認されていない
+**Cause**: Gmail access permissions have not been authorized
 
-**解決策**:
-1. GAS エディタで「デプロイ」→「デプロイを管理」を開く
-2. 「このアプリは確認されていません」画面で「詳細」→「安全でないページに移動」で承認
+**Solution**:
+1. Open "Deploy" -> "Manage deployments" in the GAS editor
+2. On the "This app isn't verified" screen, click "Advanced" -> "Go to (unsafe)" to authorize
 
 ---
 
-### エンドポイント未設定
+### Endpoint Not Set
 
-**症状**: `{"ok":false,"error":"GMAIL_ENDPOINT not set..."}`
+**Symptom**: `{"ok":false,"error":"GMAIL_ENDPOINT not set..."}`
 
-**原因**: `.ccskill-gmail/endpoint` ファイルが存在しない、または install/update が完了していない
+**Cause**: The `.ccskill-gmail/endpoint` file does not exist, or install/update has not been completed
 
-**解決策**:
+**Solution**:
 ```bash
-# update で endpoint ファイルを自動生成
+# update auto-generates the endpoint file
 ccskill-gmail update
 
-# endpoint ファイルの内容を確認
+# Check the endpoint file content
 cat .ccskill-gmail/endpoint
 ```
 
 ---
 
-## デバッグ方法
+## Debugging Methods
 
-### ヘルスチェック
+### Health Check
 
 ```bash
 .ccskill-gmail/api get
-# 期待: {"ok":true,"data":{"status":"ok","message":"Gmail Skill is running","version":"1.0.0"}}
+# Expected: {"ok":true,"data":{"status":"ok","message":"Gmail Skill is running","version":"1.0.0"}}
 ```
 
-### トークン確認
+### Token Verification
 
 ```bash
-# auth.sh を直接読み込んでトークンを確認（デバッグ用）
+# Source auth.sh directly to check the token (for debugging)
 source .ccskill-gmail/auth.sh && gas_token
-# アクセストークンが表示されれば OK
+# If an access token is displayed, it is working correctly
 ```
 
-### エンドポイント確認
+### Endpoint Verification
 
 ```bash
 cat .ccskill-gmail/endpoint
-# URL が表示されれば endpoint ファイルが正しく設定されている
+# If a URL is displayed, the endpoint file is correctly configured
 ```
 
-### レスポンスの確認
+### Response Inspection
 
 ```bash
-# レスポンスを整形表示
+# Pretty-print the response
 .ccskill-gmail/api get action=list_labels | jq .
 ```

@@ -148,18 +148,21 @@ Run `ccskill-gmail help` to see all available commands.
 
 ### Installation fails midway
 
-Re-run `ccskill-gmail install`. You'll be asked "Overwrite?" — answer `y` to overwrite the previous partial installation.
+Re-run `ccskill-gmail install`. You'll be asked "Overwrite?" — answer `y` to overwrite the previous partial installation. A failed install may also leave an orphaned GAS project on Google's side — delete it manually from [script.google.com](https://script.google.com) before retrying.
 
-### "Unable to open file" error during Google authorization
+### Redirect loop or "Unable to open file" during Google authorization
 
-This typically happens when your browser is logged into a different Google account than the one used during setup. Try one of:
+This happens when your browser is logged into multiple Google accounts, or when a private window has a cached session from a different account. Follow these steps:
 
-- Open the authorization URL in an **incognito/private window** and log in with the correct account
-- Switch to the correct account in your browser before clicking the authorization link
+1. Copy the **Authorization URL** shown in your terminal (starts with `https://script.google.com/macros/s/...`)
+2. Open a **new private/incognito window** (close any existing private windows to clear cached sessions)
+3. Go to [accounts.google.com](https://accounts.google.com) and **explicitly sign in** with the Google account you want to use for this project
+4. In the **same window**, paste the Authorization URL into the address bar
+5. Click "Allow" to authorize the script
 
-### Multiple Google / Workspace accounts
-
-When using multiple accounts, the browser may default to the wrong one during Google authorization. Using an incognito window is the most reliable workaround — it avoids account confusion entirely.
+**Important:**
+- Do NOT copy the URL from the browser's error page — it contains corrupted redirect data. Always use the clean URL from your terminal
+- Make sure to sign in at accounts.google.com **before** opening the Authorization URL — opening the URL first may trigger the same redirect loop
 
 ## Technical Details
 
@@ -189,20 +192,18 @@ These are the minimum scopes required for the skill's features. No `gmail.send` 
 
 ### Multi-account Setup
 
-Without `--user`, the default account from `clasp login` is used. No additional setup is needed for single-account usage.
+Without `--user`, the default account is used. No additional setup is needed for single-account usage.
 
-To use different Google accounts for different projects, use the `--user` option. Switching happens automatically when you `cd` into the project directory.
+To use different Google accounts for different projects, use the `--user` option. The installer will prompt for Google login automatically. Switching happens automatically when you `cd` into the project directory.
 
 ```bash
-# 1. Login with another account
-clasp --user work login
-
-# 2. Install with that account
 cd /path/to/work-project
 ccskill-gmail install --user work
-
+# The installer will prompt for Google login if needed
 # This directory now uses the work account's Gmail
 ```
+
+Note: `--user` accepts only alphanumeric characters, hyphens, and underscores (e.g. `work`, `personal`, `info-ft`). Do not use email addresses.
 
 ### Using with Codex CLI
 
@@ -243,6 +244,7 @@ Several tools exist for AI-driven Gmail access.
 - No send capability (draft creation only; send manually from Gmail UI)
 - GAS execution time limits: 6 min/execution, 90 min/day
 - Attachments: up to 5 MB
+- Drafts are always HTML format, even when replying to plain text emails (GmailApp limitation — plain text line breaks are lost without HTML conversion)
 
 ## License
 

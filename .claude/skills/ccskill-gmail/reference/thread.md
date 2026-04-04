@@ -1,30 +1,30 @@
-# archive / move_to_trash - スレッド操作
+# archive / move_to_trash - Thread Operations
 
-スレッドのアーカイブとゴミ箱移動を行います。
+Archive threads and move threads to trash.
 
 ---
 
-## archive - アーカイブ
+## archive - Archive
 
-スレッドを受信トレイからアーカイブします。メール自体は削除されず、「すべてのメール」で確認可能です。
+Archives a thread from the inbox. The email itself is not deleted and can be found in "All Mail".
 
-### リクエスト
+### Request
 
-**メソッド**: POST
+**Method**: POST
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| threadId | ✓ | アーカイブするスレッドの ID |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| threadId | ✓ | Thread ID to archive |
 
-### 実行例
+### Example
 
 ```bash
 .ccskill-gmail/api post '{"action":"archive","threadId":"19bf7f25b96ab637"}'
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -37,37 +37,37 @@
 }
 ```
 
-### 注意事項
+### Notes
 
-- アーカイブは受信トレイからの削除のみ（メール自体は残る）
-- 「すべてのメール」で確認可能
-- ラベルは維持される
+- Archiving only removes the thread from the inbox (the email itself remains)
+- Can be found in "All Mail"
+- Labels are preserved
 
 ---
 
-## move_to_trash - ゴミ箱に移動
+## move_to_trash - Move to Trash
 
-> **注意**: このアクションはデフォルトで無効化されています（`permissions.deny` に含まれています）。有効にするには `config.js` の `permissions.deny` 配列から `'move_to_trash'` を削除し、`ccskill-gmail apply-config` を実行してください。
+> **Note**: This action is disabled by default (included in `permissions.deny`). To enable it, remove `'move_to_trash'` from the `permissions.deny` array in `config.js` and run `ccskill-gmail apply-config`.
 
-スレッドをゴミ箱に移動します。30日後に自動削除されます。
+Moves a thread to trash. It will be automatically deleted after 30 days.
 
-### リクエスト
+### Request
 
-**メソッド**: POST
+**Method**: POST
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| threadId | ✓ | ゴミ箱に移動するスレッドの ID |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| threadId | ✓ | Thread ID to move to trash |
 
-### 実行例
+### Example
 
 ```bash
 .ccskill-gmail/api post '{"action":"move_to_trash","threadId":"19bf7f25b96ab637"}'
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -80,32 +80,32 @@
 }
 ```
 
-### 注意事項
+### Notes
 
-- ゴミ箱のメールは 30 日後に自動削除
-- ゴミ箱から復元可能
-- 永久削除 API は安全のため提供していません
+- Emails in trash are automatically deleted after 30 days
+- Can be restored from trash
+- A permanent delete API is not provided for safety reasons
 
 ---
 
-## ワークフロー例
+## Workflow Example
 
-### メール処理完全ワークフロー
+### Complete Email Processing Workflow
 
 ```bash
-# 1. 未読メールを検索（THREAD_ID を確認）
+# 1. Search for unread emails (note the THREAD_ID)
 .ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
-# 2. 内容を確認（THREAD_ID は手順1の結果から取得）
+# 2. View the content (THREAD_ID is obtained from step 1 results)
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject'
 
-# 3. 返信下書きを作成
+# 3. Create a reply draft
 .ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。"}'
 
-# 4. 既読にしてラベル追加
+# 4. Mark as read and add label
 .ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 .ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 
-# 5. アーカイブして受信トレイを整理
+# 5. Archive to clean up the inbox
 .ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
 ```

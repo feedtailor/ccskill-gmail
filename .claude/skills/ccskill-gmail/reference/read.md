@@ -1,30 +1,30 @@
-# 読み取り API
+# Read API
 
-メールの詳細取得とラベル一覧を取得します。
+Retrieves email details and label lists.
 
 ---
 
-## get_thread - スレッド取得
+## get_thread - Get Thread
 
-スレッド ID を指定して、スレッド内の全メッセージを取得します。
+Retrieves all messages in a thread by specifying the thread ID.
 
-### リクエスト
+### Request
 
-**メソッド**: GET
+**Method**: GET
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| threadId | ✓ | スレッド ID |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| threadId | ✓ | Thread ID |
 
-### 実行例
+### Example
 
 ```bash
 .ccskill-gmail/api get action=get_thread threadId=19bf7f25b96ab637
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -56,27 +56,27 @@
 
 ---
 
-## get_message - メッセージ詳細
+## get_message - Get Message Details
 
-メッセージ ID を指定して、単一メッセージの詳細を取得します。
+Retrieves details of a single message by specifying the message ID.
 
-### リクエスト
+### Request
 
-**メソッド**: GET
+**Method**: GET
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| messageId | ✓ | メッセージ ID |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| messageId | ✓ | Message ID |
 
-### 実行例
+### Example
 
 ```bash
 .ccskill-gmail/api get action=get_message messageId=19bf7f25b96ab637
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -109,23 +109,23 @@
 
 ---
 
-## list_labels - ラベル一覧
+## list_labels - List Labels
 
-ユーザーが作成したラベルの一覧を取得します。
+Retrieves a list of user-created labels.
 
-### リクエスト
+### Request
 
-**メソッド**: GET
+**Method**: GET
 
-**パラメータ**: なし
+**Parameters**: None
 
-### 実行例
+### Example
 
 ```bash
 .ccskill-gmail/api get action=list_labels
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -143,35 +143,35 @@
 }
 ```
 
-**備考**: システムラベル（INBOX, SENT, DRAFT など）は含まれません。ユーザーが作成したラベルのみ返されます。
+**Note**: System labels (INBOX, SENT, DRAFT, etc.) are not included. Only user-created labels are returned.
 
 ---
 
-## get_unread_count - 未読メール数取得
+## get_unread_count - Get Unread Count
 
-受信トレイまたは特定ラベルの未読メール数を取得します。
+Retrieves the unread email count for the inbox or a specific label.
 
-### リクエスト
+### Request
 
-**メソッド**: GET
+**Method**: GET
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| label | | ラベル名（省略時は INBOX） |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| label | | Label name (defaults to INBOX if omitted) |
 
-### 実行例
+### Example
 
 ```bash
-# 受信トレイの未読数
+# Inbox unread count
 .ccskill-gmail/api get action=get_unread_count
 
-# 特定ラベルの未読数
+# Unread count for a specific label
 .ccskill-gmail/api get action=get_unread_count label="重要"
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -184,9 +184,9 @@
 }
 ```
 
-### エラー例
+### Error Example
 
-存在しないラベルを指定した場合：
+When a non-existent label is specified:
 
 ```json
 {
@@ -197,27 +197,27 @@
 
 ---
 
-## list_attachments - 添付ファイル一覧
+## list_attachments - List Attachments
 
-メッセージの添付ファイル一覧を取得します。`get_attachment` の前にサイズ確認に使用します。
+Retrieves the list of attachments for a message. Use this to check sizes before calling `get_attachment`.
 
-### リクエスト
+### Request
 
-**メソッド**: GET
+**Method**: GET
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| messageId | ✓ | メッセージ ID |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| messageId | ✓ | Message ID |
 
-### 実行例
+### Example
 
 ```bash
 .ccskill-gmail/api get action=list_attachments messageId=19bf7f25b96ab637
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -242,33 +242,33 @@
 }
 ```
 
-添付ファイルがない場合は空配列が返されます。
+An empty array is returned if there are no attachments.
 
 ---
 
-## get_attachment - 添付ファイル取得
+## get_attachment - Get Attachment
 
-添付ファイルの内容を base64 エンコードで取得します。5MB 超のファイルはエラーになります。
+Retrieves the content of an attachment as base64-encoded data. Returns an error for files over 5MB.
 
-### リクエスト
+### Request
 
-**メソッド**: GET
+**Method**: GET
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| messageId | ✓ | メッセージ ID |
-| attachmentIndex | ✓ | 添付ファイルのインデックス（0始まり） |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| messageId | ✓ | Message ID |
+| attachmentIndex | ✓ | Attachment index (0-based) |
 
-### 実行例
+### Example
 
 ```bash
-# 添付ファイルを取得してローカルに保存（推奨: download サブコマンド）
+# Get an attachment and save locally (recommended: download subcommand)
 .ccskill-gmail/api download 19bf7f25b96ab637 0 /tmp/report.pdf
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -282,9 +282,9 @@
 }
 ```
 
-### エラー例
+### Error Examples
 
-インデックスが範囲外の場合：
+When the index is out of range:
 
 ```json
 {
@@ -293,7 +293,7 @@
 }
 ```
 
-サイズ超過の場合：
+When the file exceeds the size limit:
 
 ```json
 {
@@ -304,32 +304,32 @@
 
 ---
 
-## get_message_html - メール本文 HTML 取得
+## get_message_html - Get Message HTML
 
-メール本文を完全な HTML として取得します。PDF 化やブラウザ表示に使用します。
+Retrieves the email body as complete HTML. Used for PDF conversion or browser display.
 
-### リクエスト
+### Request
 
-**メソッド**: GET
+**Method**: GET
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| messageId | ✓ | メッセージ ID |
-| includeHeaders | | ヘッダー情報を HTML に含めるか（デフォルト: true） |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| messageId | ✓ | Message ID |
+| includeHeaders | | Whether to include header information in the HTML (default: true) |
 
-### 実行例
+### Example
 
 ```bash
-# HTML を保存（推奨: save-html サブコマンド）
+# Save as HTML (recommended: save-html subcommand)
 .ccskill-gmail/api save-html 19bf7f25b96ab637 /tmp/email.html
 
-# ヘッダーなしで保存
+# Save without headers
 .ccskill-gmail/api save-html 19bf7f25b96ab637 /tmp/email.html false
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -345,36 +345,36 @@
 }
 ```
 
-### PDF 化の手順
+### PDF Conversion Procedure
 
-`save-pdf` サブコマンドを使うと HTML 取得 → PDF 変換を一括で行えます。
+The `save-pdf` subcommand performs HTML retrieval and PDF conversion in a single step.
 
 ```bash
-# 推奨: save-pdf で一括処理
+# Recommended: One-step processing with save-pdf
 .ccskill-gmail/api save-pdf 19bf7f25b96ab637 ./email.pdf
 ```
 
-内部で Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、案内メッセージを返します。
+It auto-detects Chrome headless / wkhtmltopdf internally. If no tool is available, it saves the HTML and returns a guidance message.
 
 ---
 
-## get_profile - プロフィール情報取得
+## get_profile - Get Profile Information
 
-アカウントのメールアドレスと未読数の概要を取得します。
+Retrieves the account email address and unread count summary.
 
-### リクエスト
+### Request
 
-**メソッド**: GET
+**Method**: GET
 
-**パラメータ**: なし
+**Parameters**: None
 
-### 実行例
+### Example
 
 ```bash
 .ccskill-gmail/api get action=get_profile
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -387,6 +387,6 @@
 }
 ```
 
-- `email`: アカウントのメールアドレス
-- `inboxUnreadCount`: 受信トレイの未読メール数
-- `starredUnreadCount`: スター付き未読メール数
+- `email`: Account email address
+- `inboxUnreadCount`: Inbox unread email count
+- `starredUnreadCount`: Starred unread email count

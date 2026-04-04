@@ -1,29 +1,29 @@
-# add_label / remove_label - ラベル操作
+# add_label / remove_label - Label Operations
 
-スレッドにラベルを追加・削除します。
+Add or remove labels from threads.
 
 ---
 
-## add_label - ラベル追加
+## add_label - Add a Label
 
-### リクエスト
+### Request
 
-**メソッド**: POST
+**Method**: POST
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| threadId | ✓ | スレッド ID |
-| label | ✓ | ラベル名 |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| threadId | ✓ | Thread ID |
+| label | ✓ | Label name |
 
-### 実行例
+### Example
 
 ```bash
 .ccskill-gmail/api post '{"action":"add_label","threadId":"19bf7f25b96ab637","label":"対応済"}'
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -37,33 +37,33 @@
 }
 ```
 
-### 注意事項
+### Notes
 
-- 存在しないラベルを指定した場合は**自動的に新規作成**されます
-- ネストしたラベルは `親ラベル/子ラベル` 形式で指定できます
+- If a non-existent label is specified, it will be **automatically created**
+- Nested labels can be specified in `parent/child` format
 
 ---
 
-## remove_label - ラベル削除
+## remove_label - Remove a Label
 
-### リクエスト
+### Request
 
-**メソッド**: POST
+**Method**: POST
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| threadId | ✓ | スレッド ID |
-| label | ✓ | ラベル名 |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| threadId | ✓ | Thread ID |
+| label | ✓ | Label name |
 
-### 実行例
+### Example
 
 ```bash
 .ccskill-gmail/api post '{"action":"remove_label","threadId":"19bf7f25b96ab637","label":"対応済"}'
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -77,9 +77,9 @@
 }
 ```
 
-### エラー例
+### Error Example
 
-存在しないラベルを削除しようとした場合：
+When attempting to remove a non-existent label:
 
 ```json
 {
@@ -90,23 +90,23 @@
 
 ---
 
-## ワークフロー例
+## Workflow Example
 
 ```bash
-# 1. 未読メールを検索（THREAD_ID を確認）
+# 1. Search for unread emails (note the THREAD_ID)
 .ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
-# 2. 「要確認」ラベルを追加（THREAD_ID は手順1の結果から取得）
+# 2. Add a "要確認" (needs review) label (THREAD_ID is obtained from step 1 results)
 .ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"要確認"}'
 
-# 3. 対応後、「要確認」を外して「対応済」を追加
+# 3. After handling, remove "要確認" and add "対応済" (handled)
 .ccskill-gmail/api post '{"action":"remove_label","threadId":"THREAD_ID","label":"要確認"}'
 .ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 ```
 
 ---
 
-## 制限事項
+## Limitations
 
-- **スレッド単位での操作のみ対応**: 個別メッセージへのラベル付与は GmailApp の制限により未対応
-- **システムラベル**: `INBOX`, `SENT`, `TRASH` などのシステムラベルは操作できません
+- **Thread-level operations only**: Per-message labeling is not supported due to GmailApp limitations
+- **System labels**: System labels such as `INBOX`, `SENT`, `TRASH` cannot be operated on

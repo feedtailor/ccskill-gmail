@@ -93,9 +93,9 @@ fi
 
 # wkhtmltopdf (optional, for PDF)
 if command -v wkhtmltopdf &>/dev/null; then
-    echo -e "  $PASS wkhtmltopdf installed (PDF保存が使えます)"
+    echo -e "  $PASS wkhtmltopdf installed (enables PDF export)"
 else
-    echo -e "  $WARN wkhtmltopdf not installed (PDF保存には必要)"
+    echo -e "  $WARN wkhtmltopdf not installed (required for PDF export)"
     echo "       Fix: brew install wkhtmltopdf"
     WARNINGS=$((WARNINGS + 1))
 fi

@@ -1,32 +1,32 @@
-# list_drafts - 下書き一覧取得
+# list_drafts - List Drafts
 
-下書きの一覧を軽量な形式で取得します。
+Retrieves a list of drafts in a lightweight format.
 
-## リクエスト
+## Request
 
-**メソッド**: GET
+**Method**: GET
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| maxResults | | 最大取得件数（デフォルト 20, 上限 100） |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| maxResults | | Maximum number of results (default 20, max 100) |
 
 ---
 
-## 実行例
+## Example
 
 ```bash
-# 下書き一覧（デフォルト 20 件）
+# List drafts (default 20 items)
 .ccskill-gmail/api get action=list_drafts
 
-# 件数指定
+# Specify count
 .ccskill-gmail/api get action=list_drafts maxResults=50
 ```
 
 ---
 
-## レスポンス例
+## Response Example
 
 ```json
 {
@@ -47,92 +47,92 @@
 }
 ```
 
-- `total`: 全下書き件数
-- `count`: 今回返した件数（maxResults で制限された場合は total と異なる）
-- `snippet`: 本文の先頭 100 文字（プレーンテキスト）
+- `total`: Total number of drafts
+- `count`: Number of drafts returned in this response (differs from total when limited by maxResults)
+- `snippet`: First 100 characters of the body (plain text)
 
 ---
 
-# create_draft - 新規メールの下書き作成
+# create_draft - Create a New Email Draft
 
-新しいメールの下書きを作成します。既存スレッドへの返信は `create_reply_draft` を使用してください。
+Creates a new email draft. For replies to existing threads, use `create_reply_draft`.
 
-## 設計思想
+## Design Philosophy
 
-**送信機能は意図的に含めていません。**
+**Send functionality is intentionally excluded.**
 
-- 誤送信防止: AI が直接送信すると取り消し不可
-- 確認フロー: 人間が Gmail UI で内容確認 → 送信
-- 責任の明確化: 送信は人間の意思決定
+- Prevent accidental sends: Once AI sends directly, it cannot be undone
+- Review flow: Human reviews content in Gmail UI -> sends
+- Clear responsibility: Sending is a human decision
 
-下書きは Gmail の「下書き」フォルダに保存され、ブラウザや Gmail アプリで確認・編集・送信できます。
+Drafts are saved in Gmail's "Drafts" folder and can be reviewed, edited, and sent via browser or the Gmail app.
 
 ---
 
-## リクエスト
+## Request
 
-**メソッド**: POST
+**Method**: POST
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| to | ✓ | 宛先メールアドレス（カンマ区切りで複数可） |
-| subject | ✓ | 件名 |
-| body | ✓ | 本文（プレーンテキスト。htmlBody 指定時はフォールバック用） |
-| cc | | CC（カンマ区切りで複数可） |
-| bcc | | BCC（カンマ区切りで複数可） |
-| htmlBody | | HTML 本文（指定時は body がプレーンテキストフォールバックになる） |
-| attachments | | 添付ファイル配列（詳細は下記参照） |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| to | ✓ | Recipient email address (comma-separated for multiple) |
+| subject | ✓ | Subject |
+| body | ✓ | Body (plain text; used as fallback when htmlBody is specified) |
+| cc | | CC (comma-separated for multiple) |
+| bcc | | BCC (comma-separated for multiple) |
+| htmlBody | | HTML body (when specified, body becomes the plain text fallback) |
+| attachments | | Attachment array (see details below) |
 
-### attachments の形式
+### attachments Format
 
 ```json
 [
   {
     "filename": "report.pdf",
     "contentType": "application/pdf",
-    "content": "<base64エンコードされたファイル内容>"
+    "content": "<base64-encoded file content>"
   }
 ]
 ```
 
-- `filename` (必須): ファイル名
-- `content` (必須): base64 エンコードされたファイルデータ
-- `contentType` (任意): MIME タイプ（省略時は `application/octet-stream`）
-- 合計サイズ上限: 5MB（base64 デコード後のサイズ）
+- `filename` (required): File name
+- `content` (required): Base64-encoded file data
+- `contentType` (optional): MIME type (defaults to `application/octet-stream` if omitted)
+- Total size limit: 5MB (size after base64 decoding)
 
 ---
 
-## 実行例
+## Examples
 
-### 基本的な下書き
+### Basic Draft
 
 ```bash
 .ccskill-gmail/api post '{"action":"create_draft","to":"recipient@example.com","subject":"お見積りの件","body":"お世話になっております。\n\n添付の通りお見積りをお送りします。\n\nよろしくお願いいたします。"}'
 ```
 
-### CC/BCC 付き
+### With CC/BCC
 
 ```bash
 .ccskill-gmail/api post '{"action":"create_draft","to":"client@example.com","cc":"manager@example.com","bcc":"archive@example.com","subject":"プロジェクト進捗報告","body":"お疲れ様です。\n\n進捗をご報告します。"}'
 ```
 
-### 複数宛先
+### Multiple Recipients
 
 ```bash
 .ccskill-gmail/api post '{"action":"create_draft","to":"user1@example.com,user2@example.com","subject":"チームミーティングのお知らせ","body":"明日10時からミーティングを行います。"}'
 ```
 
-### HTML メール
+### HTML Email
 
 ```bash
 .ccskill-gmail/api post '{"action":"create_draft","to":"recipient@example.com","subject":"月次レポート","body":"月次レポートを送ります。","htmlBody":"<h1>月次レポート</h1><p>詳細は以下の通りです。</p>"}'
 ```
 
-### 添付ファイル付き
+### With Attachments
 
-Write ツールで JSON ファイルを作成してから送信:
+Create a JSON file with the Write tool, then send:
 
 ```bash
 .ccskill-gmail/api post @/tmp/draft-with-attachment.json
@@ -140,7 +140,7 @@ Write ツールで JSON ファイルを作成してから送信:
 
 ---
 
-## レスポンス例
+## Response Example
 
 ```json
 {
@@ -157,55 +157,55 @@ Write ツールで JSON ファイルを作成してから送信:
 
 ---
 
-## 下書きの確認・送信
+## Reviewing and Sending Drafts
 
-1. Gmail を開く: https://mail.google.com/mail/u/0/#drafts
-2. 下書き一覧から該当メールを選択
-3. 内容を確認・編集
-4. 「送信」ボタンをクリック
-
----
+1. Open Gmail: https://mail.google.com/mail/u/0/#drafts
+2. Select the draft from the drafts list
+3. Review and edit the content
+4. Click "Send"
 
 ---
 
-# create_reply_draft - 返信下書き作成
+---
 
-既存のスレッドに対する返信の下書きを作成します。
+# create_reply_draft - Create a Reply Draft
 
-## リクエスト
+Creates a reply draft to an existing thread.
 
-**メソッド**: POST
+## Request
 
-**パラメータ**:
+**Method**: POST
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| threadId | ✓ | 返信先スレッドの ID |
-| body | ✓ | 返信本文（プレーンテキスト。htmlBody 指定時はフォールバック用） |
-| cc | | CC（カンマ区切りで複数可） |
-| bcc | | BCC（カンマ区切りで複数可） |
-| htmlBody | | HTML 本文（指定時は body がプレーンテキストフォールバックになる） |
-| attachments | | 添付ファイル配列（形式は create_draft と同じ） |
-| skipSelf | | 自分の送信メッセージをスキップして相手のメッセージに返信する（デフォルト `true`） |
-| replyAll | | 全員に返信する — 元メッセージの to/cc を自動保持（デフォルト `true`） |
+**Parameters**:
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| threadId | ✓ | Thread ID to reply to |
+| body | ✓ | Reply body (plain text; used as fallback when htmlBody is specified) |
+| cc | | CC (comma-separated for multiple) |
+| bcc | | BCC (comma-separated for multiple) |
+| htmlBody | | HTML body (when specified, body becomes the plain text fallback) |
+| attachments | | Attachment array (same format as create_draft) |
+| skipSelf | | Skip your own sent messages and reply to the other party's message (default `true`) |
+| replyAll | | Reply to all -- auto-preserves original message's to/cc (default `true`) |
 
 ---
 
-## 実行例
+## Examples
 
-### 基本的な返信下書き
+### Basic Reply Draft
 
 ```bash
 .ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ご連絡ありがとうございます。\n\n承知いたしました。"}'
 ```
 
-### CC 付き返信
+### Reply with CC
 
 ```bash
 .ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"確認しました。","cc":"manager@example.com"}'
 ```
 
-### HTML 返信
+### HTML Reply
 
 ```bash
 .ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ありがとうございます。","htmlBody":"<p>ありがとうございます。<br>承知いたしました。</p>"}'
@@ -213,7 +213,7 @@ Write ツールで JSON ファイルを作成してから送信:
 
 ---
 
-## レスポンス例
+## Response Example
 
 ```json
 {
@@ -233,42 +233,42 @@ Write ツールで JSON ファイルを作成してから送信:
 
 ---
 
-## 動作詳細
+## Behavior Details
 
-- **skipSelf（デフォルト true）**: スレッド内メッセージを新しい順に遡り、自分以外が送信したメッセージを返信対象にする。全メッセージが自分の場合は最後のメッセージにフォールバック
-- **replyAll（デフォルト true）**: 元メッセージの to/cc を自動保持した「全員に返信」で下書きを作成
-- 件名は自動的に「Re: 元の件名」形式に設定
-- 宛先は実際の下書き宛先（`draft.getMessage().getTo()`）を返す
+- **skipSelf (default true)**: Traverses messages in the thread from newest to oldest and selects the first message not sent by you as the reply target. Falls back to the last message if all messages are from you
+- **replyAll (default true)**: Creates a "reply all" draft that auto-preserves the original message's to/cc
+- The subject is automatically set to "Re: original subject" format
+- The recipient returned is the actual draft recipient (`draft.getMessage().getTo()`)
 
 ---
 
-# update_draft - 下書き更新
+# update_draft - Update a Draft
 
-既存の下書きを更新します。
+Updates an existing draft.
 
-## リクエスト
+## Request
 
-**メソッド**: POST
+**Method**: POST
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| draftId | ✓ | 更新する下書きの ID |
-| to | | 新しい宛先（**新規下書きのみ有効。返信下書きでは無視される**） |
-| subject | | 新しい件名（省略時は現在の値を維持） |
-| body | | 新しい本文（省略時は現在の値を維持） |
-| cc | | 新しい CC |
-| bcc | | 新しい BCC |
-| htmlBody | | 新しい HTML 本文（省略時は既存の HTML を維持） |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| draftId | ✓ | Draft ID to update |
+| to | | New recipient (**only effective for new drafts; ignored for reply drafts**) |
+| subject | | New subject (retains current value if omitted) |
+| body | | New body (retains current value if omitted) |
+| cc | | New CC |
+| bcc | | New BCC |
+| htmlBody | | New HTML body (retains existing HTML if omitted) |
 
-## 実行例
+## Example
 
 ```bash
 .ccskill-gmail/api post '{"action":"update_draft","draftId":"r-123456789","subject":"【更新】お見積りの件"}'
 ```
 
-## レスポンス例
+## Response Example
 
 ```json
 {
@@ -285,40 +285,40 @@ Write ツールで JSON ファイルを作成してから送信:
 }
 ```
 
-- `threadId`: 下書きが属するスレッドの ID
-- `isReply`: 返信下書きとして再作成された場合 `true`
+- `threadId`: Thread ID the draft belongs to
+- `isReply`: `true` if recreated as a reply draft
 
-## 注意事項
+## Notes
 
-- GmailApp は下書きの直接編集をサポートしていないため、内部的には「削除→再作成」で実装
-- そのため **draftId が変更されます**（レスポンスで新しい ID を確認してください）
-- 返信下書きの場合、スレッドとの紐付けを維持して再作成します（`isReply: true` で判別可能）
-- **返信下書きの to（宛先）は変更できません**（GmailApp API の制約）。cc / bcc / body / subject は変更可能です。宛先を変更したい場合は、Gmail UI の下書き確認時に手動で変更してください
-- **update_draft では添付ファイル（attachments）の更新は未対応です。** 添付を変更する場合は delete_draft → create_draft で再作成してください
+- GmailApp does not support direct editing of drafts, so internally this is implemented as "delete -> recreate"
+- Therefore, **the draftId will change** (check the new ID in the response)
+- For reply drafts, the thread association is preserved during recreation (identifiable by `isReply: true`)
+- **The to (recipient) of a reply draft cannot be changed** (GmailApp API limitation). cc / bcc / body / subject can be changed. To change the recipient, manually modify it when reviewing the draft in the Gmail UI
+- **update_draft does not support updating attachments.** To change attachments, use delete_draft -> create_draft to recreate the draft
 
 ---
 
-# delete_draft - 下書き削除
+# delete_draft - Delete a Draft
 
-下書きを削除します。
+Deletes a draft.
 
-## リクエスト
+## Request
 
-**メソッド**: POST
+**Method**: POST
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| draftId | ✓ | 削除する下書きの ID |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| draftId | ✓ | Draft ID to delete |
 
-## 実行例
+## Example
 
 ```bash
 .ccskill-gmail/api post '{"action":"delete_draft","draftId":"r-123456789"}'
 ```
 
-## レスポンス例
+## Response Example
 
 ```json
 {
@@ -331,9 +331,9 @@ Write ツールで JSON ファイルを作成してから送信:
 }
 ```
 
-## エラー例
+## Error Example
 
-存在しない draftId を指定した場合：
+When a non-existent draftId is specified:
 
 ```json
 {

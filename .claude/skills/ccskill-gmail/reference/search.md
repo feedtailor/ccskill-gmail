@@ -1,32 +1,32 @@
-# search - メール検索
+# search - Email Search
 
-Gmail の検索構文を使用してメールを検索します。
+Searches emails using Gmail search syntax.
 
-## リクエスト
+## Request
 
-**メソッド**: GET
+**Method**: GET
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| query | ✓ | Gmail 検索クエリ |
-| maxResults | | 最大取得件数 (デフォルト: 20, 最大: 500) |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| query | ✓ | Gmail search query |
+| maxResults | | Maximum number of results (default: 20, max: 500) |
 
-## 実行例
+## Examples
 
 ```bash
-# 未読メール
+# Unread emails
 .ccskill-gmail/api get action=search query="is:unread"
 
-# 特定の送信者から（最新10件）
+# From a specific sender (latest 10)
 .ccskill-gmail/api get action=search query="from:boss@company.com" maxResults=10
 
-# 日本語を含むクエリ（get サブコマンドが自動エンコード）
+# Query containing Japanese (get subcommand auto-encodes)
 .ccskill-gmail/api get action=search query="subject:請求書"
 ```
 
-## レスポンス例
+## Response Example
 
 ```json
 {
@@ -51,23 +51,23 @@ Gmail の検索構文を使用してメールを検索します。
 }
 ```
 
-## Gmail 検索演算子
+## Gmail Search Operators
 
-| 演算子 | 説明 | 例 |
-|--------|------|-----|
-| is:unread | 未読メール | `is:unread` |
-| is:starred | スター付き | `is:starred` |
-| from: | 送信者 | `from:example@gmail.com` |
-| to: | 宛先 | `to:me@gmail.com` |
-| subject: | 件名 | `subject:請求書` |
-| has:attachment | 添付ファイル付き | `has:attachment` |
-| after: | 日付以降 | `after:2024/01/01` |
-| before: | 日付以前 | `before:2024/02/01` |
-| label: | ラベル | `label:重要` |
-| in:inbox | 受信トレイ | `in:inbox` |
-| in:sent | 送信済み | `in:sent` |
+| Operator | Description | Example |
+|----------|-------------|---------|
+| is:unread | Unread emails | `is:unread` |
+| is:starred | Starred emails | `is:starred` |
+| from: | Sender | `from:example@gmail.com` |
+| to: | Recipient | `to:me@gmail.com` |
+| subject: | Subject | `subject:請求書` |
+| has:attachment | Has attachments | `has:attachment` |
+| after: | After date | `after:2024/01/01` |
+| before: | Before date | `before:2024/02/01` |
+| label: | Label | `label:重要` |
+| in:inbox | In inbox | `in:inbox` |
+| in:sent | In sent | `in:sent` |
 
-複数の条件はスペースで区切って AND 検索：
+Multiple conditions are space-separated for AND search:
 ```
 is:unread from:boss@company.com has:attachment
 ```

@@ -1,33 +1,33 @@
-# mark_read / mark_unread - 既読・未読操作
+# mark_read / mark_unread - Read/Unread Operations
 
-スレッドまたはメッセージの既読・未読状態を変更します。
+Changes the read/unread status of a thread or message.
 
 ---
 
-## mark_read - 既読にする
+## mark_read - Mark as Read
 
-### リクエスト
+### Request
 
-**メソッド**: POST
+**Method**: POST
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| threadId | ※ | スレッド ID（threadId または messageId のいずれか必須） |
-| messageId | ※ | メッセージ ID |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| threadId | * | Thread ID (either threadId or messageId is required) |
+| messageId | * | Message ID |
 
-### 実行例
+### Example
 
 ```bash
-# スレッド全体を既読に
+# Mark an entire thread as read
 .ccskill-gmail/api post '{"action":"mark_read","threadId":"19bf7f25b96ab637"}'
 
-# 特定のメッセージを既読に
+# Mark a specific message as read
 .ccskill-gmail/api post '{"action":"mark_read","messageId":"19bf7f25b96ab637"}'
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -42,30 +42,30 @@
 
 ---
 
-## mark_unread - 未読にする
+## mark_unread - Mark as Unread
 
-### リクエスト
+### Request
 
-**メソッド**: POST
+**Method**: POST
 
-**パラメータ**:
+**Parameters**:
 
-| パラメータ | 必須 | 説明 |
-|-----------|------|------|
-| threadId | ※ | スレッド ID（threadId または messageId のいずれか必須） |
-| messageId | ※ | メッセージ ID |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| threadId | * | Thread ID (either threadId or messageId is required) |
+| messageId | * | Message ID |
 
-### 実行例
+### Example
 
 ```bash
-# スレッド全体を未読に
+# Mark an entire thread as unread
 .ccskill-gmail/api post '{"action":"mark_unread","threadId":"19bf7f25b96ab637"}'
 
-# 特定のメッセージを未読に
+# Mark a specific message as unread
 .ccskill-gmail/api post '{"action":"mark_unread","messageId":"19bf7f25b96ab637"}'
 ```
 
-### レスポンス例
+### Response Example
 
 ```json
 {
@@ -80,11 +80,11 @@
 
 ---
 
-## 使い分け
+## Usage Guide
 
-| 対象 | 効果 |
-|------|------|
-| threadId | スレッド内の全メッセージの既読/未読状態を変更 |
-| messageId | 指定したメッセージのみの既読/未読状態を変更 |
+| Target | Effect |
+|--------|--------|
+| threadId | Changes read/unread status for all messages in the thread |
+| messageId | Changes read/unread status for the specified message only |
 
-両方指定された場合は `threadId` が優先されます。
+When both are specified, `threadId` takes priority.

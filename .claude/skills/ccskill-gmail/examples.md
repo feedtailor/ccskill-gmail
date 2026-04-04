@@ -1,268 +1,268 @@
-# ワークフロー例
+# Workflow Examples
 
-## 前提
+## Prerequisites
 
-以下のワークフロー例では `.ccskill-gmail/api` コマンドを使用します。
-エンドポイントと認証はスクリプト内部で自動解決されます。
+The workflow examples below use the `.ccskill-gmail/api` command.
+The endpoint and authentication are automatically resolved internally by the script.
 
 ---
 
-## 1. 未読メールの確認
+## 1. Check Unread Emails
 
 ```bash
-# 未読メール一覧を取得
+# Get unread email list
 .ccskill-gmail/api get action=search query="is:unread" maxResults=10
 
-# 特定のスレッドを詳細表示
+# View a specific thread in detail
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID
 ```
 
 ---
 
-## 2. 重要な送信者からのメールを確認
+## 2. Check Emails from Important Senders
 
 ```bash
-# 特定の送信者からの未読メール
+# Unread emails from a specific sender
 .ccskill-gmail/api get action=search query="is:unread from:boss@company.com"
 ```
 
 ---
 
-## 3. 返信下書きを作成
+## 3. Create a Reply Draft
 
 ```bash
-# 1. 未読メールを検索
+# 1. Search for unread emails
 .ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
-# 2. スレッドの詳細を取得（THREAD_ID は手順1の結果から取得）
+# 2. Get thread details (THREAD_ID is obtained from step 1 results)
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID
 
-# 3. 返信下書きを作成（宛先・件名は自動設定、デフォルトで全員に返信）
+# 3. Create a reply draft (recipient and subject are auto-populated; defaults to reply-all)
 .ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"ご連絡ありがとうございます。\n\n承知いたしました。対応いたします。\n\nよろしくお願いいたします。"}'
 
-# 送信者のみに返信したい場合（replyAll: false）
+# To reply only to the sender (replyAll: false)
 .ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。","replyAll":false}'
 
-# 自分の送信メッセージをスキップせず、最後のメッセージに返信したい場合
+# To reply to the last message without skipping your own sent messages
 .ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"追記です。","skipSelf":false,"replyAll":false}'
 
-# 4. Gmail で下書きを確認・送信
+# 4. Review and send the draft in Gmail
 # https://mail.google.com/mail/u/0/#drafts
 ```
 
-デフォルト動作（`skipSelf: true`, `replyAll: true`）は、自分が最後に返信したスレッドでも正しく相手に宛てた全員返信の下書きを作成します。
+The default behavior (`skipSelf: true`, `replyAll: true`) correctly creates a reply-all draft addressed to the other party, even in threads where you sent the last message.
 
 ---
 
-## 4. 添付ファイル付きメールを検索・ダウンロード
+## 4. Search and Download Emails with Attachments
 
 ```bash
-# 添付ファイル付きの未読メール
+# Unread emails with attachments
 .ccskill-gmail/api get action=search query="is:unread has:attachment"
 
-# 添付ファイル一覧を確認（MESSAGE_ID は上の結果から取得）
+# Check the attachment list (MESSAGE_ID is obtained from the above results)
 .ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
 
-# 添付ファイルをダウンロード（index=0 の添付ファイル）
+# Download an attachment (attachment at index=0)
 .ccskill-gmail/api download MESSAGE_ID 0 /tmp/attachment.pdf
 ```
 
 ---
 
-## 5. メールを PDF 化（印刷）
+## 5. Save Email as PDF (Print)
 
 ```bash
-# メールを PDF として保存（HTML取得 → PDF変換を一括実行）
+# Save an email as PDF (fetches HTML and converts to PDF in one step)
 .ccskill-gmail/api save-pdf MESSAGE_ID ./receipt.pdf
 
-# HTML として保存したい場合
+# To save as HTML instead
 .ccskill-gmail/api save-html MESSAGE_ID ./email.html
 ```
 
-`save-pdf` は Chrome headless / wkhtmltopdf を自動検出します。ツールがない場合は HTML を保存し、ブラウザでの印刷手順を案内します。
+`save-pdf` auto-detects Chrome headless / wkhtmltopdf. If no tool is available, it saves the HTML and provides instructions for printing via a browser.
 
 ---
 
-## 6. 日付範囲でメールを検索
+## 6. Search Emails by Date Range
 
 ```bash
-# 今月のメール
+# Emails from this month
 .ccskill-gmail/api get action=search query="after:2024/01/01 before:2024/02/01"
 
-# 過去7日間
+# Past 7 days
 .ccskill-gmail/api get action=search query="newer_than:7d"
 ```
 
 ---
 
-## 7. ラベル別にメールを確認
+## 7. Check Emails by Label
 
 ```bash
-# ラベル一覧を取得
+# Get label list
 .ccskill-gmail/api get action=list_labels | jq '.data.labels[] | select(.unreadCount > 0)'
 
-# 特定ラベルのメール
+# Emails with a specific label
 .ccskill-gmail/api get action=search query="label:Projects is:unread"
 ```
 
 ---
 
-## 8. 複数宛先への下書き作成
+## 8. Create a Draft to Multiple Recipients
 
 ```bash
-# チームメンバー全員への連絡
+# Send a notification to all team members
 .ccskill-gmail/api post '{"action":"create_draft","to":"member1@example.com,member2@example.com,member3@example.com","cc":"manager@example.com","subject":"週次ミーティングのお知らせ","body":"お疲れ様です。\n\n週次ミーティングを以下の日程で行います。\n\n日時: 1月30日（火）15:00〜\n場所: 会議室A\n\nご参加よろしくお願いいたします。"}'
 ```
 
-長い JSON の場合は Write ツール + `@file` パターンを使用:
+For long JSON, use the Write tool + `@file` pattern:
 
 ```
-# Step 1: Write ツールで JSON ファイルを作成
-Write("/tmp/draft.json") に以下の内容:
-{"action":"create_draft","to":"member1@example.com,member2@example.com","cc":"manager@example.com","subject":"週次ミーティングのお知らせ","body":"お疲れ様です。\n\n...長い本文..."}
+# Step 1: Create a JSON file with the Write tool
+Write("/tmp/draft.json") with the following content:
+{"action":"create_draft","to":"member1@example.com,member2@example.com","cc":"manager@example.com","subject":"週次ミーティングのお知らせ","body":"お疲れ様です。\n\n...long body text..."}
 ```
 
 ```bash
-# Step 2: Bash で送信
+# Step 2: Send via Bash
 .ccskill-gmail/api post @/tmp/draft.json
 ```
 
 ---
 
-## 9. メールを読んで既読にする
+## 9. Read an Email and Mark as Read
 
 ```bash
-# 1. 未読メールを取得（THREAD_ID を確認）
+# 1. Get unread emails (note the THREAD_ID)
 .ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
-# 2. 内容を確認
+# 2. View the content
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
-# 3. 既読にする
+# 3. Mark as read
 .ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 ```
 
 ---
 
-## 10. メールにラベルを付けて整理
+## 10. Organize Emails with Labels
 
 ```bash
-# 1. 未読の重要メールを検索（THREAD_ID を確認）
+# 1. Search for unread important emails (note the THREAD_ID)
 .ccskill-gmail/api get action=search query="is:unread is:important" maxResults=1
 
-# 2. 「要対応」ラベルを追加
+# 2. Add a "要対応" (action required) label
 .ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"要対応"}'
 
-# 3. 対応完了後、ラベルを変更
+# 3. After handling, change the label
 .ccskill-gmail/api post '{"action":"remove_label","threadId":"THREAD_ID","label":"要対応"}'
 .ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 ```
 
 ---
 
-## 11. 未読メール対応ワークフロー（完全版）
+## 11. Unread Email Handling Workflow (Complete)
 
 ```bash
-# 1. 未読メールを検索（THREAD_ID を確認）
+# 1. Search for unread emails (note the THREAD_ID)
 .ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
-# 2. スレッドの内容を確認
+# 2. View the thread content
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
-# 3. 返信下書きを作成
+# 3. Create a reply draft
 .ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。"}'
 
-# 4. 既読にする
+# 4. Mark as read
 .ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 
-# 5. ラベルを追加
+# 5. Add a label
 .ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 
-# 6. Gmail で下書きを確認・送信
+# 6. Review and send the draft in Gmail
 # https://mail.google.com/mail/u/0/#drafts
 ```
 
 ---
 
-## 12. 未読数の監視
+## 12. Monitor Unread Count
 
 ```bash
-# 受信トレイの未読数
+# Unread count in inbox
 .ccskill-gmail/api get action=get_unread_count
 
-# 特定ラベルの未読数
+# Unread count for a specific label
 .ccskill-gmail/api get action=get_unread_count label=重要
 ```
 
 ---
 
-## 13. メール処理後のアーカイブ
+## 13. Archive After Processing Email
 
 ```bash
-# 1. 未読メールを処理（THREAD_ID を確認）
+# 1. Process unread emails (note the THREAD_ID)
 .ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
-# 2. 既読にしてラベル追加
+# 2. Mark as read and add label
 .ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 .ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 
-# 3. アーカイブして受信トレイを整理
+# 3. Archive to clean up the inbox
 .ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
 ```
 
 ---
 
-## 14. 不要メールの削除
+## 14. Delete Unwanted Emails
 
 ```bash
-# 1. 古いプロモーションメールを検索（THREAD_ID を確認）
+# 1. Search for old promotional emails (note the THREAD_ID)
 .ccskill-gmail/api get action=search query="category:promotions older_than:30d" maxResults=1
 
-# 2. ゴミ箱に移動（30日後に自動削除）
+# 2. Move to trash (auto-deleted after 30 days)
 .ccskill-gmail/api post '{"action":"move_to_trash","threadId":"THREAD_ID"}'
 ```
 
 ---
 
-## 15. 完全ワークフロー（未読確認 → 返信 → 整理 → アーカイブ）
+## 15. Complete Workflow (Check Unread -> Reply -> Organize -> Archive)
 
 ```bash
-# 1. 未読数を確認
+# 1. Check unread count
 .ccskill-gmail/api get action=get_unread_count | jq '.data.unreadCount'
 
-# 2. 未読メールを取得（THREAD_ID を確認）
+# 2. Get unread emails (note the THREAD_ID)
 .ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
-# 3. 内容を確認
+# 3. View the content
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
-# 4. 返信下書きを作成
+# 4. Create a reply draft
 .ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。"}'
 
-# 5. 既読にする
+# 5. Mark as read
 .ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 
-# 6. ラベルを追加
+# 6. Add a label
 .ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
 
-# 7. アーカイブ
+# 7. Archive
 .ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
 
-# 8. 未読数を再確認
+# 8. Re-check unread count
 .ccskill-gmail/api get action=get_unread_count | jq '.data.unreadCount'
 
-# Gmail で下書きを確認・送信: https://mail.google.com/mail/u/0/#drafts
+# Review and send drafts in Gmail: https://mail.google.com/mail/u/0/#drafts
 ```
 
 ---
 
-## 16. 添付ファイル付き下書き作成
+## 16. Create a Draft with Attachments
 
-添付ファイル付きの下書きは JSON が大きくなるため、Write ツール + `@file` パターンを使用します。
+Drafts with attachments produce large JSON, so use the Write tool + `@file` pattern.
 
 ```
-# Step 1: Write ツールで JSON ファイルを作成（base64 エンコード済みの content を含む）
-Write("/tmp/draft-with-attachment.json") に以下の内容:
+# Step 1: Create a JSON file with the Write tool (with base64-encoded content)
+Write("/tmp/draft-with-attachment.json") with the following content:
 {
   "action": "create_draft",
   "to": "recipient@example.com",
@@ -279,11 +279,11 @@ Write("/tmp/draft-with-attachment.json") に以下の内容:
 ```
 
 ```bash
-# Step 2: Bash で送信
+# Step 2: Send via Bash
 .ccskill-gmail/api post @/tmp/draft-with-attachment.json
 ```
 
-- `attachments` は配列で複数ファイルを添付可能
-- `content` は base64 エンコード済みのデータ
-- 合計サイズ上限: 5MB（base64 デコード後）
-- `contentType` 省略時は `application/octet-stream`
+- `attachments` is an array that supports multiple files
+- `content` is base64-encoded data
+- Total size limit: 5MB (after base64 decoding)
+- `contentType` defaults to `application/octet-stream` if omitted

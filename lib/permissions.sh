@@ -53,20 +53,20 @@ setup_permissions() {
 
     # opt-in 確認
     echo ""
-    echo "Claude Code の許可設定に以下のパターンを追加できます："
+    echo "The following permission patterns can be added to Claude Code:"
     for pattern in "${missing_patterns[@]}"; do
         echo "  - $pattern"
     done
     echo ""
-    echo "これにより、Skill 使用時の確認プロンプトが軽減されます。"
-    echo "設定先: $settings_file"
+    echo "This reduces confirmation prompts when using the skill."
+    echo "Target: $settings_file"
     echo ""
 
     if [ "$auto_yes" != "--yes" ] && [ "$auto_yes" != "-y" ]; then
-        read -p "許可パターンを追加しますか？ (y/N): " -n 1 -r
+        read -p "Add permission patterns? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "スキップしました。"
+            echo "Skipped."
             return 0
         fi
     fi
