@@ -287,3 +287,93 @@ Write("/tmp/draft-with-attachment.json") with the following content:
 - `content` is base64-encoded data
 - Total size limit: 5MB (after base64 decoding)
 - `contentType` defaults to `application/octet-stream` if omitted
+
+---
+
+## 17. Generate Shell Scripts for Gmail Automation
+
+The `.ccskill-gmail/api` command works as a Gmail bridge API callable from shell scripts. Ask Claude Code to generate a script and it will produce a working automation — no manual API research needed.
+
+### Use Case: Extract Spam Analysis Data
+
+> "Search spam emails and extract sender domains and subjects into NDJSON"
+
+Claude Code generates a script like:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Search spam emails
+result=$(.ccskill-gmail/api get action=search query="in:spam" maxResults=50)
+
+# Extract thread IDs
+thread_ids=$(echo "$result" | jq -r '.data.threads[].id')
+
+# Fetch each thread and output NDJSON
+for tid in $thread_ids; do
+  thread=$(.ccskill-gmail/api get action=get_thread threadId="$tid")
+  echo "$thread" | jq -c '.data.messages[0] | {
+    from: .from,
+    subject: .subject,
+    date: .date,
+    domain: (.from | capture("@(?<d>[^>]+)") | .d)
+  }'
+done
+```
+
+### Use Case: Bulk Download Attachments
+
+> "Download all PDF attachments from emails matching 'invoice' in the last month"
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+mkdir -p ./invoices
+
+# Search for invoice emails with attachments
+result=$(.ccskill-gmail/api get action=search query="invoice has:attachment newer_than:30d" maxResults=50)
+
+# Process each message
+echo "$result" | jq -r '.data.threads[].messages[].id' | while read -r msg_id; do
+  # List attachments
+  attachments=$(.ccskill-gmail/api get action=list_attachments messageId="$msg_id")
+  
+  # Download PDF attachments
+  echo "$attachments" | jq -r '.data.attachments[] | select(.mimeType == "application/pdf") | .index' | while read -r idx; do
+    filename=$(echo "$attachments" | jq -r ".data.attachments[$idx].filename")
+    .ccskill-gmail/api download "$msg_id" "$idx" "./invoices/${msg_id}_${filename}"
+    echo "Downloaded: $filename"
+  done
+done
+```
+
+### Use Case: Daily Unread Summary Report
+
+> "Create a script that outputs a Markdown summary of today's unread emails"
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+echo "# Unread Email Summary — $(date +%Y-%m-%d)"
+echo ""
+
+result=$(.ccskill-gmail/api get action=search query="is:unread newer_than:1d" maxResults=30)
+count=$(echo "$result" | jq '.data.threads | length')
+
+echo "**$count unread emails today**"
+echo ""
+echo "| From | Subject | Date |"
+echo "|------|---------|------|"
+
+echo "$result" | jq -r '.data.threads[] | "| \(.from) | \(.subject) | \(.date) |"'
+```
+
+### Key Points for Generated Scripts
+
+- **Run from the project directory** where ccskill-gmail is installed
+- **Authentication is automatic** — `.ccskill-gmail/api` handles OAuth tokens
+- **Standard shell features are allowed** — `$()`, pipes, loops, `jq`, `&&` are all fine in scripts (the restrictions in SKILL.md apply only to interactive Bash tool calls)
+- **JSON responses** — all API responses are `{"ok": true, "data": ...}`, use `jq` for parsing

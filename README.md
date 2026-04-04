@@ -63,6 +63,16 @@ Describe a complex, multi-step workflow in plain language and let Claude handle 
 
 > "List all mailing lists and automated notifications by sender, frequency, and last received date. Archive any I haven't read in over 3 months"
 
+**Shell Script Generation** — automate Gmail beyond interactive sessions
+
+The `.ccskill-gmail/api` command doubles as a Gmail bridge API callable from shell scripts. Just describe what you want automated, and Claude Code generates a working script — no manual API research needed.
+
+> "Create a script that searches spam emails and extracts sender domains into NDJSON"
+
+> "Write a script to download all PDF attachments from invoice emails this month"
+
+> "Generate a daily unread email summary report in Markdown"
+
 ## Architecture
 
 Instead of using the GCP Gmail API, this skill deploys a bridge API as a GAS (Google Apps Script) project accessible only to the authenticated user. Claude Code calls this as a private Gmail API.

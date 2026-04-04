@@ -1,6 +1,6 @@
 ---
 name: ccskill-gmail
-description: Search, read, create drafts (with attachment support), download attachments, and save emails as PDF via Gmail. No send functionality.
+description: Search, read, create drafts (with attachment support), download attachments, and save emails as PDF via Gmail. Also generates shell scripts for Gmail automation. No send functionality.
 allowed-tools: Bash, Write
 ---
 
@@ -431,6 +431,40 @@ When the user asks "what did the AI do?", this command can be used to check.
 - **Checking details**: If the user asks "what email was that?", use the threadId / messageId from the history to look it up via `get_thread` / `get_message`
 - **Storage location**: `.ccskill-gmail/audit.jsonl` (local only, recommended to exclude from git)
 - **Disabling**: Set the `CCSKILL_GMAIL_HISTORY=off` environment variable to stop logging
+
+---
+
+## Shell Script Generation
+
+This skill can also **generate standalone shell scripts** that automate Gmail operations. The `.ccskill-gmail/api` command works as a Gmail bridge API callable from any shell script — not just from Claude Code's interactive session.
+
+When a user asks "create a script that does X with my emails", generate a shell script that calls `.ccskill-gmail/api` directly. Since the skill definition teaches you the full API, you can produce correct scripts without trial and error.
+
+**Key points for script generation:**
+- The API command construction rules above (no `$()`, no `&&`, no pipes) apply only to **interactive Bash tool calls** within Claude Code. Generated shell scripts are free to use standard shell features (`$()`, pipes, loops, `jq`, etc.)
+- Authentication is handled automatically by `.ccskill-gmail/api` — scripts do not need to manage tokens
+- Scripts must be run from the project directory where ccskill-gmail is installed (`.ccskill-gmail/api` resolves paths relative to the current directory)
+- GET responses and POST responses both return JSON (`{"ok": true, "data": ...}`) — use `jq` for parsing in scripts
+- Include `set -euo pipefail` and basic error handling in generated scripts
+
+**Script pattern (GET):**
+```bash
+result=$(.ccskill-gmail/api get action=search query="is:unread" maxResults=10)
+echo "$result" | jq -r '.data.threads[] | .id'
+```
+
+**Script pattern (POST):**
+```bash
+.ccskill-gmail/api post '{"action":"mark_read","threadId":"'"$thread_id"'"}'
+```
+
+**Script pattern (POST with JSON file):**
+```bash
+cat > /tmp/payload.json <<EOF
+{"action":"create_draft","to":"$recipient","subject":"$subject","body":"$body"}
+EOF
+.ccskill-gmail/api post @/tmp/payload.json
+```
 
 ---
 
