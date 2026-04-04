@@ -8,7 +8,7 @@ A Claude Code skill for Gmail. Just tell Claude what you want in natural languag
 
 ### Email Operations
 
-Search, read, draft, label management, attachment download, and email-to-PDF export.
+Search, read, draft, label management, attachment download, and email-to-PDF export. Bulk operations (mark read/unread, add/remove labels, archive) are also supported for efficient batch processing.
 
 ### Security Policy
 
@@ -121,6 +121,8 @@ ccskill-gmail install
 
 The installer will automatically create a GAS project, deploy it, and handle Google authorization. When a browser window opens, click "Allow".
 
+**SSH / headless environments:** The installer always displays the Authorization URL in the terminal, so you can copy it and open it in any browser — even on a different machine.
+
 ## Update
 
 ```bash
@@ -142,7 +144,15 @@ This removes local files (`.ccskill-gmail/`, skill definitions, permission setti
 
 ## Other Commands
 
-Run `ccskill-gmail help` to see all available commands.
+```bash
+ccskill-gmail status              # Show all installations and their health
+ccskill-gmail doctor              # Diagnose environment and setup issues
+ccskill-gmail history             # Show API operation audit log
+ccskill-gmail apply-config        # Push config.js changes to GAS
+ccskill-gmail register <PATH>     # Register an existing installation
+ccskill-gmail release             # Create a distributable zip file
+ccskill-gmail help                # Show all available commands
+```
 
 ## Troubleshooting
 
@@ -163,6 +173,14 @@ This happens when your browser is logged into multiple Google accounts, or when 
 **Important:**
 - Do NOT copy the URL from the browser's error page — it contains corrupted redirect data. Always use the clean URL from your terminal
 - Make sure to sign in at accounts.google.com **before** opening the Authorization URL — opening the URL first may trigger the same redirect loop
+
+### Multi-account OAuth issues
+
+If you use `--user` and encounter authentication errors, run `ccskill-gmail doctor` in the project directory. The doctor command checks the full chain — clasp login, OAuth tokens, endpoint connectivity — and tells you exactly what's broken with fix suggestions.
+
+### Something doesn't work after update
+
+Run `ccskill-gmail doctor` to diagnose. If the issue persists, try `ccskill-gmail update --force` to re-deploy the GAS project from scratch.
 
 ## Technical Details
 
@@ -194,7 +212,7 @@ These are the minimum scopes required for the skill's features. No `gmail.send` 
 
 Without `--user`, the default account is used. No additional setup is needed for single-account usage.
 
-To use different Google accounts for different projects, use the `--user` option. The installer will prompt for Google login automatically. Switching happens automatically when you `cd` into the project directory.
+To use different Google accounts for different projects, use the `--user` option. The installer will prompt for Google login automatically.
 
 ```bash
 cd /path/to/work-project
@@ -203,19 +221,7 @@ ccskill-gmail install --user work
 # This directory now uses the work account's Gmail
 ```
 
-Note: `--user` accepts only alphanumeric characters, hyphens, and underscores (e.g. `work`, `personal`, `info-ft`). Do not use email addresses.
-
-### Using with Codex CLI
-
-Codex CLI does not support Claude Code plugins, but you can use the skill definition directly:
-
-```bash
-# Copy the skill definition to Codex's skill directory
-mkdir -p .agents/skills/ccskill-gmail
-cp .claude/skills/ccskill-gmail/SKILL.md .agents/skills/ccskill-gmail/SKILL.md
-```
-
-Note: The GAS Web App setup (`ccskill-gmail install`) is still required.
+Note: `--user` accepts only alphanumeric characters, hyphens, and underscores (e.g. `work`, `personal`, `info-ft`).
 
 ### Skill Definition Documents
 
@@ -242,7 +248,6 @@ Several tools exist for AI-driven Gmail access.
 ## Limitations
 
 - No send capability (draft creation only; send manually from Gmail UI)
-- GAS execution time limits: 6 min/execution, 90 min/day
 - Attachments: up to 5 MB
 - Drafts are always HTML format, even when replying to plain text emails (GmailApp limitation — plain text line breaks are lost without HTML conversion)
 
