@@ -38,13 +38,13 @@ The endpoint and authentication are automatically resolved internally by the scr
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID
 
 # 3. Create a reply draft (recipient and subject are auto-populated; defaults to reply-all)
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"ご連絡ありがとうございます。\n\n承知いたしました。対応いたします。\n\nよろしくお願いいたします。"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Thank you for reaching out.\n\nUnderstood. I will take care of it.\n\nBest regards."}'
 
 # To reply only to the sender (replyAll: false)
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。","replyAll":false}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood.","replyAll":false}'
 
 # To reply to the last message without skipping your own sent messages
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"追記です。","skipSelf":false,"replyAll":false}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"One more thing.","skipSelf":false,"replyAll":false}'
 
 # 4. Review and send the draft in Gmail
 # https://mail.google.com/mail/u/0/#drafts
@@ -111,7 +111,7 @@ The default behavior (`skipSelf: true`, `replyAll: true`) correctly creates a re
 
 ```bash
 # Send a notification to all team members
-.ccskill-gmail/api post '{"action":"create_draft","to":"member1@example.com,member2@example.com,member3@example.com","cc":"manager@example.com","subject":"週次ミーティングのお知らせ","body":"お疲れ様です。\n\n週次ミーティングを以下の日程で行います。\n\n日時: 1月30日（火）15:00〜\n場所: 会議室A\n\nご参加よろしくお願いいたします。"}'
+.ccskill-gmail/api post '{"action":"create_draft","to":"member1@example.com,member2@example.com,member3@example.com","cc":"manager@example.com","subject":"Weekly Meeting Notice","body":"Hi team,\n\nThe weekly meeting is scheduled as follows:\n\nDate: Tuesday, Jan 30 at 3:00 PM\nLocation: Conference Room A\n\nPlease plan to attend."}'
 ```
 
 For long JSON, use the Write tool + `@file` pattern:
@@ -119,7 +119,7 @@ For long JSON, use the Write tool + `@file` pattern:
 ```
 # Step 1: Create a JSON file with the Write tool
 Write("/tmp/draft.json") with the following content:
-{"action":"create_draft","to":"member1@example.com,member2@example.com","cc":"manager@example.com","subject":"週次ミーティングのお知らせ","body":"お疲れ様です。\n\n...long body text..."}
+{"action":"create_draft","to":"member1@example.com,member2@example.com","cc":"manager@example.com","subject":"Weekly Meeting Notice","body":"Hi team,\n\n...long body text..."}
 ```
 
 ```bash
@@ -150,12 +150,12 @@ Write("/tmp/draft.json") with the following content:
 # 1. Search for unread important emails (note the THREAD_ID)
 .ccskill-gmail/api get action=search query="is:unread is:important" maxResults=1
 
-# 2. Add a "要対応" (action required) label
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"要対応"}'
+# 2. Add an "ActionRequired" label
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"ActionRequired"}'
 
 # 3. After handling, change the label
-.ccskill-gmail/api post '{"action":"remove_label","threadId":"THREAD_ID","label":"要対応"}'
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"remove_label","threadId":"THREAD_ID","label":"ActionRequired"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 ```
 
 ---
@@ -170,13 +170,13 @@ Write("/tmp/draft.json") with the following content:
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
 # 3. Create a reply draft
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood."}'
 
 # 4. Mark as read
 .ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 
 # 5. Add a label
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 
 # 6. Review and send the draft in Gmail
 # https://mail.google.com/mail/u/0/#drafts
@@ -191,7 +191,7 @@ Write("/tmp/draft.json") with the following content:
 .ccskill-gmail/api get action=get_unread_count
 
 # Unread count for a specific label
-.ccskill-gmail/api get action=get_unread_count label=重要
+.ccskill-gmail/api get action=get_unread_count label=Important
 ```
 
 ---
@@ -204,7 +204,7 @@ Write("/tmp/draft.json") with the following content:
 
 # 2. Mark as read and add label
 .ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 
 # 3. Archive to clean up the inbox
 .ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
@@ -237,13 +237,13 @@ Write("/tmp/draft.json") with the following content:
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
 # 4. Create a reply draft
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood."}'
 
 # 5. Mark as read
 .ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 
 # 6. Add a label
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 
 # 7. Archive
 .ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
@@ -266,8 +266,8 @@ Write("/tmp/draft-with-attachment.json") with the following content:
 {
   "action": "create_draft",
   "to": "recipient@example.com",
-  "subject": "報告書送付",
-  "body": "お世話になっております。報告書を添付いたします。",
+  "subject": "Report Attached",
+  "body": "Hi, please find the report attached.",
   "attachments": [
     {
       "filename": "report.pdf",
@@ -377,3 +377,40 @@ echo "$result" | jq -r '.data.threads[] | "| \(.from) | \(.subject) | \(.date) |
 - **Authentication is automatic** — `.ccskill-gmail/api` handles OAuth tokens
 - **Standard shell features are allowed** — `$()`, pipes, loops, `jq`, `&&` are all fine in scripts (the restrictions in SKILL.md apply only to interactive Bash tool calls)
 - **JSON responses** — all API responses are `{"ok": true, "data": ...}`, use `jq` for parsing
+
+---
+
+## 18. Extract Unreplied Emails as Task Candidates
+
+Identify threads where the last message is from someone else (i.e., you haven't replied yet) and present them as task candidates.
+
+> **Important**: Always include `id` when filtering search results with `jq`. Without the thread ID, you cannot call `get_thread` and must re-search by subject — which risks matching the wrong thread.
+
+```bash
+# 1. Get your own email address
+.ccskill-gmail/api get action=get_profile | jq -r '.data.email'
+
+# 2. Search recent emails (ALWAYS include id in jq output)
+.ccskill-gmail/api get action=search query="is:unread" maxResults=20 \
+  | jq '.data.threads[] | {id, subject, from, date}'
+
+# 3. For each thread, check who sent the last message
+.ccskill-gmail/api get action=get_thread threadId=THREAD_ID \
+  | jq '{subject: .data.subject, lastFrom: .data.messages[-1].from, lastDate: .data.messages[-1].date}'
+
+# 4. Determine unreplied status:
+#    - If lastFrom does NOT contain your email → unreplied (task candidate)
+#    - If lastFrom contains your email → already replied (skip)
+#    - Exclude automated senders (noreply, notifications, etc.)
+```
+
+### Workflow Summary
+
+1. `get_profile` → get your email address for comparison
+2. `search` → get candidate threads (**always include `id`**)
+3. `get_thread` for each → check the last message's `from` field
+4. If `from` ≠ your email and not a noreply sender → unreplied task candidate
+
+### Why Not Just Use Search?
+
+The `search` response includes `from` (the thread's first sender) but does not indicate who sent the **last** message. To determine reply status, you must call `get_thread` and inspect `messages[-1].from`.
