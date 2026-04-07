@@ -6,10 +6,10 @@
  */
 
 /**
- * 添付ファイル配列を base64 から Blob に変換
+ * Convert attachment array from base64 to Blob
  * @param {Array} attachments - [{filename, contentType, content(base64)}]
- * @returns {Array<Blob>} GmailApp 用の Blob 配列
- * @throws {Error} 合計サイズが 5MB を超える場合
+ * @returns {Array<Blob>} Blob array for GmailApp
+ * @throws {Error} When total size exceeds 5MB
  */
 function parseAttachments(attachments) {
   if (!attachments || !Array.isArray(attachments) || attachments.length === 0) {
@@ -18,7 +18,7 @@ function parseAttachments(attachments) {
 
   var MAX_ATTACHMENTS = 25;
   if (attachments.length > MAX_ATTACHMENTS) {
-    throw new Error('添付ファイルは最大 ' + MAX_ATTACHMENTS + ' 個までです');
+    throw new Error('Too many attachments: maximum is ' + MAX_ATTACHMENTS);
   }
 
   var totalSize = 0;
@@ -32,11 +32,11 @@ function parseAttachments(attachments) {
       throw new Error('attachments[' + index + ']: content (base64) is required');
     }
 
-    // base64 文字列長から事前にサイズを推定してチェック
+    // Estimate size from base64 string length
     var estimatedSize = Math.ceil(att.content.length * 3 / 4);
     totalSize += estimatedSize;
     if (totalSize > MAX_SIZE) {
-      throw new Error('添付ファイルの合計サイズが 5MB を超えています（上限: 5MB）');
+      throw new Error('Total attachment size exceeds 5MB limit');
     }
 
     var contentType = att.contentType || 'application/octet-stream';
@@ -50,11 +50,11 @@ function parseAttachments(attachments) {
  * Create a new email draft
  * @param {string} to - Recipient email address(es), comma-separated for multiple
  * @param {string} subject - Email subject
- * @param {string} body - Email body (plain text, フォールバック用)
+ * @param {string} body - Email body (plain text, used as fallback)
  * @param {string} cc - CC recipients (optional)
  * @param {string} bcc - BCC recipients (optional)
- * @param {string} htmlBody - HTML 本文 (optional, 指定時は body がプレーンテキストフォールバックになる)
- * @param {Array} attachments - 添付ファイル配列 (optional, [{filename, contentType, content(base64)}])
+ * @param {string} htmlBody - HTML body (optional, when specified body becomes plain text fallback)
+ * @param {Array} attachments - Attachment array (optional, [{filename, contentType, content(base64)}])
  * @returns {ContentService.TextOutput} JSON response with draft info
  *
  * @example
@@ -68,7 +68,7 @@ function handleCreateDraft(to, subject, body, cc, bcc, htmlBody, attachments) {
   requireParam(subject, 'subject');
   requireParam(body, 'body');
 
-  // htmlBody 未指定時は body から自動生成（改行消失防止）
+  // Auto-generate htmlBody from body when not specified (preserves line breaks)
   if (!htmlBody && body) {
     htmlBody = body
       .replace(/&/g, '&amp;')
@@ -92,7 +92,7 @@ function handleCreateDraft(to, subject, body, cc, bcc, htmlBody, attachments) {
     draftId: draft.getId(),
     to: to,
     subject: subject,
-    message: '下書きを作成しました。Gmail で確認・送信してください。',
+    message: 'Draft created. Review and send it in Gmail.',
     gmailUrl: 'https://mail.google.com/mail/u/0/#drafts'
   });
 }
@@ -100,13 +100,13 @@ function handleCreateDraft(to, subject, body, cc, bcc, htmlBody, attachments) {
 /**
  * Create a reply draft for an existing thread
  * @param {string} threadId - Thread ID to reply to
- * @param {string} body - Reply body (plain text, フォールバック用)
+ * @param {string} body - Reply body (plain text, used as fallback)
  * @param {string} cc - CC recipients (optional)
  * @param {string} bcc - BCC recipients (optional)
- * @param {string} htmlBody - HTML 本文 (optional, 指定時は body がプレーンテキストフォールバックになる)
- * @param {Array} attachments - 添付ファイル配列 (optional, [{filename, contentType, content(base64)}])
- * @param {boolean} skipSelf - 自分の送信メッセージをスキップして相手のメッセージに返信する (デフォルト true)
- * @param {boolean} replyAll - 全員に返信する (デフォルト true)
+ * @param {string} htmlBody - HTML body (optional, when specified body becomes plain text fallback)
+ * @param {Array} attachments - Attachment array (optional, [{filename, contentType, content(base64)}])
+ * @param {boolean} skipSelf - Skip own sent messages and reply to the other party's message (default true)
+ * @param {boolean} replyAll - Reply to all recipients (default true)
  * @returns {ContentService.TextOutput} JSON response with draft info
  *
  * @example
@@ -116,20 +116,20 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, 
   requireParam(threadId, 'threadId');
   requireParam(body, 'body');
 
-  // デフォルト値: 両方 true
+  // Default: both true
   if (skipSelf === undefined || skipSelf === null) skipSelf = true;
   if (replyAll === undefined || replyAll === null) replyAll = true;
 
   const thread = GmailApp.getThreadById(threadId);
   if (!thread) {
     return errorResponse('Thread not found: ' + threadId,
-      { code: 'NOT_FOUND', hint: 'threadId が正しいか確認してください', retryable: false });
+      { code: 'NOT_FOUND', hint: 'Verify the threadId is correct', retryable: false });
   }
 
   const messages = thread.getMessages();
 
-  // skipSelf: 自分以外が送信した直近のメッセージを探す
-  let targetMessage = messages[messages.length - 1]; // フォールバック
+  // skipSelf: find the most recent message not sent by self
+  let targetMessage = messages[messages.length - 1]; // fallback
   if (skipSelf) {
     const myEmail = Session.getActiveUser().getEmail().toLowerCase();
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -141,7 +141,7 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, 
     }
   }
 
-  // htmlBody 未指定時は body から自動生成（改行消失防止）
+  // Auto-generate htmlBody from body when not specified (preserves line breaks)
   if (!htmlBody && body) {
     htmlBody = body
       .replace(/&/g, '&amp;')
@@ -158,12 +158,12 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, 
     attachments: parseAttachments(attachments)
   });
 
-  // replyAll に応じて使い分け
+  // Use replyAll or reply based on the flag
   const draft = replyAll
     ? targetMessage.createDraftReplyAll(body, options)
     : targetMessage.createDraftReply(body, options);
 
-  // 実際の下書き宛先を返す
+  // Return the actual draft recipient
   const draftMessage = draft.getMessage();
 
   return successResponse({
@@ -173,7 +173,7 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, 
     subject: 'Re: ' + targetMessage.getSubject().replace(/^Re:\s*/i, ''),
     skipSelf: skipSelf,
     replyAll: replyAll,
-    message: '返信下書きを作成しました。Gmail で確認・送信してください。',
+    message: 'Reply draft created. Review and send it in Gmail.',
     gmailUrl: 'https://mail.google.com/mail/u/0/#drafts'
   });
 }
@@ -187,7 +187,7 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, 
  * @param {string} body - New body (optional)
  * @param {string} cc - New CC recipients (optional)
  * @param {string} bcc - New BCC recipients (optional)
- * @param {string} htmlBody - HTML 本文 (optional, 省略時は既存の HTML を維持)
+ * @param {string} htmlBody - HTML body (optional, retains existing HTML if omitted)
  * @returns {ContentService.TextOutput} JSON response with new draft info
  */
 function handleUpdateDraft(draftId, to, subject, body, cc, bcc, htmlBody) {
@@ -197,17 +197,17 @@ function handleUpdateDraft(draftId, to, subject, body, cc, bcc, htmlBody) {
   const draft = drafts.find(function(d) { return d.getId() === draftId; });
   if (!draft) {
     return errorResponse('Draft not found: ' + draftId,
-      { code: 'NOT_FOUND', hint: 'list_drafts で draftId を確認してください', retryable: false });
+      { code: 'NOT_FOUND', hint: 'Use list_drafts to verify the draftId', retryable: false });
   }
 
   const message = draft.getMessage();
   const currentTo = to || message.getTo();
   const currentSubject = subject || message.getSubject();
   const currentBody = body || message.getPlainBody();
-  // htmlBody は明示的に渡された場合のみ使用（既存の HTML を引き継ぐ場合は getBody）
+  // Use htmlBody only when explicitly provided (falls back to getBody for existing HTML)
   const currentHtmlBody = htmlBody !== undefined ? htmlBody : message.getBody();
 
-  // スレッドに紐付いているか判定
+  // Determine if the draft is associated with a thread
   const thread = message.getThread();
   const threadMessages = thread.getMessages();
   const isReplyDraft = threadMessages.length > 1
@@ -219,13 +219,13 @@ function handleUpdateDraft(draftId, to, subject, body, cc, bcc, htmlBody) {
 
   let newDraft;
   if (isReplyDraft) {
-    // 返信下書き → 自分以外が送信した直近の非下書きメッセージに対して再作成
+    // Reply draft: recreate against the most recent non-draft message from others
     const nonDraftMessages = threadMessages.filter(function(m) {
       return !m.isDraft();
     });
     let replyTarget = nonDraftMessages[nonDraftMessages.length - 1];
 
-    // skipSelf: 自分以外の送信メッセージを優先
+    // skipSelf: prefer messages from others
     const myEmail = Session.getActiveUser().getEmail().toLowerCase();
     for (let i = nonDraftMessages.length - 1; i >= 0; i--) {
       const from = nonDraftMessages[i].getFrom().toLowerCase();
@@ -238,7 +238,7 @@ function handleUpdateDraft(draftId, to, subject, body, cc, bcc, htmlBody) {
     if (to) options.to = to;
     newDraft = replyTarget.createDraftReplyAll(currentBody, options);
   } else {
-    // 新規下書き → 従来通り
+    // New draft: create as usual
     newDraft = GmailApp.createDraft(currentTo, currentSubject, currentBody, options);
   }
 
@@ -248,14 +248,14 @@ function handleUpdateDraft(draftId, to, subject, body, cc, bcc, htmlBody) {
     threadId: thread.getId(),
     isReply: isReplyDraft,
     action: 'update_draft',
-    message: '下書きを更新しました',
+    message: 'Draft updated',
     gmailUrl: 'https://mail.google.com/mail/u/0/#drafts'
   });
 }
 
 /**
- * 下書き一覧を取得
- * @param {number} maxResults - 最大取得件数（デフォルト 20, 上限 100）
+ * List drafts
+ * @param {number} maxResults - Maximum number of results (default 20, max 100)
  * @returns {ContentService.TextOutput} JSON response with draft list
  *
  * @example
@@ -270,7 +270,7 @@ function handleListDrafts(maxResults) {
   const drafts = GmailApp.getDrafts();
   const total = drafts.length;
 
-  // maxResults で切り詰め
+  // Truncate by maxResults
   const sliced = drafts.slice(0, limit);
 
   const results = sliced.map(function(draft) {
@@ -310,7 +310,7 @@ function handleDeleteDraft(draftId) {
 
   if (!draft) {
     return errorResponse('Draft not found: ' + draftId,
-      { code: 'NOT_FOUND', hint: 'list_drafts で draftId を確認してください', retryable: false });
+      { code: 'NOT_FOUND', hint: 'Use list_drafts to verify the draftId', retryable: false });
   }
 
   draft.deleteDraft();
@@ -318,6 +318,6 @@ function handleDeleteDraft(draftId) {
   return successResponse({
     draftId: draftId,
     action: 'delete_draft',
-    message: '下書きを削除しました'
+    message: 'Draft deleted'
   });
 }

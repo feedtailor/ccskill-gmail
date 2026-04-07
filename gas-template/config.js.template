@@ -15,7 +15,7 @@ const CONFIG = {
   // To restrict to read-only: set allow: ['search', 'get_thread', 'get_message', 'list_labels', 'get_unread_count']
   permissions: {
     deny: [
-      'move_to_trash',  // 非可逆: 30日後に永久削除
+      'move_to_trash',  // Irreversible: permanently deleted after 30 days
     ]
   }
 };

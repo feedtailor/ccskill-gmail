@@ -35,7 +35,7 @@ Changes the read/unread status of a thread or message.
   "data": {
     "threadId": "19bf7f25b96ab637",
     "action": "mark_read",
-    "message": "スレッドを既読にしました"
+    "message": "Thread marked as read"
   }
 }
 ```
@@ -73,7 +73,7 @@ Changes the read/unread status of a thread or message.
   "data": {
     "threadId": "19bf7f25b96ab637",
     "action": "mark_unread",
-    "message": "スレッドを未読にしました"
+    "message": "Thread marked as unread"
   }
 }
 ```

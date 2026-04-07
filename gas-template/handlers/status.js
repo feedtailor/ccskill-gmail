@@ -19,32 +19,32 @@
 function handleMarkRead(threadId, messageId) {
   if (!threadId && !messageId) {
     return errorResponse('Either threadId or messageId is required',
-      { code: 'MISSING_PARAM', hint: 'threadId または messageId を指定してください', retryable: false });
+      { code: 'MISSING_PARAM', hint: 'Specify either threadId or messageId', retryable: false });
   }
 
   if (threadId) {
     const thread = GmailApp.getThreadById(threadId);
     if (!thread) {
       return errorResponse('Thread not found: ' + threadId,
-        { code: 'NOT_FOUND', hint: 'threadId が正しいか確認してください', retryable: false });
+        { code: 'NOT_FOUND', hint: 'Verify the threadId is correct', retryable: false });
     }
     thread.markRead();
     return successResponse({
       threadId: threadId,
       action: 'mark_read',
-      message: 'スレッドを既読にしました'
+      message: 'Thread marked as read'
     });
   } else {
     const message = GmailApp.getMessageById(messageId);
     if (!message) {
       return errorResponse('Message not found: ' + messageId,
-        { code: 'NOT_FOUND', hint: 'messageId が正しいか確認してください', retryable: false });
+        { code: 'NOT_FOUND', hint: 'Verify the messageId is correct', retryable: false });
     }
     message.markRead();
     return successResponse({
       messageId: messageId,
       action: 'mark_read',
-      message: 'メッセージを既読にしました'
+      message: 'Message marked as read'
     });
   }
 }
@@ -64,32 +64,32 @@ function handleMarkRead(threadId, messageId) {
 function handleMarkUnread(threadId, messageId) {
   if (!threadId && !messageId) {
     return errorResponse('Either threadId or messageId is required',
-      { code: 'MISSING_PARAM', hint: 'threadId または messageId を指定してください', retryable: false });
+      { code: 'MISSING_PARAM', hint: 'Specify either threadId or messageId', retryable: false });
   }
 
   if (threadId) {
     const thread = GmailApp.getThreadById(threadId);
     if (!thread) {
       return errorResponse('Thread not found: ' + threadId,
-        { code: 'NOT_FOUND', hint: 'threadId が正しいか確認してください', retryable: false });
+        { code: 'NOT_FOUND', hint: 'Verify the threadId is correct', retryable: false });
     }
     thread.markUnread();
     return successResponse({
       threadId: threadId,
       action: 'mark_unread',
-      message: 'スレッドを未読にしました'
+      message: 'Thread marked as unread'
     });
   } else {
     const message = GmailApp.getMessageById(messageId);
     if (!message) {
       return errorResponse('Message not found: ' + messageId,
-        { code: 'NOT_FOUND', hint: 'messageId が正しいか確認してください', retryable: false });
+        { code: 'NOT_FOUND', hint: 'Verify the messageId is correct', retryable: false });
     }
     message.markUnread();
     return successResponse({
       messageId: messageId,
       action: 'mark_unread',
-      message: 'メッセージを未読にしました'
+      message: 'Message marked as unread'
     });
   }
 }

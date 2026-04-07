@@ -32,7 +32,7 @@ Archives a thread from the inbox. The email itself is not deleted and can be fou
   "data": {
     "threadId": "19bf7f25b96ab637",
     "action": "archive",
-    "message": "スレッドをアーカイブしました"
+    "message": "Thread archived"
   }
 }
 ```
@@ -75,7 +75,7 @@ Moves a thread to trash. It will be automatically deleted after 30 days.
   "data": {
     "threadId": "19bf7f25b96ab637",
     "action": "move_to_trash",
-    "message": "スレッドをゴミ箱に移動しました"
+    "message": "Thread moved to trash"
   }
 }
 ```
@@ -100,11 +100,11 @@ Moves a thread to trash. It will be automatically deleted after 30 days.
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject'
 
 # 3. Create a reply draft
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"承知いたしました。"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood."}'
 
 # 4. Mark as read and add label
 .ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 
 # 5. Archive to clean up the inbox
 .ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'

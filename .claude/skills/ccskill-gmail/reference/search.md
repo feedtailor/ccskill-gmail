@@ -22,8 +22,8 @@ Searches emails using Gmail search syntax.
 # From a specific sender (latest 10)
 .ccskill-gmail/api get action=search query="from:boss@company.com" maxResults=10
 
-# Query containing Japanese (get subcommand auto-encodes)
-.ccskill-gmail/api get action=search query="subject:請求書"
+# Query containing non-ASCII characters (get subcommand auto-encodes)
+.ccskill-gmail/api get action=search query="subject:invoice"
 ```
 
 ## Response Example
@@ -37,14 +37,14 @@ Searches emails using Gmail search syntax.
     "threads": [
       {
         "id": "19bf7f25b96ab637",
-        "subject": "ミーティングの件",
+        "subject": "Meeting Tomorrow",
         "from": "sender@example.com",
         "date": "2024-01-15T10:30:00.000Z",
         "messageCount": 3,
         "isUnread": true,
         "isImportant": true,
         "isInInbox": true,
-        "labels": ["INBOX", "重要"]
+        "labels": ["INBOX", "Important"]
       }
     ]
   }
@@ -59,11 +59,11 @@ Searches emails using Gmail search syntax.
 | is:starred | Starred emails | `is:starred` |
 | from: | Sender | `from:example@gmail.com` |
 | to: | Recipient | `to:me@gmail.com` |
-| subject: | Subject | `subject:請求書` |
+| subject: | Subject | `subject:invoice` |
 | has:attachment | Has attachments | `has:attachment` |
 | after: | After date | `after:2024/01/01` |
 | before: | Before date | `before:2024/02/01` |
-| label: | Label | `label:重要` |
+| label: | Label | `label:Important` |
 | in:inbox | In inbox | `in:inbox` |
 | in:sent | In sent | `in:sent` |
 
