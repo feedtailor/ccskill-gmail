@@ -115,6 +115,10 @@ registry_upsert() {
         installed_at="$existing_installed_at"
     fi
 
+    # Preserve existing email if present
+    local existing_email
+    existing_email=$(jq -r --arg path "$target_dir" '.installations[$path].email // ""' "$_REGISTRY_FILE" 2>/dev/null)
+
     local tmp
     tmp=$(mktemp)
     jq --arg path "$target_dir" \
@@ -122,12 +126,50 @@ registry_upsert() {
        --arg installed_at "${installed_at:-$now}" \
        --arg updated_at "$now" \
        --arg version "${version:-unknown}" \
+       --arg email "${existing_email:-}" \
        '.installations[$path] = {
           project_name: $project_name,
           installed_at: $installed_at,
           updated_at: $updated_at,
-          version: $version
+          version: $version,
+          email: (if $email == "" then null else $email end)
         } | .updated_at = $updated_at' \
+       "$_REGISTRY_FILE" > "$tmp"
+    /bin/mv -f "$tmp" "$_REGISTRY_FILE"
+}
+
+# Update only the email field for an existing entry.
+# Usage: registry_update_email "/path/to/project" "user@example.com"
+registry_update_email() {
+    _registry_has_jq || return 0
+
+    local target_dir="$1"
+    local email="$2"
+    if [ -z "$target_dir" ] || [ -z "$email" ]; then
+        return 1
+    fi
+
+    # Ensure absolute path
+    if [ -d "$target_dir" ]; then
+        target_dir=$(cd "$target_dir" && pwd)
+    fi
+
+    if [ ! -f "$_REGISTRY_FILE" ]; then
+        return 0
+    fi
+
+    # Only update if entry exists
+    local exists
+    exists=$(jq -r --arg path "$target_dir" '.installations[$path] // empty' "$_REGISTRY_FILE" 2>/dev/null)
+    if [ -z "$exists" ]; then
+        return 0
+    fi
+
+    local tmp
+    tmp=$(mktemp)
+    jq --arg path "$target_dir" \
+       --arg email "$email" \
+       '.installations[$path].email = $email' \
        "$_REGISTRY_FILE" > "$tmp"
     /bin/mv -f "$tmp" "$_REGISTRY_FILE"
 }
