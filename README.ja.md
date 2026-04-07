@@ -167,7 +167,8 @@ ccskill-gmail uninstall
 ## その他のコマンド
 
 ```bash
-ccskill-gmail status              # インストール状況の一覧表示
+ccskill-gmail info [--json]       # 現在のプロジェクトの詳細表示（アカウント、権限、未読数）
+ccskill-gmail status [--refresh]  # インストール状況の一覧表示
 ccskill-gmail doctor              # 環境・セットアップの診断
 ccskill-gmail history             # API 操作の監査ログ表示
 ccskill-gmail apply-config        # config.js の変更を GAS に反映
@@ -175,6 +176,9 @@ ccskill-gmail register <PATH>     # 既存インストールの登録
 ccskill-gmail release             # 配布用 zip ファイルの作成
 ccskill-gmail help                # 全コマンドの表示
 ```
+
+- `info` は現在のプロジェクトのアカウントメール、バージョン、パーミッション、未読数を表示します
+- `status --refresh` は全インストール先のアカウントメールを API 経由で取得・キャッシュします
 
 ## トラブルシューティング
 

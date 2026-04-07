@@ -198,6 +198,11 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 | remove_label | ラベル削除 | `threadId`、`label`（必須） |
 | archive | アーカイブ | `threadId`（必須） |
 | move_to_trash | ゴミ箱に移動 | `threadId`（必須） |
+| bulk_mark_read | 一括既読 | `threadIds`、`dryRun`（必須） |
+| bulk_mark_unread | 一括未読 | `threadIds`、`dryRun`（必須） |
+| bulk_add_label | 一括ラベル追加 | `threadIds`、`label`、`dryRun`（必須） |
+| bulk_remove_label | 一括ラベル削除 | `threadIds`、`label`、`dryRun`（必須） |
+| bulk_archive | 一括アーカイブ | `threadIds`、`dryRun`（必須） |
 
 > 詳細: [reference/](reference/)
 
