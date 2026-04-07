@@ -443,6 +443,18 @@ echo ""
 # ========================================
 
 registry_upsert "$TARGET_DIR"
+
+# Fetch account email and save to registry
+if [ "$VERIFY_OK" = true ] && [ -x "$GAS_DIR/api" ]; then
+    PROFILE_RESPONSE=$("$GAS_DIR/api" get action=get_profile 2>/dev/null) || true
+    if [ -n "$PROFILE_RESPONSE" ]; then
+        ACCOUNT_EMAIL=$(echo "$PROFILE_RESPONSE" | jq -r '.data.email // empty' 2>/dev/null)
+        if [ -n "$ACCOUNT_EMAIL" ]; then
+            registry_update_email "$TARGET_DIR" "$ACCOUNT_EMAIL"
+        fi
+    fi
+fi
+
 echo -e "${GREEN}✓ Registered in ccskill-gmail registry${NC}"
 echo ""
 

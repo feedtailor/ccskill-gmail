@@ -2,11 +2,12 @@
 #
 # ccskill-gmail status - Installation Status
 #
-# Usage: ccskill-gmail status [--json] [--clean]
+# Usage: ccskill-gmail status [--json] [--clean] [--refresh]
 #
 # Options:
-#   --json    Output in JSON format
-#   --clean   Remove invalid entries from the registry
+#   --json      Output in JSON format
+#   --clean     Remove invalid entries from the registry
+#   --refresh   Fetch account email for all installations via API
 #
 
 set -e
@@ -43,6 +44,7 @@ source "$CCSKILL_GMAIL_DIR/lib/registry.sh"
 
 JSON_OUTPUT=false
 CLEAN_MODE=false
+REFRESH_MODE=false
 
 for arg in "$@"; do
     case "$arg" in
@@ -52,9 +54,12 @@ for arg in "$@"; do
         --clean)
             CLEAN_MODE=true
             ;;
+        --refresh)
+            REFRESH_MODE=true
+            ;;
         *)
             echo -e "${RED}Unknown option: $arg${NC}"
-            echo "Usage: ccskill-gmail status [--json] [--clean]"
+            echo "Usage: ccskill-gmail status [--json] [--clean] [--refresh]"
             exit 1
             ;;
     esac
@@ -79,6 +84,32 @@ if [ "$CLEAN_MODE" = true ]; then
 fi
 
 registry_init
+
+# ========================================
+# 3.5. --refresh mode: fetch email for all installations
+# ========================================
+
+if [ "$REFRESH_MODE" = true ]; then
+    echo "Refreshing account info..."
+    REFRESH_COUNT=0
+    while IFS= read -r rpath; do
+        [ -z "$rpath" ] && continue
+        API_SCRIPT="$rpath/.ccskill-gmail/api"
+        if [ -x "$API_SCRIPT" ]; then
+            # Subshell to isolate set -e failures from API calls
+            EMAIL=$(
+                PROFILE=$("$API_SCRIPT" get action=get_profile </dev/null 2>/dev/null) || true
+                [ -n "$PROFILE" ] && echo "$PROFILE" | jq -r '.data.email // empty' 2>/dev/null
+            ) || true
+            if [ -n "$EMAIL" ]; then
+                registry_update_email "$rpath" "$EMAIL"
+                REFRESH_COUNT=$((REFRESH_COUNT + 1))
+            fi
+        fi
+    done <<< "$(jq -r '.installations | keys[]' "$_REGISTRY_FILE" 2>/dev/null)"
+    echo -e "${GREEN}✓ Refreshed $REFRESH_COUNT installation(s)${NC}"
+    echo ""
+fi
 
 # ========================================
 # 4. JSON output
@@ -113,31 +144,58 @@ UP_TO_DATE=0
 OUTDATED=0
 NOT_FOUND=0
 
-printf "  %-40s %-12s %s\n" "PATH" "VERSION" "STATUS"
-printf "  %-40s %-12s %s\n" "----" "-------" "------"
+# Truncate path to fit within max width, collapsing middle with ...
+_truncate_path() {
+    local p="$1"
+    local max="$2"
+    if [ ${#p} -le $max ]; then
+        echo "$p"
+        return
+    fi
+    # Keep first 2 components and grow tail from end until it fits
+    local head tail
+    head=$(echo "$p" | cut -d'/' -f1-2)
+    # Try keeping last 2, then 1 path components
+    for n in 2 1; do
+        tail=$(echo "$p" | rev | cut -d'/' -f1-$n | rev)
+        local candidate="${head}/.../${tail}"
+        if [ ${#candidate} -le $max ]; then
+            echo "$candidate"
+            return
+        fi
+    done
+    # Fallback: truncate from end
+    echo "${p:0:$((max-3))}..."
+}
+
+printf "  %-40s %-24s %-12s %s\n" "PATH" "ACCOUNT" "VERSION" "STATUS"
+printf "  %-40s %-24s %-12s %s\n" "----" "-------" "-------" "------"
 
 while IFS= read -r path; do
     [ -z "$path" ] && continue
 
     version=$(jq -r --arg p "$path" '.installations[$p].version // "unknown"' "$_REGISTRY_FILE")
+    email=$(jq -r --arg p "$path" '.installations[$p].email // ""' "$_REGISTRY_FILE" 2>/dev/null)
+    display_email="${email:-(unknown)}"
 
-    # Display path with ~ shortening
+    # Display path with ~ shortening and truncation
     display_path="${path/#$HOME/~}"
+    display_path=$(_truncate_path "$display_path" 40)
 
     if [ ! -d "$path" ]; then
-        printf "  %-40s %-12s " "$display_path" "(not found)"
+        printf "  %-40s %-24s %-12s " "$display_path" "$display_email" "(not found)"
         echo -e "${RED}x not found${NC}"
         NOT_FOUND=$((NOT_FOUND + 1))
     elif [ ! -d "$path/.ccskill-gmail" ]; then
-        printf "  %-40s %-12s " "$display_path" "(not found)"
+        printf "  %-40s %-24s %-12s " "$display_path" "$display_email" "(not found)"
         echo -e "${RED}x not found${NC}"
         NOT_FOUND=$((NOT_FOUND + 1))
     elif [ "$version" = "$MASTER_VERSION" ]; then
-        printf "  %-40s %-12s " "$display_path" "$version"
+        printf "  %-40s %-24s %-12s " "$display_path" "$display_email" "$version"
         echo -e "${GREEN}up to date${NC}"
         UP_TO_DATE=$((UP_TO_DATE + 1))
     else
-        printf "  %-40s %-12s " "$display_path" "$version"
+        printf "  %-40s %-24s %-12s " "$display_path" "$display_email" "$version"
         echo -e "${YELLOW}outdated${NC}"
         OUTDATED=$((OUTDATED + 1))
     fi
