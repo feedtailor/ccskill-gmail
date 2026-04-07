@@ -31,7 +31,7 @@ Retrieves all messages in a thread by specifying the thread ID.
   "ok": true,
   "data": {
     "id": "19bf7f25b96ab637",
-    "subject": "ミーティングの件",
+    "subject": "Meeting Tomorrow",
     "messageCount": 2,
     "isUnread": true,
     "labels": ["INBOX"],
@@ -42,8 +42,8 @@ Retrieves all messages in a thread by specifying the thread ID.
         "from": "sender@example.com",
         "to": "me@gmail.com",
         "cc": "",
-        "subject": "ミーティングの件",
-        "body": "お世話になっております。\n\n明日のミーティングについて...",
+        "subject": "Meeting Tomorrow",
+        "body": "Hi,\n\nRegarding tomorrow's meeting...",
         "htmlBody": "<html>...</html>",
         "date": "2024-01-15T10:30:00.000Z",
         "isUnread": true,
@@ -89,8 +89,8 @@ Retrieves details of a single message by specifying the message ID.
     "cc": "cc@example.com",
     "bcc": "",
     "replyTo": "sender@example.com",
-    "subject": "ミーティングの件",
-    "body": "お世話になっております。\n\n明日のミーティングについて...",
+    "subject": "Meeting Tomorrow",
+    "body": "Hi,\n\nRegarding tomorrow's meeting...",
     "htmlBody": "<html>...</html>",
     "date": "2024-01-15T10:30:00.000Z",
     "isUnread": true,
@@ -134,10 +134,10 @@ Retrieves a list of user-created labels.
     "count": 5,
     "labels": [
       {"name": "Projects", "unreadCount": 3},
-      {"name": "Projects/重要", "unreadCount": 1},
+      {"name": "Projects/Important", "unreadCount": 1},
       {"name": "Purchasing", "unreadCount": 0},
-      {"name": "取材", "unreadCount": 2},
-      {"name": "執筆", "unreadCount": 0}
+      {"name": "Interviews", "unreadCount": 2},
+      {"name": "Writing", "unreadCount": 0}
     ]
   }
 }
@@ -168,7 +168,7 @@ Retrieves the unread email count for the inbox or a specific label.
 .ccskill-gmail/api get action=get_unread_count
 
 # Unread count for a specific label
-.ccskill-gmail/api get action=get_unread_count label="重要"
+.ccskill-gmail/api get action=get_unread_count label="Important"
 ```
 
 ### Response Example
@@ -179,7 +179,7 @@ Retrieves the unread email count for the inbox or a specific label.
   "data": {
     "label": "INBOX",
     "unreadCount": 15,
-    "message": "未読メールが 15 件あります"
+    "message": "15 unread email(s)"
   }
 }
 ```
@@ -191,7 +191,7 @@ When a non-existent label is specified:
 ```json
 {
   "ok": false,
-  "error": "Label not found: 存在しないラベル"
+  "error": "Label not found: NonExistentLabel"
 }
 ```
 
@@ -336,7 +336,7 @@ Retrieves the email body as complete HTML. Used for PDF conversion or browser di
   "ok": true,
   "data": {
     "messageId": "19bf7f25b96ab637",
-    "subject": "ミーティングの件",
+    "subject": "Meeting Tomorrow",
     "from": "sender@example.com",
     "to": "me@gmail.com",
     "date": "2024-01-15T10:30:00.000Z",

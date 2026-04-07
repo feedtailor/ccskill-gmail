@@ -37,9 +37,9 @@ Retrieves a list of drafts in a lightweight format.
     "drafts": [
       {
         "draftId": "r-935971606264660525",
-        "subject": "お見積りの件",
+        "subject": "Price Quote",
         "to": "recipient@example.com",
-        "snippet": "お世話になっております。添付の通りお見積りをお送りします。よろしくお願いいたし...",
+        "snippet": "Hi, please find attached the price quote as discussed. Let me know if you have any...",
         "lastDate": "2024-01-15T10:30:00.000Z"
       }
     ]
@@ -109,25 +109,25 @@ Drafts are saved in Gmail's "Drafts" folder and can be reviewed, edited, and sen
 ### Basic Draft
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_draft","to":"recipient@example.com","subject":"お見積りの件","body":"お世話になっております。\n\n添付の通りお見積りをお送りします。\n\nよろしくお願いいたします。"}'
+.ccskill-gmail/api post '{"action":"create_draft","to":"recipient@example.com","subject":"Price Quote","body":"Hi,\n\nPlease find attached the price quote as discussed.\n\nBest regards."}'
 ```
 
 ### With CC/BCC
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_draft","to":"client@example.com","cc":"manager@example.com","bcc":"archive@example.com","subject":"プロジェクト進捗報告","body":"お疲れ様です。\n\n進捗をご報告します。"}'
+.ccskill-gmail/api post '{"action":"create_draft","to":"client@example.com","cc":"manager@example.com","bcc":"archive@example.com","subject":"Project Progress Report","body":"Hi team,\n\nHere is the progress update."}'
 ```
 
 ### Multiple Recipients
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_draft","to":"user1@example.com,user2@example.com","subject":"チームミーティングのお知らせ","body":"明日10時からミーティングを行います。"}'
+.ccskill-gmail/api post '{"action":"create_draft","to":"user1@example.com,user2@example.com","subject":"Team Meeting Notice","body":"We will have a meeting tomorrow at 10am."}'
 ```
 
 ### HTML Email
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_draft","to":"recipient@example.com","subject":"月次レポート","body":"月次レポートを送ります。","htmlBody":"<h1>月次レポート</h1><p>詳細は以下の通りです。</p>"}'
+.ccskill-gmail/api post '{"action":"create_draft","to":"recipient@example.com","subject":"Monthly Report","body":"Here is the monthly report.","htmlBody":"<h1>Monthly Report</h1><p>Please see the details below.</p>"}'
 ```
 
 ### With Attachments
@@ -148,8 +148,8 @@ Create a JSON file with the Write tool, then send:
   "data": {
     "draftId": "r-935971606264660525",
     "to": "recipient@example.com",
-    "subject": "お見積りの件",
-    "message": "下書きを作成しました。Gmail で確認・送信してください。",
+    "subject": "Price Quote",
+    "message": "Draft created. Review and send it in Gmail.",
     "gmailUrl": "https://mail.google.com/mail/u/0/#drafts"
   }
 }
@@ -196,19 +196,19 @@ Creates a reply draft to an existing thread.
 ### Basic Reply Draft
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ご連絡ありがとうございます。\n\n承知いたしました。"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"Thank you for reaching out.\n\nUnderstood."}'
 ```
 
 ### Reply with CC
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"確認しました。","cc":"manager@example.com"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"Confirmed.","cc":"manager@example.com"}'
 ```
 
 ### HTML Reply
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ありがとうございます。","htmlBody":"<p>ありがとうございます。<br>承知いたしました。</p>"}'
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"Thank you.","htmlBody":"<p>Thank you.<br>Understood.</p>"}'
 ```
 
 ---
@@ -222,10 +222,10 @@ Creates a reply draft to an existing thread.
     "draftId": "r-123456789",
     "threadId": "19bf7f25b96ab637",
     "to": "original-sender@example.com",
-    "subject": "Re: 元の件名",
+    "subject": "Re: Original Subject",
     "skipSelf": true,
     "replyAll": true,
-    "message": "返信下書きを作成しました。Gmail で確認・送信してください。",
+    "message": "Reply draft created. Review and send it in Gmail.",
     "gmailUrl": "https://mail.google.com/mail/u/0/#drafts"
   }
 }
@@ -265,7 +265,7 @@ Updates an existing draft.
 ## Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"update_draft","draftId":"r-123456789","subject":"【更新】お見積りの件"}'
+.ccskill-gmail/api post '{"action":"update_draft","draftId":"r-123456789","subject":"[Updated] Price Quote"}'
 ```
 
 ## Response Example
@@ -279,7 +279,7 @@ Updates an existing draft.
     "threadId": "19bf7f25b96ab637",
     "isReply": true,
     "action": "update_draft",
-    "message": "下書きを更新しました",
+    "message": "Draft updated",
     "gmailUrl": "https://mail.google.com/mail/u/0/#drafts"
   }
 }
@@ -326,7 +326,7 @@ Deletes a draft.
   "data": {
     "draftId": "r-123456789",
     "action": "delete_draft",
-    "message": "下書きを削除しました"
+    "message": "Draft deleted"
   }
 }
 ```

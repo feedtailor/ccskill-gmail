@@ -20,7 +20,7 @@ Add or remove labels from threads.
 ### Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"add_label","threadId":"19bf7f25b96ab637","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"19bf7f25b96ab637","label":"Handled"}'
 ```
 
 ### Response Example
@@ -30,9 +30,9 @@ Add or remove labels from threads.
   "ok": true,
   "data": {
     "threadId": "19bf7f25b96ab637",
-    "label": "対応済",
+    "label": "Handled",
     "action": "add_label",
-    "message": "ラベル「対応済」を追加しました"
+    "message": "Label \"Handled\" added"
   }
 }
 ```
@@ -60,7 +60,7 @@ Add or remove labels from threads.
 ### Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"remove_label","threadId":"19bf7f25b96ab637","label":"対応済"}'
+.ccskill-gmail/api post '{"action":"remove_label","threadId":"19bf7f25b96ab637","label":"Handled"}'
 ```
 
 ### Response Example
@@ -70,9 +70,9 @@ Add or remove labels from threads.
   "ok": true,
   "data": {
     "threadId": "19bf7f25b96ab637",
-    "label": "対応済",
+    "label": "Handled",
     "action": "remove_label",
-    "message": "ラベル「対応済」を削除しました"
+    "message": "Label \"Handled\" removed"
   }
 }
 ```
@@ -84,7 +84,7 @@ When attempting to remove a non-existent label:
 ```json
 {
   "ok": false,
-  "error": "Label not found: 存在しないラベル"
+  "error": "Label not found: NonExistentLabel"
 }
 ```
 
@@ -96,12 +96,12 @@ When attempting to remove a non-existent label:
 # 1. Search for unread emails (note the THREAD_ID)
 .ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
-# 2. Add a "要確認" (needs review) label (THREAD_ID is obtained from step 1 results)
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"要確認"}'
+# 2. Add a "NeedsReview" (needs review) label (THREAD_ID is obtained from step 1 results)
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"NeedsReview"}'
 
-# 3. After handling, remove "要確認" and add "対応済" (handled)
-.ccskill-gmail/api post '{"action":"remove_label","threadId":"THREAD_ID","label":"要確認"}'
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"対応済"}'
+# 3. After handling, remove "NeedsReview" and add "Handled" (handled)
+.ccskill-gmail/api post '{"action":"remove_label","threadId":"THREAD_ID","label":"NeedsReview"}'
+.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 ```
 
 ---

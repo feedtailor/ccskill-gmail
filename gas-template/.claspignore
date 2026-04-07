@@ -1,7 +1,7 @@
-# clasp push で除外するファイル
+# Files excluded from clasp push
 
-# メタデータファイル（GASにアップロード不要）
+# Metadata files (not needed in GAS)
 .ccskill-metadata.json
 
-# テンプレートファイル
+# Template files
 config.js.template

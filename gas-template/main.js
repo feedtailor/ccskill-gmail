@@ -5,7 +5,7 @@
  * Phase 1: search, get_thread, get_message, list_labels, create_draft
  */
 
-/** GET ルーティングテーブル: アクション名 → ハンドラ関数 */
+/** GET routing table: action name -> handler function */
 var GET_ROUTES = {
   search:           function(e) { return handleSearch(e.parameter.query, parseInt(e.parameter.maxResults) || 20); },
   get_thread:       function(e) { return handleGetThread(e.parameter.threadId); },
@@ -19,7 +19,7 @@ var GET_ROUTES = {
   get_profile:      function(e) { return handleGetProfile(); }
 };
 
-/** POST ルーティングテーブル: アクション名 → ハンドラ関数 */
+/** POST routing table: action name -> handler function */
 var POST_ROUTES = {
   create_draft:       function(b) { return handleCreateDraft(b.to, b.subject, b.body, b.cc, b.bcc, b.htmlBody, b.attachments); },
   create_reply_draft: function(b) { return handleCreateReplyDraft(b.threadId, b.body, b.cc, b.bcc, b.htmlBody, b.attachments, b.skipSelf, b.replyAll); },
@@ -65,7 +65,7 @@ function doGet(e) {
         'Action "' + action + '" is denied by permissions config. ' +
         'To enable, remove "' + action + '" from permissions.deny in config.js ' +
         'and run: ccskill-gmail apply-config',
-        { code: 'PERMISSION_DENIED', hint: 'config.js の permissions.deny を確認してください', retryable: false }
+        { code: 'PERMISSION_DENIED', hint: 'Check permissions.deny in config.js', retryable: false }
       );
     }
 
@@ -75,16 +75,16 @@ function doGet(e) {
       return handler(e);
     }
     if (POST_ROUTES[action]) {
-      return errorResponse(action + ' は POST メソッドで呼び出してください',
-        { code: 'WRONG_METHOD', hint: '使い方: .ccskill-gmail/api post \'{"action":"' + action + '",...}\'', retryable: false });
+      return errorResponse(action + ' requires POST method',
+        { code: 'WRONG_METHOD', hint: 'Usage: .ccskill-gmail/api post \'{"action":"' + action + '",...}\'', retryable: false });
     }
     return errorResponse('Unknown action: ' + action,
-      { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。GET で利用可能: ' + GET_ACTIONS.join(', ') + ' / POST で利用可能: ' + POST_ACTIONS.join(', '), retryable: false });
+      { code: 'UNKNOWN_ACTION', hint: 'Check the action parameter. Available GET actions: ' + GET_ACTIONS.join(', ') + ' / POST actions: ' + POST_ACTIONS.join(', '), retryable: false });
   } catch (error) {
-    // requireParam の throw はパラメータ不足
+    // requireParam throws on missing parameters
     var errMsg = error.message || String(error);
     if (errMsg.indexOf('Missing required parameter') === 0) {
-      return errorResponse(errMsg, { code: 'MISSING_PARAM', hint: '必須パラメータが不足しています', retryable: false });
+      return errorResponse(errMsg, { code: 'MISSING_PARAM', hint: 'A required parameter is missing', retryable: false });
     }
     return errorResponse(errMsg, { code: 'INTERNAL_ERROR', retryable: true });
   }
@@ -103,14 +103,14 @@ function doPost(e) {
       body = JSON.parse(e.postData.contents);
     } catch (parseError) {
       return errorResponse('Invalid JSON in request body',
-        { code: 'INVALID_JSON', hint: 'リクエストボディが正しい JSON か確認してください', retryable: false });
+        { code: 'INVALID_JSON', hint: 'Verify the request body is valid JSON', retryable: false });
     }
 
     const action = body.action;
 
     if (!action) {
       return errorResponse('Missing required field: action',
-        { code: 'MISSING_PARAM', hint: 'JSON に "action" フィールドを含めてください', retryable: false });
+        { code: 'MISSING_PARAM', hint: 'Include an "action" field in the JSON body', retryable: false });
     }
 
     // Permission check
@@ -119,7 +119,7 @@ function doPost(e) {
         'Action "' + action + '" is denied by permissions config. ' +
         'To enable, remove "' + action + '" from permissions.deny in config.js ' +
         'and run: ccskill-gmail apply-config',
-        { code: 'PERMISSION_DENIED', hint: 'config.js の permissions.deny を確認してください', retryable: false }
+        { code: 'PERMISSION_DENIED', hint: 'Check permissions.deny in config.js', retryable: false }
       );
     }
 
@@ -129,15 +129,15 @@ function doPost(e) {
       return postHandler(body);
     }
     if (GET_ROUTES[action]) {
-      return errorResponse(action + ' は GET メソッドで呼び出してください',
-        { code: 'WRONG_METHOD', hint: '使い方: .ccskill-gmail/api get action=' + action, retryable: false });
+      return errorResponse(action + ' requires GET method',
+        { code: 'WRONG_METHOD', hint: 'Usage: .ccskill-gmail/api get action=' + action, retryable: false });
     }
     return errorResponse('Unknown action: ' + action,
-      { code: 'UNKNOWN_ACTION', hint: 'action パラメータを確認してください。GET で利用可能: ' + GET_ACTIONS.join(', ') + ' / POST で利用可能: ' + POST_ACTIONS.join(', '), retryable: false });
+      { code: 'UNKNOWN_ACTION', hint: 'Check the action parameter. Available GET actions: ' + GET_ACTIONS.join(', ') + ' / POST actions: ' + POST_ACTIONS.join(', '), retryable: false });
   } catch (error) {
     var errMsg = error.message || String(error);
     if (errMsg.indexOf('Missing required parameter') === 0) {
-      return errorResponse(errMsg, { code: 'MISSING_PARAM', hint: '必須パラメータが不足しています', retryable: false });
+      return errorResponse(errMsg, { code: 'MISSING_PARAM', hint: 'A required parameter is missing', retryable: false });
     }
     return errorResponse(errMsg, { code: 'INTERNAL_ERROR', retryable: true });
   }
