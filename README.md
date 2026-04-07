@@ -155,7 +155,8 @@ This removes local files (`.ccskill-gmail/`, skill definitions, permission setti
 ## Other Commands
 
 ```bash
-ccskill-gmail status              # Show all installations and their health
+ccskill-gmail info [--json]       # Show details for current project (account, permissions, unread)
+ccskill-gmail status [--refresh]  # Show all installations and their health
 ccskill-gmail doctor              # Diagnose environment and setup issues
 ccskill-gmail history             # Show API operation audit log
 ccskill-gmail apply-config        # Push config.js changes to GAS
@@ -163,6 +164,9 @@ ccskill-gmail register <PATH>     # Register an existing installation
 ccskill-gmail release             # Create a distributable zip file
 ccskill-gmail help                # Show all available commands
 ```
+
+- `info` shows the account email, version, permissions, and unread counts for the current project
+- `status --refresh` fetches account emails for all installations via the API and caches them
 
 ## Troubleshooting
 

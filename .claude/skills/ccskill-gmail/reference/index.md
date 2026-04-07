@@ -28,3 +28,8 @@
 | remove_label | [label.md](label.md) | Remove a label |
 | archive | [thread.md](thread.md) | Archive |
 | move_to_trash | [thread.md](thread.md) | Move to trash |
+| bulk_mark_read | (see README) | Bulk mark threads as read |
+| bulk_mark_unread | (see README) | Bulk mark threads as unread |
+| bulk_add_label | (see README) | Bulk add label to threads |
+| bulk_remove_label | (see README) | Bulk remove label from threads |
+| bulk_archive | (see README) | Bulk archive threads |
