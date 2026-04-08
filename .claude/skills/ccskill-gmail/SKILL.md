@@ -367,6 +367,19 @@ The `search` API supports Gmail's native search syntax:
 
 ---
 
+## Email Review Guidelines
+
+When the user asks to scan the inbox or identify emails that need a reply (e.g., "check my emails", "any emails I should reply to?", "check customer emails"), apply these patterns:
+
+1. **Filter out automated senders** — Exclude noreply, notifications, promotions, updates, and social category emails to surface only human-sent messages. See examples.md §19 for query patterns.
+2. **Present each email as a structured summary** — For each relevant thread, report:
+   - **Subject / From / Date**
+   - **Content**: Brief summary of the latest message
+   - **Status**: Current state (e.g., "awaiting your reply", "waiting for their response", "FYI only")
+   - **Suggested action**: What to do next (e.g., "reply with acknowledgment", "no action needed", "draft reply proposed below")
+
+---
+
 ## Retry on Errors
 
 If an API call fails, try again first. The following transient errors are often resolved by retrying:

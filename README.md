@@ -8,7 +8,7 @@ A Claude Code skill for Gmail. Just tell Claude what you want in natural languag
 
 ### Email Operations
 
-Search, read, draft, label management, attachment download, and email-to-PDF export. Bulk operations (mark read/unread, add/remove labels, archive) are also supported for efficient batch processing.
+Search, read, draft, label management, attachment download, and email-to-PDF export. Bulk operations (mark read/unread, add/remove labels, archive) are also supported for efficient batch processing. When scanning for actionable emails, automated notifications are filtered out to surface only human-sent messages (Smart Filtering), and each email is presented with a structured summary including content, status, and suggested action.
 
 ### Security Policy
 
