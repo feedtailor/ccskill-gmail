@@ -41,17 +41,15 @@ JSON files **must be created with the Write tool**. Creating JSON files with Bas
 
 ```
 # Step 1: Write the JSON with the Write tool (no confirmation prompt)
-Write("/tmp/payload.json") -> {"action":"create_reply_draft","threadId":"...","body":"..."}
+Write(".ccskill-gmail/tmp/payload.json") -> {"action":"create_reply_draft","threadId":"...","body":"..."}
 
-# Step 2: Call the API with Bash
-.ccskill-gmail/api post @/tmp/payload.json
+# Step 2: Call the API with Bash (tmp file is auto-deleted after the call)
+.ccskill-gmail/api post @.ccskill-gmail/tmp/payload.json
 ```
 
-**Prohibited:** `cat <<EOF`, `cat > /tmp/file`, `echo '...' > /tmp/file` -- all trigger a confirmation prompt.
+**Prohibited:** `cat <<EOF`, `cat > .ccskill-gmail/tmp/file`, `echo '...' > .ccskill-gmail/tmp/file` -- all trigger a confirmation prompt.
 
-**Always use absolute paths:** Specify paths like `/tmp/payload.json`. Using relative paths like `../../../../tmp/payload.json` will not match the permission `Write(/tmp/*)` and will trigger a confirmation prompt.
-
-**No parallel Write for multiple files:** When writing multiple JSON files to `/tmp/`, execute Write tools sequentially, not in parallel. Parallel Writes cause the second and subsequent calls to fail with a "File has not been read yet" error, triggering a confirmation prompt. Execute Writes sequentially, then run the subsequent Bash calls (API invocations) in parallel.
+**No parallel Write for multiple files:** When writing multiple JSON files to `.ccskill-gmail/tmp/`, execute Write tools sequentially, not in parallel. Parallel Writes cause the second and subsequent calls to fail with a "File has not been read yet" error, triggering a confirmation prompt. Execute Writes sequentially, then run the subsequent Bash calls (API invocations) in parallel.
 
 </important>
 
@@ -236,7 +234,7 @@ The get subcommand automatically URL-encodes values, so Japanese text can be use
 .ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
 
 # Download attachment (recommended: download subcommand)
-.ccskill-gmail/api download MESSAGE_ID 0 /tmp/attachment.pdf
+.ccskill-gmail/api download MESSAGE_ID 0 .ccskill-gmail/tmp/attachment.pdf
 
 # Save email as PDF (recommended: save-pdf subcommand -- fetches HTML + converts to PDF in one step)
 .ccskill-gmail/api save-pdf MESSAGE_ID ./email.pdf
@@ -465,10 +463,10 @@ echo "$result" | jq -r '.data.threads[] | .id'
 
 **Script pattern (POST with JSON file):**
 ```bash
-cat > /tmp/payload.json <<EOF
+cat > .ccskill-gmail/tmp/payload.json <<EOF
 {"action":"create_draft","to":"$recipient","subject":"$subject","body":"$body"}
 EOF
-.ccskill-gmail/api post @/tmp/payload.json
+.ccskill-gmail/api post @.ccskill-gmail/tmp/payload.json
 ```
 
 ---

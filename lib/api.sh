@@ -125,7 +125,7 @@ ccskill-get() {
 # ========================================
 # Usage:
 #   ccskill-post "$GMAIL_ENDPOINT" '{"action":"create_draft","to":"a@b.com","subject":"Hi","body":"Hello"}'
-#   ccskill-post "$GMAIL_ENDPOINT" @/tmp/draft.json
+#   ccskill-post "$GMAIL_ENDPOINT" @.ccskill-gmail/tmp/draft.json
 
 ccskill-post() {
     local endpoint="$1"
@@ -157,7 +157,7 @@ ccskill-post() {
 #   _gmail_download "$GMAIL_ENDPOINT" MESSAGE_ID INDEX OUTPUT_PATH
 #
 # Example:
-#   _gmail_download "$GMAIL_ENDPOINT" 19c98efb629db376 0 /tmp/report.pdf
+#   _gmail_download "$GMAIL_ENDPOINT" 19c98efb629db376 0 .ccskill-gmail/tmp/report.pdf
 
 _gmail_download() {
     local endpoint="$1"
@@ -204,8 +204,8 @@ _gmail_download() {
 #   _gmail_save_html "$GMAIL_ENDPOINT" MESSAGE_ID OUTPUT_PATH [includeHeaders]
 #
 # Example:
-#   _gmail_save_html "$GMAIL_ENDPOINT" 19c98efb629db376 /tmp/email.html
-#   _gmail_save_html "$GMAIL_ENDPOINT" 19c98efb629db376 /tmp/email.html false
+#   _gmail_save_html "$GMAIL_ENDPOINT" 19c98efb629db376 .ccskill-gmail/tmp/email.html
+#   _gmail_save_html "$GMAIL_ENDPOINT" 19c98efb629db376 .ccskill-gmail/tmp/email.html false
 
 _gmail_save_html() {
     local endpoint="$1"
