@@ -26,6 +26,7 @@ This skill operates Gmail through a Web API built with Google Apps Script (GAS).
 - The only exception: `| jq '...'` is allowed for reducing output size
 
 **Prohibited (triggers a confirmation prompt):**
+- `bash` prefix (use `.ccskill-gmail/api` directly, not `bash .ccskill-gmail/api`)
 - `$()` or backticks
 - Command chaining with `&&`
 - Redirection with `>`
