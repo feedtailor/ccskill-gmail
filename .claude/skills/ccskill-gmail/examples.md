@@ -64,7 +64,7 @@ The default behavior (`skipSelf: true`, `replyAll: true`) correctly creates a re
 .ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
 
 # Download an attachment (attachment at index=0)
-.ccskill-gmail/api download MESSAGE_ID 0 /tmp/attachment.pdf
+.ccskill-gmail/api download MESSAGE_ID 0 .ccskill-gmail/tmp/attachment.pdf
 ```
 
 ---
@@ -118,13 +118,13 @@ For long JSON, use the Write tool + `@file` pattern:
 
 ```
 # Step 1: Create a JSON file with the Write tool
-Write("/tmp/draft.json") with the following content:
+Write(".ccskill-gmail/tmp/draft.json") with the following content:
 {"action":"create_draft","to":"member1@example.com,member2@example.com","cc":"manager@example.com","subject":"Weekly Meeting Notice","body":"Hi team,\n\n...long body text..."}
 ```
 
 ```bash
 # Step 2: Send via Bash
-.ccskill-gmail/api post @/tmp/draft.json
+.ccskill-gmail/api post @.ccskill-gmail/tmp/draft.json
 ```
 
 ---
@@ -262,7 +262,7 @@ Drafts with attachments produce large JSON, so use the Write tool + `@file` patt
 
 ```
 # Step 1: Create a JSON file with the Write tool (with base64-encoded content)
-Write("/tmp/draft-with-attachment.json") with the following content:
+Write(".ccskill-gmail/tmp/draft-with-attachment.json") with the following content:
 {
   "action": "create_draft",
   "to": "recipient@example.com",
@@ -280,7 +280,7 @@ Write("/tmp/draft-with-attachment.json") with the following content:
 
 ```bash
 # Step 2: Send via Bash
-.ccskill-gmail/api post @/tmp/draft-with-attachment.json
+.ccskill-gmail/api post @.ccskill-gmail/tmp/draft-with-attachment.json
 ```
 
 - `attachments` is an array that supports multiple files

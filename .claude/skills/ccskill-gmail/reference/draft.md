@@ -135,7 +135,7 @@ Drafts are saved in Gmail's "Drafts" folder and can be reviewed, edited, and sen
 Create a JSON file with the Write tool, then send:
 
 ```bash
-.ccskill-gmail/api post @/tmp/draft-with-attachment.json
+.ccskill-gmail/api post @.ccskill-gmail/tmp/draft-with-attachment.json
 ```
 
 ---

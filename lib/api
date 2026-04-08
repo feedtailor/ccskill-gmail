@@ -9,8 +9,8 @@
 #   .ccskill-gmail/api get action=search query="is:unread"
 #   .ccskill-gmail/api get action=get_thread thread_id=abc123
 #   .ccskill-gmail/api post '{"action":"create_draft","to":"a@b.com","subject":"Hi","body":"Hello"}'
-#   .ccskill-gmail/api post @/tmp/draft.json
-#   .ccskill-gmail/api download MSG_ID INDEX /tmp/file.pdf
+#   .ccskill-gmail/api post @.ccskill-gmail/tmp/draft.json
+#   .ccskill-gmail/api download MSG_ID INDEX .ccskill-gmail/tmp/file.pdf
 #   .ccskill-gmail/api save-html MSG_ID ./email.html [includeHeaders]
 #   .ccskill-gmail/api save-pdf MSG_ID ./receipt.pdf
 #
@@ -200,6 +200,19 @@ cmd_post() {
 
     _assert_endpoint "$GMAIL_ENDPOINT" || return $?
     _do_post "$body"
+    local rc=$?
+
+    # Auto-cleanup: delete tmp file if it was in .ccskill-gmail/tmp/
+    if [[ "$body" == @* ]]; then
+        local filepath="${body#@}"
+        case "$filepath" in
+            */".ccskill-gmail/tmp/"*|".ccskill-gmail/tmp/"*)
+                rm -f "$filepath"
+                ;;
+        esac
+    fi
+
+    return $rc
 }
 
 # ========================================

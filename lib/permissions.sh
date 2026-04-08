@@ -22,7 +22,7 @@ setup_permissions() {
     local settings_file="$target_dir/.claude/settings.local.json"
     local patterns=(
         "Bash(.ccskill-gmail/api *)"
-        "Write(/tmp/*)"
+        "Write(.ccskill-gmail/tmp/*)"
     )
     local missing_patterns=()
 

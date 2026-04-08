@@ -205,6 +205,15 @@ if [ -f "$METADATA_FILE" ] && command -v jq &>/dev/null; then
     fi
 fi
 
+# tmp ディレクトリ作成（既存インストールのマイグレーション）
+mkdir -p "$GAS_DIR/tmp"
+
+# .ccskill-gmail 内の .gitignore（tmp/ を除外）
+_INNER_GITIGNORE="$GAS_DIR/.gitignore"
+if [ ! -f "$_INNER_GITIGNORE" ] || ! grep -qF "tmp/" "$_INNER_GITIGNORE"; then
+    echo "tmp/" >> "$_INNER_GITIGNORE"
+fi
+
 # ディレクトリ保護
 chmod 700 "$GAS_DIR" 2>/dev/null || true
 

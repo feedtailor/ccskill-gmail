@@ -265,7 +265,7 @@ Retrieves the content of an attachment as base64-encoded data. Returns an error 
 
 ```bash
 # Get an attachment and save locally (recommended: download subcommand)
-.ccskill-gmail/api download 19bf7f25b96ab637 0 /tmp/report.pdf
+.ccskill-gmail/api download 19bf7f25b96ab637 0 .ccskill-gmail/tmp/report.pdf
 ```
 
 ### Response Example
@@ -323,10 +323,10 @@ Retrieves the email body as complete HTML. Used for PDF conversion or browser di
 
 ```bash
 # Save as HTML (recommended: save-html subcommand)
-.ccskill-gmail/api save-html 19bf7f25b96ab637 /tmp/email.html
+.ccskill-gmail/api save-html 19bf7f25b96ab637 .ccskill-gmail/tmp/email.html
 
 # Save without headers
-.ccskill-gmail/api save-html 19bf7f25b96ab637 /tmp/email.html false
+.ccskill-gmail/api save-html 19bf7f25b96ab637 .ccskill-gmail/tmp/email.html false
 ```
 
 ### Response Example

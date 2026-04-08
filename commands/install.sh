@@ -227,7 +227,14 @@ echo ""
 
 /bin/cp "$CCSKILL_GMAIL_DIR/lib/api" "$GAS_DIR/api"
 chmod +x "$GAS_DIR/api"
+mkdir -p "$GAS_DIR/tmp"
 chmod 700 "$GAS_DIR"
+
+# .ccskill-gmail 内の .gitignore（tmp/ を除外）
+INNER_GITIGNORE="$GAS_DIR/.gitignore"
+if [ ! -f "$INNER_GITIGNORE" ] || ! grep -qF "tmp/" "$INNER_GITIGNORE"; then
+    echo "tmp/" >> "$INNER_GITIGNORE"
+fi
 
 echo -e "${GREEN}✓ api script copied, directory secured${NC}"
 

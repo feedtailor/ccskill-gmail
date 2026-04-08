@@ -43,17 +43,15 @@ JSON ファイルは **Write ツールで作成する必要があります**。B
 
 ```
 # Step 1: Write ツールで JSON を作成（確認プロンプトなし）
-Write("/tmp/payload.json") -> {"action":"create_reply_draft","threadId":"...","body":"..."}
+Write(".ccskill-gmail/tmp/payload.json") -> {"action":"create_reply_draft","threadId":"...","body":"..."}
 
-# Step 2: Bash で API を呼ぶ
-.ccskill-gmail/api post @/tmp/payload.json
+# Step 2: Bash で API を呼ぶ（tmp ファイルは呼び出し後に自動削除）
+.ccskill-gmail/api post @.ccskill-gmail/tmp/payload.json
 ```
 
-**禁止:** `cat <<EOF`、`cat > /tmp/file`、`echo '...' > /tmp/file` — いずれも確認プロンプトが発生します。
+**禁止:** `cat <<EOF`、`cat > .ccskill-gmail/tmp/file`、`echo '...' > .ccskill-gmail/tmp/file` — いずれも確認プロンプトが発生します。
 
-**必ず絶対パスを使用:** `/tmp/payload.json` のようなパスを指定してください。`../../../../tmp/payload.json` のような相対パスはパーミッション `Write(/tmp/*)` にマッチせず、確認プロンプトが発生します。
-
-**複数ファイルの並列 Write は不可:** `/tmp/` に複数の JSON ファイルを書く場合は Write ツールを順次実行してください。並列だと 2 番目以降が「File has not been read yet」エラーになり確認プロンプトが発生します。Write は順次実行し、その後の Bash 呼び出し（API 実行）は並列で実行してください。
+**複数ファイルの並列 Write は不可:** `.ccskill-gmail/tmp/` に複数の JSON ファイルを書く場合は Write ツールを順次実行してください。並列だと 2 番目以降が「File has not been read yet」エラーになり確認プロンプトが発生します。Write は順次実行し、その後の Bash 呼び出し（API 実行）は並列で実行してください。
 
 </important>
 
@@ -238,7 +236,7 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 .ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
 
 # 添付ファイルダウンロード（推奨: download サブコマンド）
-.ccskill-gmail/api download MESSAGE_ID 0 /tmp/attachment.pdf
+.ccskill-gmail/api download MESSAGE_ID 0 .ccskill-gmail/tmp/attachment.pdf
 
 # メールを PDF で保存（推奨: save-pdf サブコマンド — HTML 取得 + PDF 変換を一括で実行）
 .ccskill-gmail/api save-pdf MESSAGE_ID ./email.pdf
@@ -467,10 +465,10 @@ echo "$result" | jq -r '.data.threads[] | .id'
 
 **スクリプトパターン（POST + JSON ファイル）:**
 ```bash
-cat > /tmp/payload.json <<EOF
+cat > .ccskill-gmail/tmp/payload.json <<EOF
 {"action":"create_draft","to":"$recipient","subject":"$subject","body":"$body"}
 EOF
-.ccskill-gmail/api post @/tmp/payload.json
+.ccskill-gmail/api post @.ccskill-gmail/tmp/payload.json
 ```
 
 ---
