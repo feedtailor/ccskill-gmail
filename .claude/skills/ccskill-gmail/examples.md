@@ -414,3 +414,41 @@ Identify threads where the last message is from someone else (i.e., you haven't 
 ### Why Not Just Use Search?
 
 The `search` response includes `from` (the thread's first sender) but does not indicate who sent the **last** message. To determine reply status, you must call `get_thread` and inspect `messages[-1].from`.
+
+---
+
+## 19. Smart Filtering — Surface Human Emails
+
+When scanning the inbox for actionable emails, exclude automated senders to reduce noise:
+
+```bash
+# Filter out automated notifications and surface human-sent emails
+.ccskill-gmail/api get action=search query="newer_than:1d in:inbox -category:promotions -category:updates -category:social -from:noreply -from:no-reply -from:donotreply -from:notification -from:alert" maxResults=20
+```
+
+### Customizing the Filter
+
+```bash
+# Customer emails only (if a label exists)
+.ccskill-gmail/api get action=search query="newer_than:1d label:customers"
+
+# Broader time range
+.ccskill-gmail/api get action=search query="newer_than:7d in:inbox -from:noreply -from:no-reply"
+
+# Combined with unreplied check (see §18)
+# First filter with smart query, then check last sender per thread
+```
+
+### Presenting Results
+
+After retrieving threads, fetch each thread's details and present a structured summary:
+
+**Format:**
+
+```
+### 1. [Sender Name]（[Company]） — [Subject]
+- **Latest**: [Who] → [Who] ([date])
+- **Content**: [1-2 sentence summary]
+- **Status**: [Current state — e.g., "awaiting your reply", "waiting for their response", "FYI only"]
+- **Suggested action**: [What to do next — e.g., "reply with acknowledgment", "no action needed", "draft reply proposed below"]
+```
