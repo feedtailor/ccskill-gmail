@@ -24,101 +24,25 @@ Gmail (GmailApp)
 
 ccskill-spreadsheet と同じアーキテクチャパターンを採用。
 
-## ディレクトリ構成
+## 参照
 
-```
-ccskill-gmail/
-├── ccskill-gmail              # メインコマンド（ディスパッチャ）
-├── commands/                   # サブコマンド
-│   ├── install.sh
-│   ├── uninstall.sh
-│   ├── update.sh
-│   ├── update-all.sh
-│   ├── apply-config.sh
-│   ├── register.sh
-│   └── status.sh
-├── lib/                        # 共通ライブラリ
-│   ├── auth.sh                # OAuth 認証（gas_token）
-│   ├── api                    # API スタンドアロンスクリプト（get/post/download/save-html/save-pdf）
-│   ├── push-gas.sh            # GAS push/deploy
-│   ├── registry.sh            # レジストリ管理
-│   └── permissions.sh         # パーミッション設定
-├── gas-template/               # GAS ソースコード
-│   ├── appsscript.json
-│   ├── config.js.template
-│   ├── main.js
-│   ├── handlers/
-│   └── utils/
-└── .claude/skills/ccskill-gmail/  # スキル定義のマスターソース
-    ├── SKILL.md                   # install/update 時にインストール先の
-    ├── troubleshooting.md         # .claude/skills/ccskill-gmail/ へコピーされる
-    ├── examples.md
-    └── reference/
-```
-
-## セキュリティ設計判断
-
-不採用にした対策とその理由は `docs/security-decisions.md` を参照。
-
-## API 設計
-
-### GET（読み取り）
-- `search` - メール検索（Gmail 検索構文使用）
-- `get_thread` / `get_message` - スレッド/メッセージ取得
-- `list_labels` / `get_unread_count`
-
-### POST（書き込み）
-- `create_draft` / `create_reply_draft` - 下書き作成
-- `update_draft` / `delete_draft`
-- `add_label` / `remove_label` / `mark_read` / `mark_unread`
-- `archive` / `move_to_trash`
-
-**注意**: アクション追加時は `main.js` 先頭の `GET_ROUTES` / `POST_ROUTES` テーブルにハンドラを追加すること。switch 文は存在しない（テーブル駆動方式）。ルーティング・WRONG_METHOD 検出・アクション一覧はすべてテーブルから自動生成される。
-
-## GAS スコープ
-
-```json
-{
-  "oauthScopes": [
-    "https://www.googleapis.com/auth/gmail.readonly",
-    "https://www.googleapis.com/auth/gmail.compose",
-    "https://www.googleapis.com/auth/gmail.modify"
-  ]
-}
-```
-
-※ `script.external_request` は不要のため削除済み
-
-## 開発コマンド
-
-```bash
-# 初回セットアップ（clasp ローカルインストール + PATH 登録）
-./ccskill-gmail setup
-
-# インストール
-ccskill-gmail install [NAME] [DIR]
-
-# 更新
-ccskill-gmail update [--force] [--yes] [DIR]
-
-# 一括更新
-ccskill-gmail update-all
-
-# ステータス確認
-ccskill-gmail status
-```
+- **ディレクトリ構成**: コード探索で確認
+- **セキュリティ設計判断**: @docs/security-decisions.md
+- **API アクション一覧・ルーティング**: @gas-template/main.js （テーブル駆動方式。switch 文は存在しない）
+- **GAS スコープ**: @gas-template/appsscript.json
+- **各種コマンド**: @README.md または `ccskill-gmail --help`
 
 ## テスト手順
 
-GAS コードを変更したら、必ずデプロイして実機テストすること。
+GAS コードを変更したら、必ずデプロイしてテストすること。
 
 ```bash
-# 1. テスト用プロジェクト（ftgmail）にデプロイ
-cd ~/projects/ftgmail
+# 1. テスト用プロジェクトにデプロイ（プロジェクトのパスはユーザーに確認すること）
+cd ~/projects/<テスト用プロジェクト>
 ~/projects/ccskill-gmail/ccskill-gmail update --force --yes .
 
 # 2. テスト用プロジェクトに cd してからテスト実行
-cd ~/projects/ftgmail
+cd ~/projects/<テスト用プロジェクト>
 .ccskill-gmail/api get action=...
 .ccskill-gmail/api post '{"action":...}'
 ```
