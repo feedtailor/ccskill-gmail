@@ -28,6 +28,7 @@ Google Apps Script (GAS) で構築した Web API を通じて Gmail を操作す
 - 唯一の例外: 出力サイズ削減のための `| jq '...'` は許可
 
 **禁止事項（確認プロンプトが発生する）:**
+- `bash` プレフィックス（`bash .ccskill-gmail/api` ではなく `.ccskill-gmail/api` を直接使う）
 - `$()` やバッククォート
 - `&&` によるコマンド連結
 - `>` によるリダイレクト
