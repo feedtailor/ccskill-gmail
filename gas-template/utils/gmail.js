@@ -141,14 +141,31 @@ function formatDraft(draft) {
 function parseEmailAddresses(input) {
   if (!input) return [];
 
-  // Split by comma
-  const parts = input.split(',');
+  // Extract <email> addresses (handles quoted names containing commas)
+  var results = [];
+  var bracketPattern = /<([^>]+)>/g;
+  var match;
+  var remaining = input;
+  while ((match = bracketPattern.exec(input)) !== null) {
+    results.push(match[1]);
+  }
 
-  return parts.map(function(part) {
-    part = part.trim();
-    // Extract email from "Name <email>" format
-    const match = part.match(/<([^>]+)>/);
-    return match ? match[1] : part;
+  if (results.length > 0) {
+    // Also pick up any bare addresses not wrapped in <>
+    // Remove all "...< >..." segments, then split remainder by comma
+    remaining = input.replace(/"[^"]*"?\s*<[^>]+>/g, '').replace(/<[^>]+>/g, '');
+    remaining.split(',').forEach(function(part) {
+      part = part.trim();
+      if (part.length > 0 && part.indexOf('@') !== -1) {
+        results.push(part);
+      }
+    });
+    return results;
+  }
+
+  // Fallback: plain comma-separated addresses (no angle brackets)
+  return input.split(',').map(function(part) {
+    return part.trim();
   }).filter(function(email) {
     return email.length > 0;
   });
