@@ -150,18 +150,45 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, 
       .replace(/\n/g, '<br>');
   }
 
+  // When replyAll, build CC ourselves to exclude self
+  var replyAllCc = '';
+  if (replyAll) {
+    var myEmail = Session.getActiveUser().getEmail().toLowerCase();
+    var fromAddr = parseEmailAddresses(targetMessage.getFrom());
+    var fromSet = {};
+    fromAddr.forEach(function(e) { fromSet[e.toLowerCase()] = true; });
+
+    var originalTo = parseEmailAddresses(targetMessage.getTo());
+    var originalCc = parseEmailAddresses(targetMessage.getCc());
+    var seen = {};
+    var filtered = [];
+    originalTo.concat(originalCc).forEach(function(addr) {
+      var key = addr.toLowerCase();
+      // Exclude self, From (already in To of reply), and duplicates
+      if (key !== myEmail && !fromSet[key] && !seen[key]) {
+        seen[key] = true;
+        filtered.push(addr);
+      }
+    });
+    replyAllCc = filtered.join(',');
+  }
+
+  // Merge replyAll CC with user-specified CC
+  var mergedCc = cc || '';
+  if (replyAll && replyAllCc) {
+    mergedCc = mergedCc ? mergedCc + ',' + replyAllCc : replyAllCc;
+  }
+
   // Build options object
   const options = buildEmailOptions({
-    cc: cc,
+    cc: mergedCc,
     bcc: bcc,
     htmlBody: htmlBody,
     attachments: parseAttachments(attachments)
   });
 
-  // Use replyAll or reply based on the flag
-  const draft = replyAll
-    ? targetMessage.createDraftReplyAll(body, options)
-    : targetMessage.createDraftReply(body, options);
+  // Always use createDraftReply (CC is handled manually for replyAll)
+  const draft = targetMessage.createDraftReply(body, options);
 
   // Return the actual draft recipient
   const draftMessage = draft.getMessage();
@@ -170,6 +197,7 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, 
     draftId: draft.getId(),
     threadId: threadId,
     to: draftMessage.getTo(),
+    cc: draftMessage.getCc(),
     subject: 'Re: ' + targetMessage.getSubject().replace(/^Re:\s*/i, ''),
     skipSelf: skipSelf,
     replyAll: replyAll,
