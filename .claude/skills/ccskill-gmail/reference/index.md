@@ -33,3 +33,10 @@
 | bulk_add_label | (see README) | Bulk add label to threads |
 | bulk_remove_label | (see README) | Bulk remove label from threads |
 | bulk_archive | (see README) | Bulk archive threads |
+
+## Workflows
+
+| Workflow | File | Description |
+|----------|------|-------------|
+| Inbox Triage | [triage.md](triage.md) | Structured inbox review and classification |
+| Commitment Extraction | [commitment.md](commitment.md) | Extract action items and promises from threads |
