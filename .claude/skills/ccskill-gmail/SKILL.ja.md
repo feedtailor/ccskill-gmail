@@ -392,7 +392,18 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 .ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
 ```
 
-各スレッドに対して `get_thread` を呼び、最後のメッセージの送信者を確認。ユーザー以外であれば reply-now / draft-needed の候補です。完全な分類ルールは [reference/triage.md](reference/triage.md) を参照。
+各スレッドに対して `get_thread` を呼び、`data.lastSentMessage.from`（`messages[-1].from` ではない）を読みます。`lastSentMessage.from` がユーザー以外であれば reply-now / draft-needed の候補です。完全な分類ルールは [reference/triage.md](reference/triage.md) を参照。
+
+### ⚠️ 最終送信者の判定には `lastSentMessage` を使う（`messages[-1]` ではない）
+
+`get_thread` は下書きを送信済みメッセージと並べて返します。直前に作成した返信下書きが `messages[]` の末尾に出現し、送信済み返信と誤認される恐れがあります。
+
+レスポンスには triage 専用のヘルパーフィールドが2つ含まれています:
+
+- `lastSentMessage` (object | null) — 最新の **下書きでない** メッセージ
+- `hasDraft` (bool) — スレッドに下書きが含まれていれば `true`
+
+「最後に発言したのは誰か」の判定には必ず `data.lastSentMessage` を読んでください。`messages[-1]` は信頼してはいけません。`data.hasDraft` が `true` の場合、新しい下書きを作る前に既存の下書きを確認してください — 下書きを上に重ねないこと。
 
 ### 出力フォーマット
 

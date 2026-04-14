@@ -390,7 +390,18 @@ When looking for emails that need a reply, **never include `is:unread`** in the 
 .ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
 ```
 
-Then for each thread call `get_thread` and verify the last message's sender. If the last message is not from the user, the thread is a reply-now / draft-needed candidate. See [reference/triage.md](reference/triage.md) for the full classification rules.
+Then for each thread call `get_thread` and read `data.lastSentMessage.from` (NOT `messages[-1].from`). If `lastSentMessage.from` is not the user, the thread is a reply-now / draft-needed candidate. See [reference/triage.md](reference/triage.md) for the full classification rules.
+
+### ⚠️ Use `lastSentMessage` (NOT `messages[-1]`) when checking the last sender
+
+`get_thread` returns drafts inline with sent messages. A reply draft you just created will appear at the end of `messages[]` and look like a sent reply.
+
+The response provides two helper fields specifically for triage:
+
+- `lastSentMessage` (object | null) — the most recent **non-draft** message
+- `hasDraft` (bool) — `true` if the thread contains a draft
+
+Always read `data.lastSentMessage` for the "who spoke last" judgment. Treat `messages[-1]` as unreliable. If `data.hasDraft` is `true`, inspect the existing draft before creating another one — do NOT stack drafts on top.
 
 ### Output format
 
