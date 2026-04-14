@@ -93,7 +93,7 @@ When attempting to remove a non-existent label:
 ## Workflow Example
 
 ```bash
-# 1. Search for unread emails (note the THREAD_ID)
+# 1. Pick any one thread as a demo target (smoke test — NOT a triage query)
 .ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
 # 2. Add a "NeedsReview" (needs review) label (THREAD_ID is obtained from step 1 results)

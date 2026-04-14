@@ -352,19 +352,23 @@ The `search` API supports Gmail's native search syntax:
 
 ## Workflow Example
 
-### Check Unread Emails and Create a Reply Draft
+### Pickup Emails That Need a Reply
+
+> **Do not use `is:unread` here.** Unread ≠ unreplied — see [Email Review Guidelines](#email-review-guidelines) below. For the full classification workflow, see [reference/triage.md](reference/triage.md).
 
 ```bash
-# 1. Get the list of unread emails
-.ccskill-gmail/api get action=search query="is:unread" maxResults=5
+# 1. Get candidate threads (human senders in the inbox, last 7 days, excluding the user's own replies and automated categories)
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
 
-# 2. View a specific thread in detail
-.ccskill-gmail/api get action=get_thread threadId=19bf7f25b96ab637
+# 2. For each candidate thread, inspect lastSentMessage to see who spoke last
+.ccskill-gmail/api get action=get_thread threadId=THREAD_ID
+# ↑ Read data.lastSentMessage.from (NOT messages[-1].from).
+#   If it is not the user, the thread is a reply-now / draft-needed candidate.
 
-# 3. Create a reply draft
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"Thank you for reaching out.\n\nUnderstood."}'
+# 3. Create a reply draft on the threads that need one
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Thank you for reaching out.\n\nUnderstood."}'
 
-# 4. Review and send the draft in Gmail
+# 4. Review and send the draft manually in Gmail
 # https://mail.google.com/mail/u/0/#drafts
 ```
 

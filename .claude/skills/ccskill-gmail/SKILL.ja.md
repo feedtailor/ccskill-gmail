@@ -354,19 +354,23 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 
 ## ワークフロー例
 
-### 未読メールを確認して返信下書きを作成
+### 要返信メールを抽出して返信下書きを作成
+
+> **ここで `is:unread` を使ってはいけません。** Unread ≠ Unreplied — 下の[メールレビューガイドライン](#メールレビューガイドライン)を参照してください。完全な分類フローは [reference/triage.md](reference/triage.md) にあります。
 
 ```bash
-# 1. 未読メールの一覧を取得
-.ccskill-gmail/api get action=search query="is:unread" maxResults=5
+# 1. 候補スレッドを取得（受信箱の人間送信者、直近7日、自分の返信と自動通知カテゴリを除外）
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
 
-# 2. 特定のスレッドを詳細表示
-.ccskill-gmail/api get action=get_thread threadId=19bf7f25b96ab637
+# 2. 各候補スレッドを取得して lastSentMessage（最後に誰が話したか）を確認
+.ccskill-gmail/api get action=get_thread threadId=THREAD_ID
+# ↑ data.lastSentMessage.from を読む（messages[-1].from ではない）。
+#   自分でなければ reply-now / draft-needed の候補。
 
-# 3. 返信下書きを作成
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"ご連絡ありがとうございます。\n\n承知いたしました。"}'
+# 3. 返信が必要なスレッドに対して下書きを作成
+.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"ご連絡ありがとうございます。\n\n承知いたしました。"}'
 
-# 4. Gmail で下書きを確認して送信
+# 4. Gmail で下書きを確認して手動で送信
 # https://mail.google.com/mail/u/0/#drafts
 ```
 
