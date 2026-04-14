@@ -37,6 +37,17 @@ function formatThread(thread) {
  */
 function formatThreadWithMessages(thread) {
   const messages = thread.getMessages();
+  const formattedMessages = messages.map(formatMessage);
+
+  // Drafts appear inline with sent messages in the thread; find the last non-draft
+  // so triage logic can determine "who actually spoke last" without parsing isDraft.
+  var lastSentMessage = null;
+  for (var i = formattedMessages.length - 1; i >= 0; i--) {
+    if (!formattedMessages[i].isDraft) {
+      lastSentMessage = formattedMessages[i];
+      break;
+    }
+  }
 
   return {
     id: thread.getId(),
@@ -49,7 +60,9 @@ function formatThreadWithMessages(thread) {
     labels: thread.getLabels().map(function(label) {
       return label.getName();
     }),
-    messages: messages.map(formatMessage)
+    messages: formattedMessages,
+    lastSentMessage: lastSentMessage,
+    hasDraft: formattedMessages.some(function(m) { return m.isDraft; })
   };
 }
 
