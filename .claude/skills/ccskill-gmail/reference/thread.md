@@ -93,7 +93,7 @@ Moves a thread to trash. It will be automatically deleted after 30 days.
 ### Complete Email Processing Workflow
 
 ```bash
-# 1. Search for unread emails (note the THREAD_ID)
+# 1. Pick any one thread as a demo target (smoke test — NOT a triage query)
 .ccskill-gmail/api get action=search query="is:unread" maxResults=1
 
 # 2. View the content (THREAD_ID is obtained from step 1 results)

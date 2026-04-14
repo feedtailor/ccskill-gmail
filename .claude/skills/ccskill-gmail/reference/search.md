@@ -2,6 +2,21 @@
 
 Searches emails using Gmail search syntax.
 
+## Use-case query map
+
+Pick the query by **what you want**, not by the first operator that comes to mind. `is:unread` is often the wrong default — see the NG column.
+
+| What you want | Recommended query | Do NOT use |
+|---------------|-------------------|------------|
+| New mail since last check | `is:unread in:inbox newer_than:1d` | — |
+| Unread count only | `get_unread_count` action (see [read.md](read.md)) | — |
+| **Emails that need a reply** | `in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums` | ❌ `is:unread` |
+| Automated bill/receipt triage | `from:<sender> subject:invoice` | — |
+| Find a specific thread | `from:<sender> subject:<keyword>` | — |
+| All mail from a sender | `from:<sender>` | — |
+
+> **Why `is:unread` fails for "need a reply"**: A Gmail message becomes "read" the moment the user opens it in any client (web, mobile, preview pane) — that does not mean they have replied. See [triage.md](triage.md) for the full "emails that need a reply" workflow.
+
 ## Request
 
 **Method**: GET
