@@ -322,6 +322,8 @@ The `search` API supports Gmail's native search syntax:
 .ccskill-gmail/api get action=search query="is:unread from:important@example.com"
 ```
 
+> **Note**: `is:unread` is useful for "new mail since last check" workflows but **NOT** for "emails that need a reply". Unread ≠ unreplied — see [Email Review Guidelines](#email-review-guidelines) below.
+
 ---
 
 ## Response Handling
@@ -370,7 +372,38 @@ The `search` API supports Gmail's native search syntax:
 
 ## Email Review Guidelines
 
-When the user asks to scan the inbox or identify emails that need a reply (e.g., "check my emails", "any emails I should reply to?", "check customer emails"), apply these patterns:
+When the user asks to scan the inbox or identify emails that need a reply (e.g., "check my emails", "any emails I should reply to?", "check customer emails"), apply the patterns below. **For the full classification workflow (reply-now / waiting / draft-needed / fyi / archive), always consult [reference/triage.md](reference/triage.md).**
+
+### ⚠️ Do NOT filter by `is:unread`
+
+**Unread ≠ unreplied.** A Gmail message becomes "read" the moment the user opens it in any Gmail client (web, mobile app, preview pane) — that does not mean they have replied. In Japanese business email workflows especially, users routinely scan an email to understand it, then leave it in the inbox to reply later.
+
+When looking for emails that need a reply, **never include `is:unread`** in the query. Instead:
+
+- Use `in:inbox -from:me` to find threads where the user is not the last actor
+- Fetch each thread and check whether the **last message** was sent by someone other than the user — this is the authoritative signal for "awaiting reply"
+- Date range: `newer_than:7d` to `newer_than:14d` is a reasonable default. Shorter windows (e.g., `newer_than:1d`) will miss stalled replies
+
+### Recommended query for "emails that need a reply"
+
+```bash
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+```
+
+Then for each thread call `get_thread` and read `data.lastSentMessage.from` (NOT `messages[-1].from`). If `lastSentMessage.from` is not the user, the thread is a reply-now / draft-needed candidate. See [reference/triage.md](reference/triage.md) for the full classification rules.
+
+### ⚠️ Use `lastSentMessage` (NOT `messages[-1]`) when checking the last sender
+
+`get_thread` returns drafts inline with sent messages. A reply draft you just created will appear at the end of `messages[]` and look like a sent reply.
+
+The response provides two helper fields specifically for triage:
+
+- `lastSentMessage` (object | null) — the most recent **non-draft** message
+- `hasDraft` (bool) — `true` if the thread contains a draft
+
+Always read `data.lastSentMessage` for the "who spoke last" judgment. Treat `messages[-1]` as unreliable. If `data.hasDraft` is `true`, inspect the existing draft before creating another one — do NOT stack drafts on top.
+
+### Output format
 
 1. **Filter out automated senders** — Exclude noreply, notifications, promotions, updates, and social category emails to surface only human-sent messages. See examples.md §19 for query patterns.
 2. **Present each email as a structured summary** — For each relevant thread, report:
@@ -488,5 +521,7 @@ EOF
 ## Related Documentation
 
 - [API Reference](reference/) - Detailed specifications for all APIs
+- [Email Triage Workflow](reference/triage.md) - Classification rules for "emails that need a reply" (reply-now / waiting / draft-needed / fyi / archive)
+- [Commitment Extraction](reference/commitment.md) - Extract action items and promises from email threads
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions
 - [Workflow Examples](examples.md) - Practical usage examples

@@ -183,11 +183,21 @@ DST_SKILL_DIR=$(cd "$SKILL_DIR" 2>/dev/null && pwd)
 if [ "$SRC_SKILL_DIR" = "$DST_SKILL_DIR" ]; then
     echo -e "${YELLOW}Skipping skill definition copy (source and target are the same)${NC}"
 else
-    # メタデータ以外をコピー
-    find "$CCSKILL_GMAIL_DIR/.claude/skills/ccskill-gmail" -type f ! -name '.ccskill-metadata.json' | while read file; do
-        filename=$(basename "$file")
-        cp "$file" "$SKILL_DIR/$filename"
-    done
+    # スキル定義をコピー（ディレクトリ構造を保持）
+    /bin/cp -R "$CCSKILL_GMAIL_DIR/.claude/skills/ccskill-gmail/." "$SKILL_DIR/"
+
+    # 過去のフラット化バグ (#097) で残った stale なトップレベルファイルを削除
+    # reference/ 配下に同名ファイルが存在するトップレベルファイルのみが対象
+    # （cp -R 後に実行することで、新しい reference/ 配下のファイルを基準に判定する）
+    if [ -d "$SKILL_DIR/reference" ]; then
+        for ref_file in "$SKILL_DIR/reference"/*.md; do
+            [ -f "$ref_file" ] || continue
+            ref_basename=$(basename "$ref_file")
+            if [ -f "$SKILL_DIR/$ref_basename" ]; then
+                /bin/rm -f "$SKILL_DIR/$ref_basename"
+            fi
+        done
+    fi
 fi
 
 # api スクリプトを更新
