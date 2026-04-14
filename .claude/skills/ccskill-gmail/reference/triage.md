@@ -1,6 +1,17 @@
 # Inbox Triage Workflow
 
-When the user asks to check, review, or triage their inbox (e.g., "check my emails", "what needs my attention?", "triage my inbox"), follow this structured workflow.
+## When to use this document
+
+Read this document **before constructing any search query** if the user's request matches any of these phrases:
+
+- 日本語: 「要返信」「未返信」「返信漏れ」「返信すべきメール」「メールチェックして」
+- English: "reply needed", "emails I should reply to", "pending replies", "check my emails", "triage my inbox", "scan inbox", "what needs my attention?"
+
+**Do NOT improvise a search query based on `is:unread`.** Unread ≠ unreplied — the classification below is independent of read state. See [SKILL.md "Email Review Guidelines"](../SKILL.md#email-review-guidelines) for the recommended query.
+
+---
+
+When the user asks to check, review, or triage their inbox, follow this structured workflow.
 
 ## Step 1: Fetch and Filter
 

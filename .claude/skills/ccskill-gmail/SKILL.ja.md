@@ -324,6 +324,8 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 .ccskill-gmail/api get action=search query="is:unread from:important@example.com"
 ```
 
+> **注意**: `is:unread` は「前回チェック以降の新着メール」用途には便利ですが、「要返信メール」の抽出には**使ってはいけません**。Unread ≠ Unreplied — 詳細は下の [メールレビューガイドライン](#メールレビューガイドライン) を参照。
+
 ---
 
 ## レスポンスの処理
@@ -367,6 +369,39 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 # 4. Gmail で下書きを確認して送信
 # https://mail.google.com/mail/u/0/#drafts
 ```
+
+---
+
+## メールレビューガイドライン
+
+ユーザーが受信箱をスキャンしたり、要返信メールを抽出するよう依頼した場合（例: 「メールチェックして」「返信すべきメールある？」「顧客メール確認して」）は以下のルールを適用します。**reply-now / waiting / draft-needed / fyi / archive の完全な分類フローは必ず [reference/triage.md](reference/triage.md) を参照してください。**
+
+### ⚠️ `is:unread` でフィルタしてはいけません
+
+**未読 ≠ 未返信です。** Gmail のメッセージは Web/モバイル/プレビューペインのいずれかでユーザーが開いた瞬間に「既読」になります — それは返信したことを意味しません。特に日本のビジネスメール運用では、内容を確認するために一度開いて、返信は後回しにするケースが日常的に発生します。
+
+要返信メールを探す際は **検索クエリに `is:unread` を絶対に含めないこと**。代わりに:
+
+- `in:inbox -from:me` でユーザーが最後の発言者でないスレッドを抽出
+- 各スレッドを `get_thread` で取得し、**最後のメッセージ**の送信者がユーザー以外かを確認 — これが「返信待ち」の正しいシグナル
+- 期間: `newer_than:7d` 〜 `newer_than:14d` が妥当なデフォルト。`newer_than:1d` のような短い期間では滞留している返信を見落とします
+
+### 推奨クエリ（要返信メール）
+
+```bash
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+```
+
+各スレッドに対して `get_thread` を呼び、最後のメッセージの送信者を確認。ユーザー以外であれば reply-now / draft-needed の候補です。完全な分類ルールは [reference/triage.md](reference/triage.md) を参照。
+
+### 出力フォーマット
+
+1. **自動送信メールを除外** — noreply、通知、プロモーション、アップデート、ソーシャルカテゴリを除外し、人間が送ったメッセージのみを残す。クエリパターンは examples.md §19 を参照
+2. **各メールを構造化サマリーで提示** — 該当する各スレッドについて以下を報告:
+   - **件名 / 送信者 / 日付**
+   - **内容**: 最新メッセージの要約
+   - **ステータス**: 現在の状態（例: 「あなたの返信待ち」「相手の返信待ち」「FYI のみ」）
+   - **推奨アクション**: 次に取るべき行動（例: 「了承の返信」「アクション不要」「下記の下書きを提案」）
 
 ---
 
@@ -477,5 +512,7 @@ EOF
 ## 関連ドキュメント
 
 - [API Reference](reference/) - 全 API の詳細仕様
+- [Email Triage Workflow](reference/triage.md) - 「要返信メール」の分類ルール（reply-now / waiting / draft-needed / fyi / archive）
+- [Commitment Extraction](reference/commitment.md) - メールスレッドからの約束/依頼の構造化抽出
 - [Troubleshooting](troubleshooting.md) - よくある問題と解決策
 - [Workflow Examples](examples.md) - 実用的な使用例
