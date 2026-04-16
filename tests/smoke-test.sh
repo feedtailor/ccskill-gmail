@@ -5,7 +5,7 @@
 # デプロイ済み GAS Web App に対して全 API を叩いて ok/fail を判定する。
 #
 # Usage:
-#   ./tests/smoke-test.sh TARGET_DIR [--read-only] [--include-destructive] [-v|--verbose]
+#   ./tests/smoke-test.sh TARGET_DIR [--read-only] [-v|--verbose]
 #
 # Examples:
 #   ./tests/smoke-test.sh ~/projects/ftgmail
@@ -31,16 +31,12 @@ NC='\033[0m'
 
 TARGET_DIR=""
 READ_ONLY=false
-INCLUDE_DESTRUCTIVE=false
 VERBOSE=false
 
 for arg in "$@"; do
     case "$arg" in
         --read-only)
             READ_ONLY=true
-            ;;
-        --include-destructive)
-            INCLUDE_DESTRUCTIVE=true
             ;;
         -v|--verbose)
             VERBOSE=true
@@ -56,7 +52,7 @@ for arg in "$@"; do
 done
 
 if [ -z "$TARGET_DIR" ]; then
-    echo "Usage: ./tests/smoke-test.sh TARGET_DIR [--read-only] [--include-destructive] [-v|--verbose]"
+    echo "Usage: ./tests/smoke-test.sh TARGET_DIR [--read-only] [-v|--verbose]"
     exit 1
 fi
 
@@ -188,9 +184,6 @@ echo ""
 echo "smoke-test (target: $TARGET_DIR)"
 if [ "$READ_ONLY" = true ]; then
     echo "  mode: read-only (POST tests skipped)"
-fi
-if [ "$INCLUDE_DESTRUCTIVE" = true ]; then
-    echo "  mode: include-destructive"
 fi
 if [ "$VERBOSE" = true ]; then
     echo "  mode: verbose"
@@ -326,18 +319,12 @@ else
     run_test "POST" "unmark_important" "$API" post "{\"action\":\"unmark_important\",\"threadId\":\"$THREAD_ID\"}"
     assert_ok
 
-    # --- Destructive テスト ---
-    if [ "$INCLUDE_DESTRUCTIVE" = true ]; then
-        echo ""
-        echo -e "  ${YELLOW}(destructive tests)${NC}"
+    # --- 16. archive → move_to_inbox（対称操作で元の状態に戻る） ---
+    run_test "POST" "archive" "$API" post "{\"action\":\"archive\",\"threadId\":\"$THREAD_ID\"}"
+    assert_ok
 
-        # archive → move_to_inbox（対称操作で元の状態に戻る）
-        run_test "POST" "archive" "$API" post "{\"action\":\"archive\",\"threadId\":\"$THREAD_ID\"}"
-        assert_ok
-
-        run_test "POST" "move_to_inbox" "$API" post "{\"action\":\"move_to_inbox\",\"threadId\":\"$THREAD_ID\"}"
-        assert_ok
-    fi
+    run_test "POST" "move_to_inbox" "$API" post "{\"action\":\"move_to_inbox\",\"threadId\":\"$THREAD_ID\"}"
+    assert_ok
 fi
 
 # ========================================
