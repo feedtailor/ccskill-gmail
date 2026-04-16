@@ -1,6 +1,6 @@
-# archive / move_to_trash - Thread Operations
+# archive / move_to_inbox / move_to_trash - Thread Operations
 
-Archive threads and move threads to trash.
+Archive threads, restore them to the inbox, and move threads to trash.
 
 ---
 
@@ -42,6 +42,46 @@ Archives a thread from the inbox. The email itself is not deleted and can be fou
 - Archiving only removes the thread from the inbox (the email itself remains)
 - Can be found in "All Mail"
 - Labels are preserved
+
+---
+
+## move_to_inbox - Move Back to Inbox
+
+Restores an archived thread back to the inbox. The inverse operation of `archive`.
+
+### Request
+
+**Method**: POST
+
+**Parameters**:
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| threadId | ✓ | Thread ID to move back to inbox |
+
+### Example
+
+```bash
+.ccskill-gmail/api post '{"action":"move_to_inbox","threadId":"19bf7f25b96ab637"}'
+```
+
+### Response Example
+
+```json
+{
+  "ok": true,
+  "data": {
+    "threadId": "19bf7f25b96ab637",
+    "action": "move_to_inbox",
+    "message": "Thread moved to inbox"
+  }
+}
+```
+
+### Notes
+
+- Adds the `INBOX` label back to the thread
+- Use to undo an `archive` operation, or to lift a thread out of archive when a reply arrives
 
 ---
 

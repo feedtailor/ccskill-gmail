@@ -194,7 +194,12 @@ The get subcommand automatically URL-encodes values, so Japanese text can be use
 | add_label | Add a label | `threadId`, `label` (required) |
 | remove_label | Remove a label | `threadId`, `label` (required) |
 | archive | Archive | `threadId` (required) |
+| move_to_inbox | Move back to inbox | `threadId` (required) |
 | move_to_trash | Move to trash | `threadId` (required) |
+| star | Star a message | `messageId` (required) |
+| unstar | Unstar a message | `messageId` (required) |
+| mark_important | Mark thread as important | `threadId` (required) |
+| unmark_important | Unmark thread as important | `threadId` (required) |
 | bulk_mark_read | Bulk mark as read | `threadIds`, `dryRun` (required) |
 | bulk_mark_unread | Bulk mark as unread | `threadIds`, `dryRun` (required) |
 | bulk_add_label | Bulk add label | `threadIds`, `label`, `dryRun` (required) |
@@ -286,8 +291,19 @@ The get subcommand automatically URL-encodes values, so Japanese text can be use
 # Archive
 .ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
 
+# Move back to inbox (inverse of archive)
+.ccskill-gmail/api post '{"action":"move_to_inbox","threadId":"THREAD_ID"}'
+
 # Move to trash
 .ccskill-gmail/api post '{"action":"move_to_trash","threadId":"THREAD_ID"}'
+
+# Star a message / Unstar a message
+.ccskill-gmail/api post '{"action":"star","messageId":"MESSAGE_ID"}'
+.ccskill-gmail/api post '{"action":"unstar","messageId":"MESSAGE_ID"}'
+
+# Mark thread as important / Unmark
+.ccskill-gmail/api post '{"action":"mark_important","threadId":"THREAD_ID"}'
+.ccskill-gmail/api post '{"action":"unmark_important","threadId":"THREAD_ID"}'
 
 # Update a draft
 .ccskill-gmail/api post '{"action":"update_draft","draftId":"DRAFT_ID","subject":"New Subject"}'

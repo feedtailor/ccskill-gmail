@@ -27,7 +27,12 @@
 | add_label | [label.md](label.md) | Add a label |
 | remove_label | [label.md](label.md) | Remove a label |
 | archive | [thread.md](thread.md) | Archive |
+| move_to_inbox | [thread.md](thread.md) | Move back to inbox (inverse of archive) |
 | move_to_trash | [thread.md](thread.md) | Move to trash |
+| star | [marker.md](marker.md) | Star a message |
+| unstar | [marker.md](marker.md) | Unstar a message |
+| mark_important | [marker.md](marker.md) | Mark thread as important |
+| unmark_important | [marker.md](marker.md) | Unmark thread as important |
 | bulk_mark_read | (see README) | Bulk mark threads as read |
 | bulk_mark_unread | (see README) | Bulk mark threads as unread |
 | bulk_add_label | (see README) | Bulk add label to threads |
