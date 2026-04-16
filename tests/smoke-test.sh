@@ -312,16 +312,30 @@ else
     run_test "POST" "remove_label" "$API" post "{\"action\":\"remove_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"$SMOKE_LABEL\"}"
     assert_ok
 
+    # --- 14. star → unstar (message level) ---
+    run_test "POST" "star" "$API" post "{\"action\":\"star\",\"messageId\":\"$MESSAGE_ID\"}"
+    assert_ok
+
+    run_test "POST" "unstar" "$API" post "{\"action\":\"unstar\",\"messageId\":\"$MESSAGE_ID\"}"
+    assert_ok
+
+    # --- 15. mark_important → unmark_important (thread level) ---
+    run_test "POST" "mark_important" "$API" post "{\"action\":\"mark_important\",\"threadId\":\"$THREAD_ID\"}"
+    assert_ok
+
+    run_test "POST" "unmark_important" "$API" post "{\"action\":\"unmark_important\",\"threadId\":\"$THREAD_ID\"}"
+    assert_ok
+
     # --- Destructive テスト ---
     if [ "$INCLUDE_DESTRUCTIVE" = true ]; then
         echo ""
         echo -e "  ${YELLOW}(destructive tests)${NC}"
 
-        # archive（元に戻すため add_label INBOX で復帰）
+        # archive → move_to_inbox（対称操作で元の状態に戻る）
         run_test "POST" "archive" "$API" post "{\"action\":\"archive\",\"threadId\":\"$THREAD_ID\"}"
         assert_ok
 
-        run_test "POST" "unarchive (add INBOX)" "$API" post "{\"action\":\"add_label\",\"threadId\":\"$THREAD_ID\",\"label\":\"INBOX\"}"
+        run_test "POST" "move_to_inbox" "$API" post "{\"action\":\"move_to_inbox\",\"threadId\":\"$THREAD_ID\"}"
         assert_ok
     fi
 fi

@@ -196,7 +196,12 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 | add_label | ラベル追加 | `threadId`、`label`（必須） |
 | remove_label | ラベル削除 | `threadId`、`label`（必須） |
 | archive | アーカイブ | `threadId`（必須） |
+| move_to_inbox | 受信トレイに戻す | `threadId`（必須） |
 | move_to_trash | ゴミ箱に移動 | `threadId`（必須） |
+| star | メッセージにスターを付ける | `messageId`（必須） |
+| unstar | メッセージのスターを外す | `messageId`（必須） |
+| mark_important | スレッドを重要にする | `threadId`（必須） |
+| unmark_important | スレッドの重要マークを外す | `threadId`（必須） |
 | bulk_mark_read | 一括既読 | `threadIds`、`dryRun`（必須） |
 | bulk_mark_unread | 一括未読 | `threadIds`、`dryRun`（必須） |
 | bulk_add_label | 一括ラベル追加 | `threadIds`、`label`、`dryRun`（必須） |
@@ -288,8 +293,19 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 # アーカイブ
 .ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
 
+# 受信トレイに戻す（archive の逆操作）
+.ccskill-gmail/api post '{"action":"move_to_inbox","threadId":"THREAD_ID"}'
+
 # ゴミ箱に移動
 .ccskill-gmail/api post '{"action":"move_to_trash","threadId":"THREAD_ID"}'
+
+# メッセージにスターを付ける / 外す
+.ccskill-gmail/api post '{"action":"star","messageId":"MESSAGE_ID"}'
+.ccskill-gmail/api post '{"action":"unstar","messageId":"MESSAGE_ID"}'
+
+# スレッドを重要マークにする / 外す
+.ccskill-gmail/api post '{"action":"mark_important","threadId":"THREAD_ID"}'
+.ccskill-gmail/api post '{"action":"unmark_important","threadId":"THREAD_ID"}'
 
 # 下書き更新
 .ccskill-gmail/api post '{"action":"update_draft","draftId":"DRAFT_ID","subject":"新しい件名"}'
