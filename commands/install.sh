@@ -53,6 +53,7 @@ source "$CCSKILL_GMAIL_DIR/lib/clasp.sh"
 source "$CCSKILL_GMAIL_DIR/lib/push-gas.sh"
 source "$CCSKILL_GMAIL_DIR/lib/registry.sh"
 source "$CCSKILL_GMAIL_DIR/lib/permissions.sh"
+source "$CCSKILL_GMAIL_DIR/lib/update_check.sh"
 
 # ========================================
 # 1. 引数パース
@@ -155,6 +156,25 @@ fi
 
 echo -e "${GREEN}✓ Prerequisites checked${NC}"
 echo ""
+
+# ========================================
+# 2.5. マスターの更新チェック
+# ========================================
+
+UPDATE_LINE=$(update_check_format_oneline "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
+if [ -n "$UPDATE_LINE" ]; then
+    echo -e "${YELLOW}$UPDATE_LINE${NC}"
+    echo "  Master: $CCSKILL_GMAIL_DIR"
+    echo ""
+    read -p "Proceed with install using the current (outdated) master? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installation cancelled."
+        echo "Tip: cd $CCSKILL_GMAIL_DIR && git pull, then run install again."
+        exit 0
+    fi
+    echo ""
+fi
 
 # ========================================
 # 3. 既存インストールチェック

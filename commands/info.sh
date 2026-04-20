@@ -30,6 +30,7 @@ if [ -z "$CCSKILL_GMAIL_DIR" ]; then
 fi
 
 source "$CCSKILL_GMAIL_DIR/lib/registry.sh"
+source "$CCSKILL_GMAIL_DIR/lib/update_check.sh"
 
 # ========================================
 # 2. Parse arguments
@@ -239,6 +240,14 @@ if [ "$INBOX_UNREAD" != "(unavailable)" ]; then
 else
     printf "  %-14s %s\n" "Inbox:" "(unavailable)"
     printf "  %-14s %s\n" "Starred:" "(unavailable)"
+fi
+
+# Master update check (silent on failure / up-to-date)
+UPDATE_LINE=$(update_check_format_oneline "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
+if [ -n "$UPDATE_LINE" ]; then
+    echo ""
+    echo -e "  ${YELLOW}${UPDATE_LINE}${NC}"
+    echo "  Fix: cd $CCSKILL_GMAIL_DIR && git pull && ccskill-gmail update-all"
 fi
 
 echo ""
