@@ -49,6 +49,18 @@ Commands:
 
 Version: $VERSION
 EOF
+
+    # Master update check (cache only, no fetch)
+    if [ -f "$CCSKILL_GMAIL_DIR/lib/update_check.sh" ]; then
+        # shellcheck source=lib/update_check.sh
+        . "$CCSKILL_GMAIL_DIR/lib/update_check.sh"
+        local _uc_line
+        _uc_line=$(update_check_format_oneline_cached "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
+        if [ -n "$_uc_line" ]; then
+            echo ""
+            echo "$_uc_line"
+        fi
+    fi
 }
 
 if [ $# -eq 0 ]; then

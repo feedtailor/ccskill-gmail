@@ -37,6 +37,7 @@ if ! command -v jq &> /dev/null; then
 fi
 
 source "$CCSKILL_GMAIL_DIR/lib/registry.sh"
+source "$CCSKILL_GMAIL_DIR/lib/update_check.sh"
 
 # ========================================
 # 2. Parse arguments
@@ -212,6 +213,14 @@ fi
 if [ "$OUTDATED" -gt 0 ]; then
     echo ""
     echo -e "${YELLOW}Tip: Run 'ccskill-gmail update-all' to update all outdated installations.${NC}"
+fi
+
+# Master update check (silent on failure / up-to-date)
+UPDATE_LINE=$(update_check_format_oneline "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
+if [ -n "$UPDATE_LINE" ]; then
+    echo ""
+    echo -e "${YELLOW}${UPDATE_LINE}${NC}"
+    echo "Fix: cd $CCSKILL_GMAIL_DIR && git pull && ccskill-gmail update-all"
 fi
 
 echo ""
