@@ -1,20 +1,22 @@
 ---
 name: ccskill-gmail
-description: Search, read, create drafts (with attachment support), download attachments, and save emails as PDF via Gmail. Also generates shell scripts for Gmail automation. No send functionality.
+description: Companion Gmail skill for Claude Code, complementing the standard Gmail connector. Search, read, create drafts (with attachment support), download attachments, save emails as PDF, and generate shell scripts for Gmail automation. Optimized for project-bound multi-account operation. No send functionality.
 allowed-tools: Bash, Write
 ---
 
 # Gmail Skill
 
-A Claude Code Skill for searching, reading, and creating drafts in Gmail.
+A Claude Code Skill for Gmail, designed to complement (not replace) the standard Gmail connector.
 
 ## Overview
 
 This skill operates Gmail through a Web API built with Google Apps Script (GAS). It supports email search, reading, and draft creation.
 
+**Positioning**: This skill is a **companion** to the standard Gmail connector available in Claude.ai and Codex. Use the standard connector for everyday search/read/draft. Use this skill for project-bound multi-account operation (different Google account per `cd`), attachment file downloads, email-to-PDF export, local audit log, and shell-script automation.
+
 **Design philosophy**: Send functionality is intentionally excluded. Drafts are created and then reviewed and sent by the human in Gmail -- a safety-by-design approach.
 
-**Security**: The Web App is published as "Only myself" and requires authentication via clasp's OAuth token. The `.ccskill-gmail/api` script handles automatic token acquisition and refresh.
+**Security**: The Web App is published as "Only myself" and requires authentication via clasp's OAuth token. The `.ccskill-gmail/api` script handles automatic token acquisition and refresh. The active Google account is determined by the project directory you `cd` into — run `ccskill-gmail info` to confirm which account you are about to operate on.
 
 <important if="you are calling .ccskill-gmail/api or constructing a Bash command for Gmail">
 

@@ -1,5 +1,21 @@
 # Workflow Examples
 
+## When to use ccskill-gmail vs the standard Gmail connector
+
+ccskill-gmail is a **companion** to the standard Gmail connector available in Claude.ai and Codex. The two are not mutually exclusive — pick the right tool for each task.
+
+| Task | Recommended |
+|---|---|
+| Quick "what's unread", "show me this thread", chat-driven reply drafting | Standard Gmail connector |
+| Project-bound multi-account operation (different account per `cd`) | **ccskill-gmail** |
+| Downloading attachment file contents (the connector returns metadata only) | **ccskill-gmail** |
+| Saving emails as HTML / PDF for archival | **ccskill-gmail** |
+| Bulk operations across many threads | **ccskill-gmail** |
+| Shell-script automation, cron, CI integration | **ccskill-gmail** |
+| Local audit log of every AI-initiated operation | **ccskill-gmail** |
+
+The examples that follow focus on workflows where ccskill-gmail is the right choice. For everyday search/read/draft, the standard connector is faster and more conversational.
+
 ## Prerequisites
 
 The workflow examples below use the `.ccskill-gmail/api` command.
