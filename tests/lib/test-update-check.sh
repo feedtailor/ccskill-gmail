@@ -293,6 +293,30 @@ test_oneline_cached_returns_1_when_no_cache() {
 }
 
 # ========================================
+# テスト: fetch 防御層 (BatchMode / ConnectTimeout) — #111
+# ========================================
+
+# fetch が SSH パスフレーズ要求でブロックしない、かつ到達不能ホストで長時間待たない
+# ことを保証するため、git fetch には GIT_SSH_COMMAND='ssh -o BatchMode=yes ...' を
+# 環境変数で適用していること。実際の SSH ハンドシェイクは sandbox 環境で再現が
+# 難しいため、ソース上の契約を静的に検証する。
+test_fetch_uses_batch_mode_ssh() {
+    local source_file="$REPO_ROOT/lib/update_check.sh"
+    grep -qE "GIT_SSH_COMMAND.*BatchMode=yes" "$source_file" || {
+        echo "    expected $source_file to set GIT_SSH_COMMAND with BatchMode=yes" >&2
+        return 1
+    }
+}
+
+test_fetch_uses_connect_timeout() {
+    local source_file="$REPO_ROOT/lib/update_check.sh"
+    grep -qE "GIT_SSH_COMMAND.*ConnectTimeout" "$source_file" || {
+        echo "    expected $source_file to set GIT_SSH_COMMAND with ConnectTimeout" >&2
+        return 1
+    }
+}
+
+# ========================================
 # 実行
 # ========================================
 
@@ -325,5 +349,8 @@ run_test "run: returns 1 when master dir missing"    test_run_returns_1_when_mas
 run_test "oneline: message when behind"              test_oneline_outputs_message_when_behind
 run_test "oneline: returns 1 when up to date"        test_oneline_returns_1_when_up_to_date
 run_test "oneline_cached: returns 1 when no cache"   test_oneline_cached_returns_1_when_no_cache
+
+run_test "fetch: uses SSH BatchMode (#111)"          test_fetch_uses_batch_mode_ssh
+run_test "fetch: uses SSH ConnectTimeout (#111)"     test_fetch_uses_connect_timeout
 
 test_summary

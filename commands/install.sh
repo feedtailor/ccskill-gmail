@@ -161,7 +161,7 @@ echo ""
 # 2.5. マスターの更新チェック
 # ========================================
 
-UPDATE_LINE=$(update_check_format_oneline "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
+UPDATE_LINE=$(update_check_format_oneline_cached "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
 if [ -n "$UPDATE_LINE" ]; then
     echo -e "${YELLOW}$UPDATE_LINE${NC}"
     echo "  Master: $CCSKILL_GMAIL_DIR"
