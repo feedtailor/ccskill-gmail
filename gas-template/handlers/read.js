@@ -171,8 +171,27 @@ function handleGetMessageHtml(messageId, includeHeaders) {
       { code: 'NOT_FOUND', hint: 'Verify the messageId is correct', retryable: false });
   }
 
-  var html = message.getBody();
+  var rawBody = message.getBody();
+  var bodyHtml;
+
+  // Plain-text-only emails: getBody() returns the text without <pre>/<br>,
+  // so newlines and full-width spacing collapse when rendered. Wrap in <pre>
+  // with a CJK monospace stack so box-drawing chars and column alignment survive.
+  if (isLikelyPlainTextOnly_(rawBody)) {
+    var plainBody = stripInvisibleChars(message.getPlainBody());
+    bodyHtml =
+      '<pre style="white-space: pre-wrap; word-wrap: break-word; ' +
+      'font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, ' +
+      '\'Noto Sans Mono CJK JP\', \'Hiragino Kaku Gothic ProN\', monospace; ' +
+      'font-size: 13px; line-height: 1.6; margin: 0; padding: 0;">' +
+      escapeHtml_(plainBody) +
+      '</pre>';
+  } else {
+    bodyHtml = rawBody;
+  }
+
   var addHeaders = (includeHeaders !== 'false');
+  var html = bodyHtml;
 
   if (addHeaders) {
     var headerHtml =
@@ -182,7 +201,7 @@ function handleGetMessageHtml(messageId, includeHeaders) {
       '<p><strong>Date:</strong> ' + message.getDate().toISOString() + '</p>' +
       '<p><strong>Subject:</strong> ' + escapeHtml_(message.getSubject()) + '</p>' +
       '</div>';
-    html = headerHtml + html;
+    html = headerHtml + bodyHtml;
   }
 
   return successResponse({

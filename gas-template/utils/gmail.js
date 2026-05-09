@@ -67,6 +67,26 @@ function formatThreadWithMessages(thread) {
 }
 
 /**
+ * Heuristic check whether a Gmail message body is plain-text only.
+ *
+ * GmailApp.getBody() returns a string for both plain-text and HTML messages,
+ * but plain-text messages come back without block-level HTML wrapping. When
+ * such a body is rendered as HTML, newlines collapse, consecutive whitespace
+ * shrinks, and box-drawing characters break out of their column alignment.
+ *
+ * This heuristic looks for common block/inline HTML tags. Absence of all of
+ * them strongly suggests the source was text/plain only, in which case the
+ * caller should wrap the body in <pre> to preserve layout.
+ *
+ * @param {string} body - Result of GmailMessage.getBody()
+ * @returns {boolean} true if the body looks like plain text without HTML structure
+ */
+function isLikelyPlainTextOnly_(body) {
+  if (!body) return true;
+  return !/<(br|div|table|p|span|a\s|img|tr|td|h[1-6]|ul|ol|li|blockquote)\b/i.test(body);
+}
+
+/**
  * Strip invisible characters (indirect prompt injection mitigation)
  * Removes zero-width spaces, joiners, direction control chars, etc.
  * @param {string} str - Input string
