@@ -89,7 +89,12 @@ _update_check_fetch_and_count() {
     command -v git >/dev/null 2>&1 || return 1
     command -v jq >/dev/null 2>&1 || return 1
 
-    git -C "$master_dir" fetch --quiet origin main 2>/dev/null || return 1
+    # SSH 鍵にパスフレーズが付いている場合や origin が到達不能な場合に
+    # 対話プロンプトでブロックさせない / 長時間待たせない (#111)。
+    # 明示的な ccskill-gmail update では呼ばれないため、ユーザーが意図的に
+    # fetch する経路は影響を受けない。
+    GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeout=5' \
+        git -C "$master_dir" fetch --quiet origin main 2>/dev/null || return 1
 
     local count
     count=$(git -C "$master_dir" rev-list --count HEAD..origin/main 2>/dev/null) || return 1
