@@ -92,8 +92,8 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
-# ccskill-gmail master updates (fetch-based)
-UPDATE_LINE=$(update_check_format_oneline "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
+# ccskill-gmail master updates (cached only — see #111)
+UPDATE_LINE=$(update_check_format_oneline_cached "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
 if [ -n "$UPDATE_LINE" ]; then
     echo -e "  $WARN $UPDATE_LINE"
     echo "       Fix: cd $CCSKILL_GMAIL_DIR && git pull && ccskill-gmail update-all"

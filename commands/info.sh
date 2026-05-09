@@ -243,7 +243,7 @@ else
 fi
 
 # Master update check (silent on failure / up-to-date)
-UPDATE_LINE=$(update_check_format_oneline "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
+UPDATE_LINE=$(update_check_format_oneline_cached "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
 if [ -n "$UPDATE_LINE" ]; then
     echo ""
     echo -e "  ${YELLOW}${UPDATE_LINE}${NC}"
