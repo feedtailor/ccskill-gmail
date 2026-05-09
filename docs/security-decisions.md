@@ -6,7 +6,7 @@ This document records security recommendations that were **reviewed and intentio
 
 ## Assumptions
 
-ccskill-gmail is a **personal, local tool**. It is not designed for organizational deployment or SaaS delivery. If this assumption changes, all decisions below should be re-evaluated.
+ccskill-gmail is a **personal, local companion tool** that complements the standard Gmail connector available in Claude.ai and Codex. It is not a replacement for that connector, and it is not designed for organizational deployment or SaaS delivery. If any of these assumptions change, all decisions below should be re-evaluated.
 
 ## Design Principles
 

@@ -2,21 +2,23 @@
 
 ---
 name: ccskill-gmail
-description: Gmail でのメール検索・閲覧・下書き作成（添付対応）・添付ダウンロード・PDF 保存。Gmail 自動化用シェルスクリプトの生成にも対応。送信機能なし。
+description: 標準 Gmail コネクタを補完する Claude Code 用 companion Gmail スキル。Gmail でのメール検索・閲覧・下書き作成（添付対応）・添付ダウンロード・PDF 保存・Gmail 自動化用シェルスクリプト生成。プロジェクト単位の multi-account 固定運用に最適化。送信機能なし。
 allowed-tools: Bash, Write
 ---
 
 # Gmail スキル
 
-Gmail のメール検索・閲覧・下書き作成を行う Claude Code スキル。
+標準 Gmail コネクタを**置き換えるのではなく補完する**位置付けの Claude Code 用 Gmail スキル。
 
 ## 概要
 
 Google Apps Script (GAS) で構築した Web API を通じて Gmail を操作するスキルです。メール検索、閲覧、下書き作成に対応しています。
 
+**位置付け**: このスキルは Claude.ai / Codex の標準 Gmail コネクタを **補完** する companion です。日常的な検索・閲覧・下書き作成は標準コネクタを使い、本スキルは「プロジェクト単位の multi-account 固定（`cd` で Google アカウントが切り替わる）」「添付ファイル実体ダウンロード」「メール HTML / PDF エクスポート」「ローカル監査ログ」「シェルスクリプト自動化」のために使う想定です。
+
 **設計思想**: 送信機能は意図的に除外しています。下書きを作成し、人間が Gmail で確認してから送信する — 安全設計によるアプローチです。
 
-**セキュリティ**: Web App は「自分のみ」で公開され、clasp の OAuth トークンによる認証が必要です。`.ccskill-gmail/api` スクリプトがトークンの取得・リフレッシュを自動で行います。
+**セキュリティ**: Web App は「自分のみ」で公開され、clasp の OAuth トークンによる認証が必要です。`.ccskill-gmail/api` スクリプトがトークンの取得・リフレッシュを自動で行います。有効な Google アカウントは `cd` したプロジェクトディレクトリで決まります。`ccskill-gmail info` でこれから操作するアカウントを確認できます。
 
 <important if="Gmail 用の .ccskill-gmail/api を呼ぶ、または Bash コマンドを構築する場合">
 

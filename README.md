@@ -1,69 +1,93 @@
 # ccskill-gmail
 
-A Claude Code skill for Gmail. Just tell Claude what you want in natural language — search, read, draft replies, organize emails, and more.
+A **companion skill** for Claude/Codex Gmail workflows.
+
+Use the **standard Gmail connector** for everyday search, reading, and drafting — it is faster and more conversational. Reach for **ccskill-gmail** when you need project-bound multi-account operation, attachment file downloads, email-to-PDF export, or local shell automation.
 
 [日本語版 README はこちら](README.ja.md)
 
+## When to use ccskill-gmail
+
+ccskill-gmail is designed to **complement** — not replace — the standard Gmail connector available in Claude.ai and Codex.
+
+| Use case | Recommended tool |
+|---|---|
+| Everyday search, reading, and drafting | Standard Gmail connector |
+| Reply drafting in a chat session | Standard Gmail connector |
+| Organization-managed official integration | Standard Gmail connector |
+| Project-bound multi-account operation (different account per `cd`) | **ccskill-gmail** |
+| Downloading attachment file contents | **ccskill-gmail** |
+| Saving emails as HTML / PDF | **ccskill-gmail** |
+| Shell-script automation via local bridge API | **ccskill-gmail** |
+| Local audit log of AI operations | **ccskill-gmail** |
+
+The most distinctive value is **project-bound multi-account operation**: by binding a Gmail account to each project directory, you eliminate the structural risk of an AI accidentally reading or drafting from the wrong account while working across personal / work / customer mailboxes.
+
 ## Features
 
-### Email Operations
+### Project-bound multi-account operation
 
-Search, read, draft, label management, attachment download, and email-to-PDF export. Bulk operations (mark read/unread, add/remove labels, archive) are also supported for efficient batch processing. When scanning for actionable emails, automated notifications are filtered out to surface only human-sent messages (Smart Filtering), and each email is presented with a structured summary including content, status, and suggested action.
+Bind a different Gmail / Google Workspace account to each project directory. The active account follows `cd` — no UI toggling, no confirmation prompts, no risk of the AI operating on the wrong mailbox.
 
-### Security Policy
+```bash
+cd /path/to/work-project    # operates on work@company.com
+cd /path/to/personal-blog   # operates on you@gmail.com
+cd /path/to/client-x        # operates on you@client-x.example
+```
 
-Designed with safety in mind for AI-driven email operations:
+This is the most important safety property when juggling personal, work, and customer mailboxes from a single Claude Code environment.
 
-- **No send capability** — No send API is implemented. Only draft creation. Users review and send manually from Gmail (this is the same approach as Anthropic's official Claude.ai Gmail connector)
-- **Delete is opt-in** — Email deletion is disabled by default (configurable in config.js)
-- **Prompt injection protection** — Hidden instructions embedded in HTML emails (CSS hiding, zero-width characters, white-on-white text, etc.) are neutralized
-- **Automatic audit logging** — All AI operations are logged locally. Only action names and IDs are recorded — no email subjects or body content
+### Attachment download and email export
 
-### Account Support
+- **Download attachment file contents** — the standard connector exposes metadata only
+- **Export emails as HTML or PDF** — useful for audit trails, handover packages, and offline archives
+- Bulk download / export across search results
 
-Works with both personal Google accounts and Google Workspace accounts. Multi-account usage is supported — each project directory can use a different account, and switching happens automatically by `cd`.
+### Local shell automation
+
+`.ccskill-gmail/api` doubles as a Gmail bridge API callable from shell scripts. Suitable for cron jobs, CI pipelines, or any unattended workflow that needs Gmail without launching a chat session.
+
+### Local audit log
+
+All AI-initiated operations are recorded locally in JSONL (action names and IDs only — no subjects or bodies). Inspect with `ccskill-gmail history`.
+
+### Security defaults
+
+- **No send capability** — draft creation only. Users review and send manually from Gmail (the same approach as the official Claude.ai Gmail connector)
+- **Delete is opt-in** — disabled by default in `config.js`
+- **Prompt injection protection** — hidden instructions embedded in HTML emails (CSS hiding, zero-width characters, white-on-white text, etc.) are neutralized in the GAS layer before reaching the AI
 
 ## Examples
 
-### One-shot Requests
+The examples below highlight where ccskill-gmail is the right choice. For everyday search / read / draft, prefer the standard Gmail connector.
 
-> "Show me unread emails"
-
-> "Draft a reply to this email"
-
-> "Check important emails and add the 'handled' label"
-
-> "Find invoice emails from this week and download the attached PDFs"
-
-> "Mark these emails as read and archive them"
-
-### Advanced Workflows
-
-Describe a complex, multi-step workflow in plain language and let Claude handle the rest.
-
-**Accounting & Administration**
+### Attachment & PDF workflows
 
 > "Find all receipt emails from ACME Corp in the last 6 months and save the attached PDFs as `20260401_VendorName_TotalWithTax_receipt.pdf`"
 
-> "Collect all quote emails from multiple vendors and create a comparison table with vendor name, item, price, and delivery date"
+> "Save this email thread as PDF for the audit trail"
 
-**Handover & Knowledge Base**
+### Multi-account workflows
+
+> "List unread mails for the account bound to this project only"
+
+> "I'm in the personal-blog directory now — show today's new arrivals from this account"
+
+### Cross-cutting knowledge work
 
 > "Trace the entire email history with John at ACME Corp and create a handover document including background, open tasks, and work in progress. Export the list as Excel"
 
 > "Search all incident response emails for the XYZ system from the past year and create a table of occurrence date, root cause, and resolution"
 
-**Missed Response Detection & Follow-up**
-
 > "Find all external emails from the past month that I haven't replied to. List them with sender, subject, and days since received. Draft follow-up replies for the important ones"
 
-**Recurring Task Automation** — works great with the `/loop` command
+### Recurring task automation — works great with `/loop`
 
 > "Review all external emails received this week, categorize them as needs-reply / FYI / resolved, and compile a weekly report"
 
 > "List all mailing lists and automated notifications by sender, frequency, and last received date. Archive any I haven't read in over 3 months"
 
-**Shell Script Generation** — automate Gmail beyond interactive sessions
+### Shell script generation
 
 The `.ccskill-gmail/api` command doubles as a Gmail bridge API callable from shell scripts. Just describe what you want automated, and Claude Code generates a working script — no manual API research needed.
 
@@ -95,6 +119,8 @@ flowchart LR
     style GAS fill:#1a73e8,stroke:#4285f4,color:#fff
     style Gmail fill:#c5221f,stroke:#ea4335,color:#fff
 ```
+
+This local-first architecture is what enables the project-bound multi-account model: each project directory binds to its own GAS deployment under a chosen Google account, and the active deployment is selected by `cd`.
 
 ## Requirements
 
@@ -133,6 +159,8 @@ The installer will automatically create a GAS project, deploy it, and handle Goo
 
 **SSH / headless environments:** The installer always displays the Authorization URL in the terminal, so you can copy it and open it in any browser — even on a different machine.
 
+After installation, run `ccskill-gmail info` to confirm which Google account is bound to the current project.
+
 ## Update
 
 ```bash
@@ -165,7 +193,7 @@ ccskill-gmail release             # Create a distributable zip file
 ccskill-gmail help                # Show all available commands
 ```
 
-- `info` shows the account email, version, permissions, and unread counts for the current project
+- `info` shows the account email, version, permissions, and unread counts for the current project — use it to confirm which account you are about to operate on
 - `status --refresh` fetches account emails for all installations via the API and caches them
 
 ## Troubleshooting
@@ -244,20 +272,6 @@ For API specifications and troubleshooting, see the skill definition documents:
 - [SKILL.md](.claude/skills/ccskill-gmail/SKILL.md) — API specification and rules
 - [examples.md](.claude/skills/ccskill-gmail/examples.md) — Workflow examples
 - [troubleshooting.md](.claude/skills/ccskill-gmail/troubleshooting.md) — Common issues and solutions
-
-## Comparison with Other Tools
-
-Several tools exist for AI-driven Gmail access.
-
-| Feature | ccskill-gmail | [Claude Gmail Connector](https://support.claude.com/en/articles/10166901-use-google-workspace-connectors) | [Google Workspace CLI](https://github.com/googleworkspace/cli) | [gogcli](https://github.com/steipete/gogcli) |
-|---|---|---|---|---|
-| Send | x (draft only) | x (draft only) | o | o |
-| Delete | x (disabled by default) | x | o | o |
-| Draft creation | o | o | o | o |
-| Attachment download | o | x (metadata only) | o | o |
-| Email PDF export | o | x | x | x |
-| Audit log | o (automatic local log) | x | x | x |
-| Injection protection | o (implemented in GAS) | x | x | x |
 
 ## Limitations
 
