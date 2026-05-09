@@ -69,6 +69,38 @@ test_zero_when_input_empty() {
     assert_eq "0" "$count"
 }
 
+# ========================================
+# 静的検証: TOTAL_COMMITS=0 のときに "Unable to show changes" が出ない (#112)
+#
+# grep -E (count なし) もマッチ 0 件で exit 1 を返すため、|| 側に "Unable to show
+# changes" を置いていると、feat/fix が無いだけのケースで誤って「git が失敗した」
+# かのように見えてしまう。TOTAL_COMMITS の値で分岐させて、変更なしのケースは
+# 専用メッセージ ("(no user-facing changes ...)") を出すべき。
+# ========================================
+
+test_no_user_facing_changes_message_present() {
+    if ! grep -qE 'no user-facing changes' "$UPDATE_SH"; then
+        {
+            echo "    update.sh に '(no user-facing changes ...)' 系メッセージが無い"
+            echo "    → TOTAL_COMMITS=0 のときの専用表示を入れてください (#112)"
+        } >&2
+        return 1
+    fi
+    return 0
+}
+
+test_total_commits_zero_branch_present() {
+    # TOTAL_COMMITS=0 を明示的に分岐するロジックがあるか確認
+    if ! grep -qE 'TOTAL_COMMITS.*-eq[[:space:]]+0|TOTAL_COMMITS.*=[[:space:]]*"?0"?' "$UPDATE_SH"; then
+        {
+            echo "    update.sh に TOTAL_COMMITS が 0 のときの分岐が無い"
+            echo "    → if [ \"\$TOTAL_COMMITS\" -eq 0 ]; then ... else ... fi 等で分岐させてください"
+        } >&2
+        return 1
+    fi
+    return 0
+}
+
 test_count_does_not_contain_newline() {
     # 旧バグでは "0\n0" になっていた。`wc -l` で行数が 1 かを直接検証する。
     local count
@@ -91,5 +123,7 @@ run_test "feat/fix なしの入力で count は '0'"                test_zero_wh
 run_test "feat/fix あり入力で正しい件数"                      test_counts_feat_and_fix_only
 run_test "空入力で count は '0'"                              test_zero_when_input_empty
 run_test "count に改行が含まれない"                           test_count_does_not_contain_newline
+run_test "0 件時の専用メッセージが定義されている"             test_no_user_facing_changes_message_present
+run_test "TOTAL_COMMITS=0 の分岐ロジックがある"               test_total_commits_zero_branch_present
 
 test_summary

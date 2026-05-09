@@ -152,7 +152,15 @@ if [ "$CURRENT_VERSION" != "unknown" ] && [ "$GLOBAL_VERSION" != "unknown" ] && 
     TOTAL_COMMITS=$(cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --no-merges --format="%s" "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null | grep -cE "^(feat|fix):" || true)
     echo "Changes ($TOTAL_COMMITS):"
     echo "--------"
-    (cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --no-merges --format="  %cd  %s" --date=short "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null | grep -E "^  [0-9]{4}-[0-9]{2}-[0-9]{2}  (feat|fix):") || echo "  (Unable to show changes)"
+    if [ "$TOTAL_COMMITS" -eq 0 ]; then
+        # feat/fix が 0 件 = ユーザー向け変更なし。git が失敗したわけではないので
+        # "Unable to show changes" ではなく専用メッセージを出す (#112)。
+        echo "  (no user-facing changes — docs/chore/test only)"
+    else
+        # 1 件以上あるはずなのに grep -E が失敗するなら、git そのものが壊れている等の
+        # 異常時。そのときに限り Unable to show changes を出す。
+        (cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --no-merges --format="  %cd  %s" --date=short "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null | grep -E "^  [0-9]{4}-[0-9]{2}-[0-9]{2}  (feat|fix):") || echo "  (Unable to show changes)"
+    fi
     echo ""
 fi
 
