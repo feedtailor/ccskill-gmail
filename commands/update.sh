@@ -146,10 +146,21 @@ fi
 
 # 変更内容表示（git がある場合のみ）
 if [ "$CURRENT_VERSION" != "unknown" ] && [ "$GLOBAL_VERSION" != "unknown" ] && [ -d "$CCSKILL_GMAIL_DIR/.git" ]; then
-    TOTAL_COMMITS=$(cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --no-merges --format="%s" "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null | grep -cE "^(feat|fix):" || echo "0")
+    # grep -c はマッチ 0 件のとき stdout に "0" を吐いて exit 1 で抜けるため、
+    # `|| echo "0"` としていた旧実装は count が "0\n0" となる二重出力バグを起こしていた (#112)。
+    # `|| true` で exit code だけ握り潰せば、grep が出した "0" がそのまま使える。
+    TOTAL_COMMITS=$(cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --no-merges --format="%s" "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null | grep -cE "^(feat|fix):" || true)
     echo "Changes ($TOTAL_COMMITS):"
     echo "--------"
-    (cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --no-merges --format="  %cd  %s" --date=short "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null | grep -E "^  [0-9]{4}-[0-9]{2}-[0-9]{2}  (feat|fix):") || echo "  (Unable to show changes)"
+    if [ "$TOTAL_COMMITS" -eq 0 ]; then
+        # feat/fix が 0 件 = ユーザー向け変更なし。git が失敗したわけではないので
+        # "Unable to show changes" ではなく専用メッセージを出す (#112)。
+        echo "  (no user-facing changes — docs/chore/test only)"
+    else
+        # 1 件以上あるはずなのに grep -E が失敗するなら、git そのものが壊れている等の
+        # 異常時。そのときに限り Unable to show changes を出す。
+        (cd "$CCSKILL_GMAIL_DIR" && git --no-pager log --no-merges --format="  %cd  %s" --date=short "${CURRENT_VERSION}..${GLOBAL_VERSION}" 2>/dev/null | grep -E "^  [0-9]{4}-[0-9]{2}-[0-9]{2}  (feat|fix):") || echo "  (Unable to show changes)"
+    fi
     echo ""
 fi
 
