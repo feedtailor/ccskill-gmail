@@ -1,105 +1,222 @@
 # ccskill-gmail
 
-A **companion skill** for Claude/Codex Gmail workflows.
+**Make Gmail work a whole lot easier.**
 
-Use the **standard Gmail connector** for everyday search, reading, and drafting — it is faster and more conversational. Reach for **ccskill-gmail** when you need project-bound multi-account operation, attachment file downloads, email-to-PDF export, or local shell automation.
+ccskill-gmail is a skill that complements Claude Code's built-in Gmail connector (MCP). It adds what the standard connector can't do — attachment downloads, mail-body PDF export, prompt-injection defenses — plus local audit logging of every Claude Code action and support for multiple Gmail accounts.
+
+For everyday search, reading, and reply drafting alone, the standard Gmail connector may feel more natural to use — but ccskill-gmail covers those cases too.
 
 [日本語版 README はこちら](README.ja.md)
 
-## When to use ccskill-gmail
+## Comparison
 
-ccskill-gmail is designed to **complement** — not replace — the standard Gmail connector available in Claude.ai and Codex.
-
-| Use case | Recommended tool |
+| Use case | Standard connector or ccskill-gmail? |
 |---|---|
-| Everyday search, reading, and drafting | Standard Gmail connector |
-| Reply drafting in a chat session | Standard Gmail connector |
-| Organization-managed official integration | Standard Gmail connector |
-| Project-bound multi-account operation (different account per `cd`) | **ccskill-gmail** |
-| Downloading attachment file contents | **ccskill-gmail** |
-| Saving emails as HTML / PDF | **ccskill-gmail** |
-| Shell-script automation via local bridge API | **ccskill-gmail** |
-| Local audit log of AI operations | **ccskill-gmail** |
+| Mail search and reading | both |
+| Draft creation | both |
+| Multi-account support | ccskill-gmail |
+| Attachment downloads | ccskill-gmail |
+| Save mail body as PDF | ccskill-gmail |
+| Audit log | ccskill-gmail |
+| Build Gmail integration scripts | ccskill-gmail |
 
-The most distinctive value is **project-bound multi-account operation**: by binding a Gmail account to each project directory, you eliminate the structural risk of an AI accidentally reading or drafting from the wrong account while working across personal / work / customer mailboxes.
+## Distinctive features
 
-## Features
+### Attachment downloads
 
-### Project-bound multi-account operation
+ccskill-gmail can download attachment file contents. You can have them saved with names derived from the email body, or hand them off as input for Claude Code's next step.
 
-Bind a different Gmail / Google Workspace account to each project directory. The active account follows `cd` — no UI toggling, no confirmation prompts, no risk of the AI operating on the wrong mailbox.
+### Save mail body as PDF
+
+You can save a mail body as a PDF file. Both HTML mail and plain-text mail are supported.
+
+### Multi-account support
+
+The standard Gmail connector only sees the single account linked to Claude. ccskill-gmail connects to any Gmail account on a per-project-directory basis.
 
 ```bash
 cd /path/to/work-project    # operates on work@company.com
 cd /path/to/personal-blog   # operates on you@gmail.com
-cd /path/to/client-x        # operates on you@client-x.example
+cd /path/to/client-x        # operates on sales@client-x.example
 ```
 
-This is the most important safety property when juggling personal, work, and customer mailboxes from a single Claude Code environment.
+A single project directory can be bound to one Gmail account.
 
-### Attachment download and email export
+### Operation history
 
-- **Download attachment file contents** — the standard connector exposes metadata only
-- **Export emails as HTML or PDF** — useful for audit trails, handover packages, and offline archives
-- Bulk download / export across search results
+You can look back at the work ccskill-gmail has done.
 
-### Local shell automation
+This is implemented by writing every operation — mail search, content fetch, draft creation, attachment download, and so on — to a local audit log in JSONL.
 
-`.ccskill-gmail/api` doubles as a Gmail bridge API callable from shell scripts. Suitable for cron jobs, CI pipelines, or any unattended workflow that needs Gmail without launching a chat session.
+Only the action name and Gmail thread ID are recorded; subjects, bodies, and recipients are not. When you ask Claude Code to display  history, the information is looked up using those thread IDs.
 
-### Local audit log
+### Build your own Gmail scripts
 
-All AI-initiated operations are recorded locally in JSONL (action names and IDs only — no subjects or bodies). Inspect with `ccskill-gmail history`.
+The bundled `.ccskill-gmail/api` works as a Gmail operation script. You can use it to have Claude Code build programs that integrate with Gmail. No GCP API key (and no OAuth setup) is required.
 
-### Security defaults
+### Security
 
-- **No send capability** — draft creation only. Users review and send manually from Gmail (the same approach as the official Claude.ai Gmail connector)
-- **Delete is opt-in** — disabled by default in `config.js`
-- **Prompt injection protection** — hidden instructions embedded in HTML emails (CSS hiding, zero-width characters, white-on-white text, etc.) are neutralized in the GAS layer before reaching the AI
+- **No send feature.** Claude Code prepares the draft; you send it yourself from Gmail (same design as the standard connector)
+- **Move-to-trash is off by default.** Opt in via `config.js` if you really need it
+- **Prompt-injection defenses.** Hidden instructions embedded in HTML mail (CSS hiding, zero-width characters, white-on-white text, and so on) are neutralized in the GAS layer before they ever reach the AI
+- **Built on Google account authentication.** The skill is designed around being authenticated with a Google account.
 
-## Examples
+## Specific examples
 
-The examples below highlight where ccskill-gmail is the right choice. For everyday search / read / draft, prefer the standard Gmail connector.
-
-### Attachment & PDF workflows
+### Organize attached receipts
 
 > "Find all receipt emails from ACME Corp in the last 6 months and save the attached PDFs as `20260401_VendorName_TotalWithTax_receipt.pdf`"
 
-> "Save this email thread as PDF for the audit trail"
-
-### Multi-account workflows
-
-> "List unread mails for the account bound to this project only"
-
-> "I'm in the personal-blog directory now — show today's new arrivals from this account"
-
-### Cross-cutting knowledge work
+### Make sense of past mail threads
 
 > "Trace the entire email history with John at ACME Corp and create a handover document including background, open tasks, and work in progress. Export the list as Excel"
 
 > "Search all incident response emails for the XYZ system from the past year and create a table of occurrence date, root cause, and resolution"
 
-> "Find all external emails from the past month that I haven't replied to. List them with sender, subject, and days since received. Draft follow-up replies for the important ones"
+### Context-aware reply drafts
 
-### Recurring task automation — works great with `/loop`
+> "Find all external emails from the past month I haven't replied to. List them with sender, subject, and days since received. Draft follow-up replies for the important ones"
 
-> "Review all external emails received this week, categorize them as needs-reply / FYI / resolved, and compile a weekly report"
+### Look back at recent work
 
-> "List all mailing lists and automated notifications by sender, frequency, and last received date. Archive any I haven't read in over 3 months"
+> "Show me what I asked the skill last week, in order"
 
-### Shell script generation
+### Archive what you don't need
 
-The `.ccskill-gmail/api` command doubles as a Gmail bridge API callable from shell scripts. Just describe what you want automated, and Claude Code generates a working script — no manual API research needed.
+> "List all mailing lists and automated notifications by sender, frequency, and last received date. Archive any that have sat unread for more than 3 months"
 
-> "Create a script that searches spam emails and extracts sender domains into NDJSON"
+### Build your own scripts
 
-> "Write a script to download all PDF attachments from invoice emails this month"
+> "Write a script that searches likely-spam mails and extracts sender domains"
 
-> "Generate a daily unread email summary report in Markdown"
+> "Write a script to bulk-download PDF attachments from this month's invoice mails"
 
-## Architecture
+> "Generate a daily unread-mail summary as Markdown"
 
-Instead of using the GCP Gmail API, this skill deploys a bridge API as a GAS (Google Apps Script) project accessible only to the authenticated user. Claude Code calls this as a private Gmail API.
+## Requirements
+
+- Google account (personal or Google Workspace)
+- Node.js / npm
+- jq
+- Google Apps Script API enabled — first-time GAS users must turn on [the Google Apps Script API setting](https://script.google.com/home/usersettings)
+
+## Installation
+
+### 1. Get the skill
+
+**git clone:**
+
+```bash
+cd ~/projects
+git clone https://github.com/feedtailor/ccskill-gmail.git
+```
+
+**zip distribution:**
+
+```bash
+cd ~/projects
+unzip ccskill-gmail-XXXXXX.zip
+```
+
+### 2. Run the setup script
+
+Installs clasp, registers PATH, and handles Google login.
+
+```bash
+cd ~/projects/ccskill-gmail
+./ccskill-gmail setup
+```
+
+### 3. Install into your project
+
+Run the install command from the directory of the project you want to use the skill in.
+
+```bash
+cd /path/to/your-project
+ccskill-gmail install
+```
+
+GAS project creation and deployment happen automatically. A browser will open partway through for Google authorization — click "Allow".
+
+### 4. Verify
+
+After installation, run `ccskill-gmail info`. You should see something like the output below — confirm that the project directory is wired up to the Gmail account you intended.
+
+```bash
+  Account:       ccskill-gmail@example.com
+  Directory:     /path/to/your-project
+  Version:       999ce0e
+  Installed:     2026-05-06 01:23:45
+
+  Permissions:
+    Denied:      move_to_trash
+
+  Inbox:         xxxx unread
+  Starred:       xx unread
+```
+
+## Update
+
+ccskill-gmail receives feature additions and bug fixes from time to time.
+
+### git clone
+
+In the directory where you cloned ccskill-gmail, run `git pull` and then the update-all command. It detects every project where ccskill-gmail is installed and updates all of them.
+
+```bash
+cd ~/projects/ccskill-gmail
+git pull
+ccskill-gmail update-all
+```
+
+You can also update one project at a time.
+
+```bash
+cd /path/to/your-project/
+ccskill-gmail update
+```
+
+### zip distribution
+
+Download the new zip, extract it over the project directory, then apply with `ccskill-gmail update`.
+
+## Uninstall
+
+```bash
+ccskill-gmail uninstall
+```
+
+This removes local files (`.ccskill-gmail/`, skill definitions, permission settings). The Google Apps Script project is **not** automatically deleted — remove it manually from [script.google.com](https://script.google.com) if you want it gone.
+
+## Other commands
+
+```bash
+ccskill-gmail help                # Show all commands
+ccskill-gmail info [--json]       # Show details for the current project (account, permissions, unread)
+ccskill-gmail status [--refresh]  # List all installations and their status
+ccskill-gmail doctor              # Diagnose environment and setup issues
+ccskill-gmail history             # Show the API operation audit log
+ccskill-gmail apply-config        # Push config.js changes to GAS
+ccskill-gmail register <PATH>     # Register an existing installation
+ccskill-gmail release             # Create a distributable zip file
+```
+
+## Using multiple accounts
+
+To switch between Google accounts, use the `--user` option. `--user` accepts only alphanumeric characters, hyphens, and underscores (e.g. `work`, `personal2`, `info-ft`).
+
+```bash
+cd /path/to/work-project
+ccskill-gmail install --user work
+```
+
+A separate Google login may be required mid-flow. The Google account becomes bound to the project directory.
+
+## Technical details
+
+### Architecture
+
+ccskill-gmail does not use the GCP Gmail API. Instead, it deploys a bridge API as a GAS (Google Apps Script) project accessible only to the authenticated user, and Claude Code calls that bridge.
 
 ```mermaid
 flowchart LR
@@ -120,152 +237,33 @@ flowchart LR
     style Gmail fill:#c5221f,stroke:#ea4335,color:#fff
 ```
 
-This local-first architecture is what enables the project-bound multi-account model: each project directory binds to its own GAS deployment under a chosen Google account, and the active deployment is selected by `cd`.
+Each Google account is bound to a project directory, so the Gmail account being operated on changes per project.
 
-## Requirements
+### Permissions
 
-- Google account
-- Node.js / npm
-- jq (command-line JSON processor)
-- Bash (macOS, Linux, WSL)
-- Apps Script API enabled — visit https://script.google.com/home/usersettings and turn on "Google Apps Script API" (required for first-time GAS users)
+During setup, Google will ask you to grant permissions.
 
-## Installation
+**clasp permissions (during setup)**
 
-### 1. Get the skill
-
-```bash
-cd ~/projects
-git clone https://github.com/feedtailor/ccskill-gmail.git
-```
-
-### 2. Setup
-
-Installs clasp locally, registers PATH, and handles Google login in one command.
-
-```bash
-cd ~/projects/ccskill-gmail
-./ccskill-gmail setup
-```
-
-### 3. Install to your project
-
-```bash
-cd /path/to/your-project
-ccskill-gmail install
-```
-
-The installer will automatically create a GAS project, deploy it, and handle Google authorization. When a browser window opens, click "Allow".
-
-**SSH / headless environments:** The installer always displays the Authorization URL in the terminal, so you can copy it and open it in any browser — even on a different machine.
-
-After installation, run `ccskill-gmail info` to confirm which Google account is bound to the current project.
-
-## Update
-
-```bash
-cd ~/projects/ccskill-gmail
-git pull
-
-# Apply to projects
-ccskill-gmail update        # single project
-ccskill-gmail update-all    # all projects
-```
-
-## Uninstall
-
-```bash
-ccskill-gmail uninstall
-```
-
-This removes local files (`.ccskill-gmail/`, skill definitions, permission settings). The Google Apps Script project is not automatically deleted — to fully remove it, delete it manually from [script.google.com](https://script.google.com).
-
-## Other Commands
-
-```bash
-ccskill-gmail info [--json]       # Show details for current project (account, permissions, unread)
-ccskill-gmail status [--refresh]  # Show all installations and their health
-ccskill-gmail doctor              # Diagnose environment and setup issues
-ccskill-gmail history             # Show API operation audit log
-ccskill-gmail apply-config        # Push config.js changes to GAS
-ccskill-gmail register <PATH>     # Register an existing installation
-ccskill-gmail release             # Create a distributable zip file
-ccskill-gmail help                # Show all available commands
-```
-
-- `info` shows the account email, version, permissions, and unread counts for the current project — use it to confirm which account you are about to operate on
-- `status --refresh` fetches account emails for all installations via the API and caches them
-
-## Troubleshooting
-
-### Installation fails midway
-
-Re-run `ccskill-gmail install`. You'll be asked "Overwrite?" — answer `y` to overwrite the previous partial installation. A failed install may also leave an orphaned GAS project on Google's side — delete it manually from [script.google.com](https://script.google.com) before retrying.
-
-### Redirect loop or "Unable to open file" during Google authorization
-
-This happens when your browser is logged into multiple Google accounts, or when a private window has a cached session from a different account. Follow these steps:
-
-1. Copy the **Authorization URL** shown in your terminal (starts with `https://script.google.com/macros/s/...`)
-2. Open a **new private/incognito window** (close any existing private windows to clear cached sessions)
-3. Go to [accounts.google.com](https://accounts.google.com) and **explicitly sign in** with the Google account you want to use for this project
-4. In the **same window**, paste the Authorization URL into the address bar
-5. Click "Allow" to authorize the script
-
-**Important:**
-- Do NOT copy the URL from the browser's error page — it contains corrupted redirect data. Always use the clean URL from your terminal
-- Make sure to sign in at accounts.google.com **before** opening the Authorization URL — opening the URL first may trigger the same redirect loop
-
-### Multi-account OAuth issues
-
-If you use `--user` and encounter authentication errors, run `ccskill-gmail doctor` in the project directory. The doctor command checks the full chain — clasp login, OAuth tokens, endpoint connectivity — and tells you exactly what's broken with fix suggestions.
-
-### Something doesn't work after update
-
-Run `ccskill-gmail doctor` to diagnose. If the issue persists, try `ccskill-gmail update --force` to re-deploy the GAS project from scratch.
-
-## Technical Details
-
-### Permissions Explained
-
-During setup, Google will ask you to grant permissions at two stages:
-
-**Stage 1: Permissions for managing GAS projects (during `setup`)**
-
-| Permission | Why it's needed |
+| Permission | What it's for |
 |---|---|
-| View and manage Google Drive files | Create and update the GAS project files |
+| View and manage Google Drive files | Create and update GAS project files |
 | View and manage Apps Script projects | Create the GAS project and push code |
 | View and manage deployments | Deploy the Web App |
 
-These are standard clasp (GAS CLI tool) permissions. They do **not** grant access to your email.
+These are the standard permissions clasp (Google's official CLI for GAS) requests. ccskill-gmail relies on clasp, so they are required.
 
-**Stage 2: Permissions for Gmail access (during first use)**
+**Gmail permissions (on first use)**
 
-| Permission (OAuth scope) | Why it's needed |
+| Permission (OAuth scope) | What it's for |
 |---|---|
-| `gmail.readonly` | Search and read emails, list labels, download attachments |
+| `gmail.readonly` | Search and read mail, list labels, download attachments |
 | `gmail.compose` | Create and edit drafts |
-| `gmail.modify` | Mark read/unread, add/remove labels, archive, move to trash |
+| `gmail.modify` | Toggle read/unread, add/remove labels, archive, move to trash |
 
-These are the minimum scopes required for the skill's features. No `gmail.send` scope is requested.
+Only the minimum scopes required are requested. The `gmail.send` scope is **not** requested.
 
-### Multi-account Setup
-
-Without `--user`, the default account is used. No additional setup is needed for single-account usage.
-
-To use different Google accounts for different projects, use the `--user` option. The installer will prompt for Google login automatically.
-
-```bash
-cd /path/to/work-project
-ccskill-gmail install --user work
-# The installer will prompt for Google login if needed
-# This directory now uses the work account's Gmail
-```
-
-Note: `--user` accepts only alphanumeric characters, hyphens, and underscores (e.g. `work`, `personal`, `info-ft`).
-
-### Skill Definition Documents
+### Skill definition documents
 
 For API specifications and troubleshooting, see the skill definition documents:
 
@@ -273,12 +271,38 @@ For API specifications and troubleshooting, see the skill definition documents:
 - [examples.md](.claude/skills/ccskill-gmail/examples.md) — Workflow examples
 - [troubleshooting.md](.claude/skills/ccskill-gmail/troubleshooting.md) — Common issues and solutions
 
-## Limitations
+## Troubleshooting
 
-- No send capability (draft creation only; send manually from Gmail UI)
-- Attachments: up to 5 MB
-- Drafts are always HTML format, even when replying to plain text emails (GmailApp limitation — plain text line breaks are lost without HTML conversion)
+### Installation fails midway
+
+Re-run `ccskill-gmail install`. You'll be asked "Overwrite?" — answer `y` to start over. A failed install can leave a stranded GAS project on Google's side; remove it manually from [script.google.com](https://script.google.com) before retrying.
+
+### Redirect loop or "Unable to open file" when the browser opens
+
+This happens when you're already signed in to multiple Google accounts in the browser, or a session from a different account is still cached. Try the following:
+
+1. Copy the **Authorization URL** shown in your terminal (starts with `https://script.google.com/macros/s/...`)
+2. Open a **new private/incognito window** (close any existing private windows first)
+3. Go to [accounts.google.com](https://accounts.google.com) and sign in with the Google account you want to bind
+4. In the same window, paste the Authorization URL from step 1 into the address bar
+5. Click "Allow"
+
+**Important:**
+- Do **not** copy the URL from the browser's error page — always use the URL **shown in your terminal**
+- Sign in at accounts.google.com **before** opening the Authorization URL. Opening the URL first will trigger the same redirect loop
+
+### Multi-account OAuth errors
+
+If you encounter authentication errors while using `--user`, run `ccskill-gmail doctor` from the project directory. The doctor command checks the full chain — clasp login, OAuth tokens, endpoint connectivity — and tells you exactly what's broken with fix suggestions.
+
+### Something doesn't work after update
+
+Run `ccskill-gmail doctor` to diagnose. If the issue persists, try `ccskill-gmail update --force` to redeploy the GAS project from scratch.
+
+## Support
+
+No support is provided — questions will not be answered. This is offered free of charge, so please understand. If you need support for commercial use, please consider a contract via [this page](https://www.feedtailor.jp/product_advisory-claudecode/).
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License

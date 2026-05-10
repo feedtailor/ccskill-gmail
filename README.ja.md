@@ -1,103 +1,220 @@
 # ccskill-gmail
 
-Claude/Codex の Gmail ワークフローを**補完**する companion skill です。
+**Gmail での作業を、もっともっと楽にする。**
 
-通常の検索・閲覧・下書き作成は**標準 Gmail コネクタ**に任せた方が速くて自然です。**ccskill-gmail** は、複数アカウントをプロジェクト単位で固定したい場合や、添付ファイルの実体ダウンロード・メールの PDF 化・ローカルからのシェル自動化が必要な場合に補完的に使うスキルです。
+ccskill-gmail は、Claude Code 標準の Gmail コネクタ (MCP) を補完するスキルです。標準コネクタでは不可能な、添付ファイルのダウンロード・メール本文の PDF 化・プロンプトインジェクション対策のほか、Claude Code による操作ログの記録、複数 Gmail アカウントの使い分けにも対応しています。
 
-## ccskill-gmail を使うべき場面
+日常的な検索・閲覧・返信下書き作成のみであれば、標準 Gmail コネクタの方が使いやすい可能性がありますが、本スキルにも同じ機能が備わっています。
 
-ccskill-gmail は、Claude.ai や Codex の標準 Gmail コネクタを**置き換えるものではなく、補完するもの**として設計されています。
+## 比較表
 
-| 用途 | 推奨 |
+| 用途 | 標準コネクタ or ccskill-gmail ? |
 |---|---|
-| 日常的なメール検索・閲覧 | 標準 Gmail コネクタ |
-| チャット中の返信下書き作成 | 標準 Gmail コネクタ |
-| 組織管理された公式連携 | 標準 Gmail コネクタ |
-| プロジェクトごとの Gmail アカウント固定（`cd` でアカウント切替） | **ccskill-gmail** |
-| 添付ファイル実体のダウンロード | **ccskill-gmail** |
-| メールの HTML / PDF 保存 | **ccskill-gmail** |
-| ローカル bridge API 経由のシェルスクリプト自動化 | **ccskill-gmail** |
-| AI 操作のローカル監査ログ | **ccskill-gmail** |
+| メール検索・閲覧 | 両方 |
+| 下書き作成 | 両方 |
+| 複数アカウント対応 | ccskill-gmail |
+| 添付ファイルダウンロード | ccskill-gmail |
+| メール本文のPDF保存 | ccskill-gmail |
+| 監査ログ | ccskill-gmail |
+| Gmail連携スクリプト開発 | ccskill-gmail |
 
-最も強い訴求点は **プロジェクト単位の multi-account 固定** です。Gmail アカウントをプロジェクトディレクトリに紐付けることで、個人・会社・顧客のメールボックスを横断する際に「AI が間違ったアカウントで読んでしまう/下書きを作ってしまう」という構造的リスクを排除できます。
+## 特徴的な機能
 
-## 機能
+### 添付ファイルのダウンロード
 
-### プロジェクト単位の multi-account 固定
+添付ファイルをダウンロードできます。メール本文に応じたファイル名で保存したり、添付ファイルの内容を踏まえた作業を指示することができます。
 
-プロジェクトディレクトリごとに異なる Gmail / Google Workspace アカウントを bind できます。`cd` するだけで使用アカウントが切り替わります。UI 操作も確認プロンプトもなく、誤アカウント操作のリスクがありません。
+### メール本文のPDFファイル化
+
+メール本文をPDFファイルとして保存できます。HTMLメール・プレインテキストメールの両方に対応しています。
+
+### 複数アカウント対応
+
+標準の Gmail コネクタは Claude に紐付いた一つのアカウントにしかアクセスできませんが、ccskill-gmail はプロジェクトディレクトリごとに任意の Gmail アカウントを個別に接続できます。
 
 ```bash
 cd /path/to/work-project    # work@company.com を操作
 cd /path/to/personal-blog   # you@gmail.com を操作
-cd /path/to/client-x        # you@client-x.example を操作
+cd /path/to/client-x        # sales@client-x.example を操作
 ```
 
-単一の Claude Code 環境から個人・会社・顧客のメールボックスを切り替えて扱う場合に、最も重要な安全特性です。
+1つのプロジェクトディレクトリに紐づけられる Gmail アカウントは1つです。
 
-### 添付ダウンロード・メールエクスポート
+### 操作履歴の記録と振り返り
 
-- **添付ファイルの実体ダウンロード** — 標準コネクタはメタデータしか返しません
-- **メールの HTML / PDF エクスポート** — 監査証跡、引き継ぎ資料、オフラインアーカイブ用途に
-- 検索結果に対する一括ダウンロード / エクスポート
+ccskill-gmail が行った作業を振り返ることができます。
 
-### ローカルシェル自動化
+本スキルによるメール検索・内容取得・下書き作成・添付ダウンロード等の全ての操作をローカル監査ログ(JSONL形式)で保存することにより実現しています。
 
-`.ccskill-gmail/api` はシェルスクリプトから呼べる Gmail bridge API としても機能します。cron ジョブ、CI パイプライン、その他チャットセッションを起動せずに Gmail を操作したい無人ワークフロー全般に向いています。
+記録されるのは操作名とthread IDのみで、件名・本文・宛先等は記録しません。Claude Code に振り返りを指示した時に thread ID を頼りに情報を取得する設計になっています。
 
-### ローカル監査ログ
+### Gmail を使う独自スクリプトの開発
 
-AI が起動した全操作を JSONL でローカル記録します（アクション名と ID のみ。件名・本文は記録しません）。`ccskill-gmail history` で確認可能。
+本スキルが内蔵する `.ccskill-gmail/api` は Gmail 操作スクリプトとして機能します。このスクリプトを使って、Gmail と連携するプログラムを Claude Code に開発してもらうことができます。OAuthを前提とする GCP のAPIキーの発行は不要です。
 
-### 安全寄りのデフォルト
+### セキュリティ
 
-- **送信機能なし** — 下書き作成まで。送信は人間が Gmail で確認してから手動で行う想定です（Anthropic 公式の Claude.ai Gmail コネクタも同様の設計思想）
-- **削除はオプトイン** — `config.js` でデフォルト無効
-- **プロンプトインジェクション対策** — HTML メールに埋め込まれた隠し指示（CSS 非表示・ゼロ幅文字・白文字等）を GAS 層で無効化してから AI に渡します
+- **送信機能はありません。** Claude Code が下書きを作成し、送信はユーザが Gmail から手動で行う設計です（標準コネクタも同じ思想）
+- **ゴミ箱移動はデフォルト無効。** 必要な場合は `config.js` でオプトインしてください
+- **プロンプトインジェクション対策。** HTML メールに埋め込まれた隠し指示（CSS 非表示・ゼロ幅文字・白文字等）は、GAS 層で無効化してから AI に渡します
+- **Googleアカウント認証前提。** Google アカウントで認証することを前提とした作りになっています。
 
-## 使用例
+## 具体的な使用例
 
-以下は ccskill-gmail を選ぶべきケースです。日常的な検索・閲覧・下書き作成は標準 Gmail コネクタの方が向いています。
-
-### 添付・PDF ワークフロー
+### 添付ファイルの領収書を整理
 
 > 「○○社からの領収書メールを直近半年分探して、添付PDFを `20260401_取引先名_税込金額_receipt.pdf` の形式で保存して」
 
-> 「このメールスレッドを監査証跡として PDF 保存して」
-
-### マルチアカウントワークフロー
-
-> 「このプロジェクトに bind されたアカウントの未読メールだけを一覧して」
-
-> 「いま personal-blog ディレクトリにいるので、こっちのアカウントの今日の新着を見せて」
-
-### 横断的なナレッジワーク
+### 過去のメールやり取りの整理
 
 > 「○○社の○○さんとのやり取りを全て遡り、経緯・残タスク・仕掛かりを含む引き継ぎ資料を作成して。一覧はExcelで」
 
 > 「○○システムの障害対応メールを過去1年分調べて、発生日・原因・対処法の一覧を作って」
 
+### 文脈をふまえた返信メール下書き
+
 > 「過去1ヶ月で返信していない取引先メールを洗い出して、相手先・件名・放置日数の一覧を作って。重要なものにはフォローアップの下書きも作って」
 
-### 定期業務の自動化 — `/loop` コマンドと併用すると効果的
+### 作業の振り返り
 
-> 「今週届いた社外メールを全件レビューして、要返信・FYI・対応完了に分類し、週次レポートにまとめて」
+> 「先週○○をお願いした件を時系列でまとめてください」
 
-> 「メーリングリストや自動通知を全てリストアップして、送信元・頻度・最終受信日の一覧を作って。3ヶ月以上読んでないものはアーカイブして」
+### 不要メールのアーカイブ
 
-### シェルスクリプト生成
+> 「メーリングリストや通知系メールを抽出して、送信元・頻度・最終受信日の一覧を作って。3ヶ月以上未読が放置されているメールはアーカイブして」
 
-`.ccskill-gmail/api` コマンドはシェルスクリプトから呼べる Gmail bridge API としても機能します。やりたいことを伝えるだけで、Claude Code が動作するスクリプトを生成します。API の調査は不要です。
+### 独自スクリプトの開発
 
-> 「スパムメールを検索して送信元ドメインを NDJSON で抽出するスクリプトを作って」
+> 「スパムらしきメールを検索して送信元ドメインを抽出するスクリプトを作って」
 
 > 「今月届いた請求書メールから PDF 添付を一括ダウンロードするスクリプトを書いて」
 
 > 「毎日の未読メールサマリーを Markdown で出力するスクリプトを生成して」
 
-## 構造
+## 必要なもの・前提条件
 
-ccskill-gmail では、GCP の Gmail API は使用していません。そのためセットアップが比較的簡単です。認証ユーザのみが使用できるブリッジ API が GAS プロジェクトとしてデプロイされ、これを Claude Code が使用する構造となっています。
+- Google アカウント (個人用 / GoogleWorksspace)
+- Node.js / npm
+- jq
+- Google Apps Script API の有効化 (初めて GAS を使う場合には [Google Apps Script API の設定](https://script.google.com/home/usersettings) をオンにする必要があります)
+
+## インストール
+
+### 1. スキルの入手
+
+**git clone の場合:**
+
+```bash
+cd ~/projects
+git clone https://github.com/feedtailor/ccskill-gmail.git
+```
+
+**zip 配布の場合:**
+
+```bash
+cd ~/projects
+unzip ccskill-gmail-XXXXXX.zip
+```
+
+### 2. セットアップスクリプトの実行
+
+clasp のインストール、PATH 登録、Google ログインを行います。
+
+```bash
+cd ~/projects/ccskill-gmail
+./ccskill-gmail setup
+```
+
+### 3. プロジェクトにインストール
+
+本スキルを使うプロジェクトのディレクトリでインストールコマンドを実行します。
+
+```bash
+cd /path/to/your-project
+ccskill-gmail install
+```
+
+GAS プロジェクトの作成、デプロイを自動で行います。途中で Google の認証のためブラウザが開きますので「許可」してください。
+
+### 4. 確認
+
+インストールル完了後、`ccskill-gmail info` を実行してください。以下のような情報が表示されますので、意図した通りにプロジェクトディレクトリと Gmail が連携していることを確認してください。
+
+```bash
+  Account:       ccskill-gmail@example.com
+  Directory:     /path/to/your-project
+  Version:       999ce0e
+  Installed:     2026-05-06 01:23:45
+
+  Permissions:
+    Denied:      move_to_trash
+
+  Inbox:         xxxx unread
+  Starred:       xx unread
+```
+
+## 更新
+
+ccskill-gmail は機能追加や不具合修正で更新されることがあります。
+
+### git clone の場合
+
+ccskill-gmail をインストールしたディレクトリで `git pull` を実行したのち、アップデートコマンドを実行してください。ccskill-gmail がインストールされたプロジェクトディレクトリを検出し全てのプロジェクトにアップデートをかけます。
+
+```bash
+cd ~/projects/ccskill-gmail
+git pull
+ccskill-gmail update-all
+```
+
+個別にプロジェクト単位でアップデートすることもできます。
+
+```bash
+cd /path/to/your-project/
+ccskill-gmail update
+```
+
+### zip 配布の場合
+
+新しい zip をダウンロードし、プロジェクトディレクトリに展開した後、`ccskill-gmail update` で反映してください。
+
+## アンインストール
+
+```bash
+ccskill-gmail uninstall
+```
+
+ローカルファイル（`.ccskill-gmail/`、スキル定義、パーミッション設定）が削除されます。Google Apps Script のプロジェクトは自動削除されないため、[script.google.com](https://script.google.com) から手動で削除してください。
+
+## その他のコマンド
+
+```bash
+ccskill-gmail help                # 全コマンドの表示
+ccskill-gmail info [--json]       # 現在のプロジェクトの詳細表示（アカウント、権限、未読数）
+ccskill-gmail status [--refresh]  # インストール状況の一覧表示
+ccskill-gmail doctor              # 環境・セットアップの診断
+ccskill-gmail history             # API 操作の監査ログ表示
+ccskill-gmail apply-config        # config.js の変更を GAS に反映
+ccskill-gmail register <PATH>     # 既存インストールの登録
+ccskill-gmail release             # 配布用 zip ファイルの作成
+```
+
+## 複数アカウント利用
+
+Google アカウントを使い分けたい場合は `--user` オプションを使います。`--user` には英数字・ハイフン・アンダースコアのみ使用できます。（例: `work`, `personal2`, `info-ft`）
+
+```bash
+cd /path/to/work-project
+ccskill-gmail install --user work
+```
+
+途中、Google ログインが別途必要な場合があります。プロジェクトディレクトリに Google アカウントが紐づきます。
+
+## 技術情報
+
+### 構造
+
+ccskill-gmail は、GCP の Gmail API を使用しません。その代わり、認証ユーザのみが使用できるブリッジ API を GAS プロジェクトとしてデプロイします。これを Claude Code が使用する構造となっています。
 
 ```mermaid
 flowchart LR
@@ -118,126 +235,10 @@ flowchart LR
     style Gmail fill:#c5221f,stroke:#ea4335,color:#fff
 ```
 
-このローカルファースト構成こそが、プロジェクト単位の multi-account モデルを成立させています。各プロジェクトディレクトリは選択された Google アカウント配下の自分専用 GAS デプロイに bind され、`cd` によって有効なデプロイが切り替わります。
+Google アカウントはプロジェクトディレクトリに紐づくため、操作する Gmail をプロジェクトごとに変えることができます。
 
-## 必要なもの
 
-- Google アカウント
-- Node.js / npm
-- jq（JSON 処理ツール）
-- Bash (macOS, Linux, WSL)
-- Apps Script API の有効化 — 初めて GAS を使う場合には https://script.google.com/home/usersettings で「Google Apps Script API」をオンにしてください
 
-## セットアップ
-
-### 1. スキルを入手
-
-**git clone の場合:**
-
-```bash
-cd ~/projects
-git clone https://github.com/feedtailor/ccskill-gmail.git
-```
-
-**zip 配布の場合:**
-
-```bash
-cd ~/projects
-unzip ccskill-gmail-XXXXXX.zip
-```
-
-### 2. セットアップ
-
-clasp のローカルインストール、PATH 登録、Google ログインを一括で行います。
-
-```bash
-cd ~/projects/ccskill-gmail
-./ccskill-gmail setup
-```
-
-### 3. プロジェクトにインストール
-
-```bash
-cd /path/to/your-project
-ccskill-gmail install
-```
-
-インストーラーが GAS プロジェクトの作成、デプロイ、Google 認可まで自動で行います。ブラウザが開いたら「許可」をクリックしてください。
-
-**SSH / ヘッドレス環境:** インストーラーは認証 URL をターミナルに常時表示するため、別のマシンのブラウザにコピーして開くことも可能です。
-
-インストール完了後、`ccskill-gmail info` を実行して、現在のプロジェクトに bind された Google アカウントを確認してください。
-
-## 更新
-
-**git clone の場合:**
-
-```bash
-cd ~/projects/ccskill-gmail
-git pull
-
-# プロジェクトに反映
-ccskill-gmail update        # 個別(プロジェクト配下で)
-ccskill-gmail update-all    # 一括
-```
-
-**zip 配布の場合:**
-
-新しい zip を展開して上書きした後、`ccskill-gmail update` でプロジェクトに反映してください。
-
-## アンインストール
-
-```bash
-ccskill-gmail uninstall
-```
-
-ローカルファイル（`.ccskill-gmail/`、スキル定義、パーミッション設定）が削除されます。Google Apps Script のプロジェクトは自動削除されないため、完全に削除したい場合は [script.google.com](https://script.google.com) から手動で削除してください。
-
-## その他のコマンド
-
-```bash
-ccskill-gmail info [--json]       # 現在のプロジェクトの詳細表示（アカウント、権限、未読数）
-ccskill-gmail status [--refresh]  # インストール状況の一覧表示
-ccskill-gmail doctor              # 環境・セットアップの診断
-ccskill-gmail history             # API 操作の監査ログ表示
-ccskill-gmail apply-config        # config.js の変更を GAS に反映
-ccskill-gmail register <PATH>     # 既存インストールの登録
-ccskill-gmail release             # 配布用 zip ファイルの作成
-ccskill-gmail help                # 全コマンドの表示
-```
-
-- `info` は現在のプロジェクトのアカウントメール、バージョン、パーミッション、未読数を表示します。これから操作するアカウントを確認するために使ってください
-- `status --refresh` は全インストール先のアカウントメールを API 経由で取得・キャッシュします
-
-## トラブルシューティング
-
-### install が途中で失敗した場合
-
-`ccskill-gmail install` を再度実行してください。「Overwrite?」と聞かれるので `y` で上書きすれば最初からやり直せます。失敗時に GAS プロジェクトが Google 側に残ることがあります。[script.google.com](https://script.google.com) から手動で削除してから再実行してください。
-
-### リダイレクトループ / 「ファイルを開くことができません」エラー
-
-ブラウザに複数の Google アカウントでログインしている場合や、シークレットウィンドウに別アカウントのセッションが残っている場合に発生します。以下の手順で解決できます:
-
-1. ターミナルに表示された **認証 URL** をコピーする（`https://script.google.com/macros/s/...` で始まる URL）
-2. **新しいシークレットウィンドウ**を開く（既存のシークレットウィンドウがあれば閉じてセッションをクリアする）
-3. [accounts.google.com](https://accounts.google.com) にアクセスし、このプロジェクトで使いたい Google アカウントで**明示的にログイン**する
-4. **同じウィンドウで**、コピーした認証 URL をアドレスバーに貼り付けて開く
-5. 「許可」をクリックして認可を完了する
-
-**重要:**
-- ブラウザのエラーページに表示される URL はコピーしないでください。リダイレクトデータが壊れています。必ずターミナルに表示されたクリーンな URL を使ってください
-- 認証 URL を開く**前に** accounts.google.com でログインしてください。先に認証 URL を開くと同じリダイレクトループが発生します
-
-### マルチアカウントの OAuth 問題
-
-`--user` を使用して認証エラーが発生する場合は、プロジェクトディレクトリで `ccskill-gmail doctor` を実行してください。clasp のログイン状態、OAuth トークン、エンドポイント接続まで一通りチェックし、問題箇所と修正方法を提示します。
-
-### update 後に正常動作しない場合
-
-`ccskill-gmail doctor` で診断してください。問題が解決しない場合は `ccskill-gmail update --force` で GAS プロジェクトを再デプロイしてください。
-
-## 技術詳細
 
 ### 権限について
 
@@ -263,21 +264,6 @@ clasp（GAS を CLI で扱うための Google 公式ツール）が要求する�
 
 必要最小限のスコープのみ要求しています。`gmail.send` スコープは要求しません。
 
-### 複数アカウントで使う場合
-
-`--user` を指定しない場合はデフォルトアカウントが使われます。単一アカウントで使う場合は指定不要です。
-
-プロジェクトごとに異なる Google アカウントを使い分けたい場合は、`--user` オプションを使います。Google ログインが必要な場合はインストーラーが自動で案内します。
-
-```bash
-cd /path/to/work-project
-ccskill-gmail install --user work
-# Google ログインが必要な場合は自動で案内されます
-# 以降、このディレクトリでは work アカウントの Gmail が使われる
-```
-
-`--user` には英数字・ハイフン・アンダースコアのみ使用できます（例: `work`, `personal`, `info-ft`）。
-
 ### スキル定義ドキュメント
 
 API の仕様やトラブルシューティングは、スキル定義ドキュメントを参照してください:
@@ -286,11 +272,37 @@ API の仕様やトラブルシューティングは、スキル定義ドキュ�
 - [examples.md](.claude/skills/ccskill-gmail/examples.md) — ワークフロー例
 - [troubleshooting.md](.claude/skills/ccskill-gmail/troubleshooting.md) — よくある問題と解決策
 
-## 制限事項
+## トラブルシューティング
 
-- 送信機能なし（下書き作成のみ、送信は Gmail UI で手動）
-- 添付ファイル: 5MB まで対応
-- 下書きは常に HTML 形式（プレーンテキストへの返信でも同様。GmailApp の制約により、プレーンテキストでは改行が消失するため）
+### install が途中で失敗した場合
+
+`ccskill-gmail install` を再度実行してください。「Overwrite?」と聞かれるので `y` で上書きすれば最初からやり直せます。失敗時に GAS プロジェクトが Google 側に残ることがあります。[script.google.com](https://script.google.com) から手動で削除してから再実行してください。
+
+### ブラウザが開いた時にリダイレクトループエラーや、「ファイルを開くことができません」のエラーが表示される
+
+既にブラウザで複数 Google アカウントでログインしていたり、別アカウントのセッションが残っている場合に発生します。以下の手順を試して下さい。
+
+1. ターミナルに表示された **認証 URL** をコピーする（`https://script.google.com/macros/s/...` で始まる URL）
+2. **新しいシークレットウィンドウ**を開く（既存のシークレットウィンドウがあれば全て閉じる）
+3. [accounts.google.com](https://accounts.google.com) にアクセスして紐づけたい Gmail の Google アカウントでログインする
+4. 同じウィンドウで、1.でコピーした認証 URL をアドレスバーに貼り付けて開く
+5. 「許可」をクリックする
+
+**重要:**
+- ブラウザのエラーページに表示される URL はコピーしないでください。必ず**ターミナルに表示されたURL**を使ってください
+- コピーした認証URLを開く**前に**、accounts.google.com でログインしてください。先に認証URLを開くと同じリダイレクトループが発生します
+
+### マルチアカウントのOAuth認証エラー
+
+`--user` を使用して認証エラーが発生する場合は、プロジェクトディレクトリで `ccskill-gmail doctor` を実行してください。clasp のログイン状態、OAuth トークン、エンドポイント接続まで一通りチェックし、問題箇所と修正方法を提示します。
+
+### update 後に正常動作しない場合
+
+`ccskill-gmail doctor` で診断してください。問題が解決しない場合は `ccskill-gmail update --force` で GAS プロジェクトを再デプロイしてください。
+
+## サポート
+
+サポートは一切行っていません。ご質問等を頂いてもご回答は致しません。無償で公開しているものですのでご了承下さい。法人や業務用途等でサポートが必要な場合、[こちら](https://www.feedtailor.jp/product_advisory-claudecode/)をご契約下さい。
 
 ## ライセンス
 
