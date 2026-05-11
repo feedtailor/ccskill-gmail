@@ -24,7 +24,7 @@ ccskill-gmail は、Claude Code 標準の Gmail コネクタ (MCP) を補完す�
 | マルチアカウント対応 | × | × | ○ |
 | Gmail 連携スクリプトの開発 | × | × | ○ |
 
-出典: [Claude 公式ドキュメント「Google Workspace コネクタを使用する」](https://support.claude.com/en/articles/10166901-use-google-workspace-connectors) / [Google「Workspace MCP サーバーを構成する」](https://developers.google.com/workspace/guides/configure-mcp-servers?hl=ja)。Workspace MCP は執筆時点でプレビュー提供のため、内容は変わる可能性があります。
+出典: [Claude 公式ドキュメント「Google Workspace コネクタを使用する」](https://support.claude.com/en/articles/10166901-use-google-workspace-connectors) / [Google「Workspace MCP サーバーを構成する」](https://developers.google.com/workspace/guides/configure-mcp-servers?hl=ja)
 
 ## 特徴的な機能
 
