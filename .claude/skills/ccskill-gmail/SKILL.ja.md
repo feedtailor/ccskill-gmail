@@ -24,7 +24,7 @@ Google Apps Script (GAS) でホストされた Web API を通じて Gmail を操
 
 ```bash
 # GET（読み取りアクション）
-.ccskill-gmail/api get action=search query="is:unread"
+.ccskill-gmail/api get action=search query="from:boss@example.com" maxResults=10
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID
 
 # POST（書き込みアクション）
@@ -32,6 +32,8 @@ Google Apps Script (GAS) でホストされた Web API を通じて Gmail を操
 ```
 
 GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は書き込み（`create_draft`、`mark_read`、`add_label` 等）。間違ったメソッドを使うと `Unknown action` エラーが返ります。get サブコマンドは値を自動 URL エンコードするため日本語はそのまま渡せます。
+
+> **「要返信メール」「重要なメール」「ピックアップ」等の依頼に `is:unread` / `is:important` を使ってはいけません。** ユーザーがレビュー・トリアージ・重要メール抽出を依頼した場合は、必ず先に [reference/triage.md](reference/triage.md) を読むこと。
 
 全アクション一覧と個別仕様は [reference/index.md](reference/index.md)、実行可能な例は [examples.md](examples.md) を参照。
 
@@ -144,7 +146,7 @@ Claude は JSON を直接読みます。レスポンスが大きく切り詰め�
 | 既読・未読 API (mark_read / mark_unread / bulk) | [reference/status.md](reference/status.md) |
 | スレッド API (archive / move_to_inbox / move_to_trash / bulk) | [reference/thread.md](reference/thread.md) |
 | マーカー API (star / unstar / mark_important / unmark_important) | [reference/marker.md](reference/marker.md) |
-| Inbox triage / 要返信メール抽出 | [reference/triage.md](reference/triage.md) |
+| Inbox triage / 要返信メール抽出 / 重要なメール / ピックアップ — **これらの依頼ではクエリ構築前に必ず参照すること** | [reference/triage.md](reference/triage.md) |
 | メールを PDF で保存（添付 PDF を本文変換より優先） | [examples.md §5](examples.md) |
 | 約束/依頼の構造化抽出 | [reference/commitment.md](reference/commitment.md) |
 | 操作履歴（`ccskill-gmail history`） | [reference/history.md](reference/history.md) |

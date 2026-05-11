@@ -22,7 +22,7 @@ The skill is invoked through a single CLI: `.ccskill-gmail/api`. It has two subc
 
 ```bash
 # GET (read actions)
-.ccskill-gmail/api get action=search query="is:unread"
+.ccskill-gmail/api get action=search query="from:boss@example.com" maxResults=10
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID
 
 # POST (write actions)
@@ -30,6 +30,8 @@ The skill is invoked through a single CLI: `.ccskill-gmail/api`. It has two subc
 ```
 
 GET is for read actions (`search`, `get_thread`, `list_labels`, ...). POST is for write actions (`create_draft`, `mark_read`, `add_label`, ...). Using the wrong method returns an `Unknown action` error. The get subcommand auto URL-encodes values, so Japanese text can be passed as-is.
+
+> **Do not use `is:unread` to find "emails that need a reply" / "important emails" / "highlights".** Always read [reference/triage.md](reference/triage.md) first when the user asks to review, triage, or pick out emails.
 
 For the full action list and per-action specs, see [reference/index.md](reference/index.md). For runnable examples, see [examples.md](examples.md).
 
@@ -142,7 +144,7 @@ Claude reads the JSON directly. Only use `| jq` when the response is large enoug
 | Read/unread APIs (mark_read, mark_unread, bulk variants) | [reference/status.md](reference/status.md) |
 | Thread APIs (archive, move_to_inbox, move_to_trash, bulk variants) | [reference/thread.md](reference/thread.md) |
 | Marker APIs (star, unstar, mark_important, unmark_important) | [reference/marker.md](reference/marker.md) |
-| Inbox triage / "emails that need a reply" workflow | [reference/triage.md](reference/triage.md) |
+| Inbox triage / "emails that need a reply" / "important emails" / "pick out highlights" — **READ BEFORE constructing a search query for these requests** | [reference/triage.md](reference/triage.md) |
 | Saving an email as PDF (prefer attached PDF over body conversion) | [examples.md §5](examples.md) |
 | Commitment extraction | [reference/commitment.md](reference/commitment.md) |
 | Operation history (`ccskill-gmail history`) | [reference/history.md](reference/history.md) |

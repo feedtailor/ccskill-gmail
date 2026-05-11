@@ -4,10 +4,15 @@
 
 Read this document **before constructing any search query** if the user's request matches any of these phrases:
 
-- 日本語: 「要返信」「未返信」「返信漏れ」「返信すべきメール」「メールチェックして」
-- English: "reply needed", "emails I should reply to", "pending replies", "check my emails", "triage my inbox", "scan inbox", "what needs my attention?"
+- 日本語: 「要返信」「未返信」「返信漏れ」「返信すべきメール」「メールチェックして」「**重要なメール**」「**優先度の高いメール**」「**ピックアップ**」「**目を通すべきメール**」「**重要なやりとり**」「**最近の重要**」
+- English: "reply needed", "emails I should reply to", "pending replies", "check my emails", "triage my inbox", "scan inbox", "what needs my attention?", "**important emails**", "**high-priority emails**", "**pick out the important ones**", "**what's important**", "**highlights**"
 
-**Do NOT improvise a search query based on `is:unread`.** Unread ≠ unreplied — the classification below is independent of read state. See [Recommended search query](#recommended-search-query) below.
+**Do NOT improvise a search query based on `is:unread` or `is:important`.**
+
+- `is:unread` ≠ unreplied. A message becomes "read" the moment the user opens it in any client; that says nothing about whether they replied.
+- `is:important` ≠ what the user means by "important". The Gmail "Important" marker is auto-assigned and noisy (often hundreds of messages per month, including system notifications). When the user asks for "important emails", they expect **your human-style judgment** based on sender, content, and context — not the Gmail marker.
+
+See [Recommended search query](#recommended-search-query) below. Importance/priority is judged by the classification rules in this document, not by Gmail markers.
 
 ### Always use `lastSentMessage` (NOT `messages[-1]`) to determine the last sender
 
