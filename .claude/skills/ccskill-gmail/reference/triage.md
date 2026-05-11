@@ -7,7 +7,7 @@ Read this document **before constructing any search query** if the user's reques
 - 日本語: 「要返信」「未返信」「返信漏れ」「返信すべきメール」「メールチェックして」
 - English: "reply needed", "emails I should reply to", "pending replies", "check my emails", "triage my inbox", "scan inbox", "what needs my attention?"
 
-**Do NOT improvise a search query based on `is:unread`.** Unread ≠ unreplied — the classification below is independent of read state. See [SKILL.md "Email Review Guidelines"](../SKILL.md#email-review-guidelines) for the recommended query.
+**Do NOT improvise a search query based on `is:unread`.** Unread ≠ unreplied — the classification below is independent of read state. See [Recommended search query](#recommended-search-query) below.
 
 ### Always use `lastSentMessage` (NOT `messages[-1]`) to determine the last sender
 
@@ -108,9 +108,29 @@ After the report, ask the user what they'd like to do:
 
 Do not take action without the user's confirmation.
 
-## Integration with Email Review Guidelines
+## Recommended search query
 
-This workflow extends the Email Review Guidelines in SKILL.md. The core rules still apply:
-- Filter out automated senders (noreply, notifications, promotions)
-- Present structured summaries with content, status, and suggested action
-- See examples.md §19 for automated sender query patterns
+For "emails that need a reply", use:
+
+```bash
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+```
+
+Then for each thread call `get_thread` and read `data.lastSentMessage.from` (NOT `messages[-1].from`). If `lastSentMessage.from` is not the user, the thread is a reply-now / draft-needed candidate.
+
+### Why not `is:unread`?
+
+**Unread ≠ unreplied.** A Gmail message becomes "read" the moment the user opens it in any Gmail client (web, mobile app, preview pane) — that does not mean they have replied. In Japanese business workflows especially, users routinely scan an email to understand it, then leave it in the inbox to reply later.
+
+When looking for emails that need a reply, **never include `is:unread`** in the query. Use `in:inbox -from:me` to find threads where the user is not the last actor, then verify per-thread with `lastSentMessage`.
+
+Date range: `newer_than:7d` to `newer_than:14d` is a reasonable default. Shorter windows (e.g., `newer_than:1d`) will miss stalled replies.
+
+### Output format
+
+1. **Filter out automated senders** — Exclude noreply, notifications, promotions, updates, and social category emails to surface only human-sent messages. See examples.md §19 for query patterns.
+2. **Present each email as a structured summary** — For each relevant thread, report:
+   - **Subject / From / Date**
+   - **Content**: Brief summary of the latest message
+   - **Status**: Current state (e.g., "awaiting your reply", "waiting for their response", "FYI only")
+   - **Suggested action**: What to do next (e.g., "reply with acknowledgment", "no action needed", "draft reply proposed below")
