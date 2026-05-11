@@ -22,7 +22,7 @@ The skill is invoked through a single CLI: `.ccskill-gmail/api`. It has two subc
 
 ```bash
 # GET (read actions)
-.ccskill-gmail/api get action=search query="is:unread"
+.ccskill-gmail/api get action=search query="from:boss@example.com" maxResults=10
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID
 
 # POST (write actions)
@@ -31,7 +31,78 @@ The skill is invoked through a single CLI: `.ccskill-gmail/api`. It has two subc
 
 GET is for read actions (`search`, `get_thread`, `list_labels`, ...). POST is for write actions (`create_draft`, `mark_read`, `add_label`, ...). Using the wrong method returns an `Unknown action` error. The get subcommand auto URL-encodes values, so Japanese text can be passed as-is.
 
+**❌ Common mistakes — these do NOT exist:**
+
+- `.ccskill-gmail/api.sh ...` — no `.sh` extension; the script is `.ccskill-gmail/api`
+- `.ccskill-gmail/api search ...` — `search` is an **action**, not a subcommand
+- `.ccskill-gmail/api list_labels ...` — same; actions are always passed via `action=...`
+
+The subcommands are exactly five: `get`, `post`, `download`, `save-html`, `save-pdf`. Everything else (`search`, `get_thread`, `create_draft`, `mark_read`, ...) is an `action` value passed to `get` or `post`.
+
+> **Do not use `is:unread` to find "emails that need a reply" / "important emails" / "highlights".** Always read [reference/triage.md](reference/triage.md) first when the user asks to review, triage, or pick out emails.
+
 For the full action list and per-action specs, see [reference/index.md](reference/index.md). For runnable examples, see [examples.md](examples.md).
+
+---
+
+## Email Review — Critical Rules
+
+Applies whenever the user asks to scan / review / triage the inbox or pick out important / reply-needed emails. Trigger phrases (partial match counts — apply this section if the request roughly matches any of these):
+
+- 「メールチェック」「メール確認」「返信すべき」「要返信」「未返信」「重要なメール」「優先度の高い」「ピックアップ」「目を通すべき」
+- "check my emails", "triage my inbox", "scan inbox", "emails I should reply to", "important emails", "high-priority", "highlights", "what needs my attention"
+
+### ⚠️ Do NOT filter with `is:unread` or `is:important`
+
+- `is:unread` ≠ unreplied. A message becomes "read" the moment the user opens it in any client — that says nothing about whether they replied.
+- `is:important` ≠ what the user means by "important". The Gmail Important marker is auto-assigned and noisy. The user expects **your human-style judgment** based on sender / content / context.
+
+Use this query as the base, then judge per-thread:
+
+```bash
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+```
+
+Date range default: `newer_than:7d` to `newer_than:14d`. **Do not shrink to `1d`** — it misses stalled replies.
+
+### ⚠️ Use `lastSentMessage` (NOT `messages[-1]`) to determine the last sender
+
+`get_thread` returns drafts inline with sent messages. Reading `messages[-1]` will misclassify your own freshly created draft as the latest reply. Always read `data.lastSentMessage` (most recent **non-draft** message). Inspect `data.hasDraft` before creating another draft — do NOT stack drafts on top.
+
+### Example queries for triage requests
+
+**✅ OK — start with this and judge per-thread:**
+
+```bash
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+```
+
+**❌ NG — these miss the point of triage requests:**
+
+```bash
+# is:unread → returns unopened messages, not unreplied threads. Forbidden for triage.
+.ccskill-gmail/api get action=search query="is:unread"
+
+# is:important → Gmail's auto-marker, full of noise. Forbidden for triage.
+.ccskill-gmail/api get action=search query="is:important"
+
+# newer_than:1d → too narrow, misses stalled replies. Use 7d–14d.
+.ccskill-gmail/api get action=search query="newer_than:1d in:inbox"
+```
+
+For the full classification workflow (reply-now / waiting / draft-needed / fyi / archive), read [reference/triage.md](reference/triage.md).
+
+---
+
+## PDF Saving — Choosing Between `download` and `save-pdf`
+
+When the user asks to save an email as PDF, choose the source in this order:
+
+1. **Attached PDF (preferred).** Run `list_attachments` first. If an `application/pdf` attachment exists, save it via `download`. The publisher-provided attachment takes precedence over anything re-rendered from the body.
+2. **PDF download link in the body.** Fetch the linked PDF rather than re-rendering the body.
+3. **`save-pdf` (HTML body conversion) — last resort.** Only when neither of the above exists.
+
+Skipping step 1 silently produces a lower-quality artifact when an authoritative PDF was right there.
 
 ---
 
@@ -142,7 +213,7 @@ Claude reads the JSON directly. Only use `| jq` when the response is large enoug
 | Read/unread APIs (mark_read, mark_unread, bulk variants) | [reference/status.md](reference/status.md) |
 | Thread APIs (archive, move_to_inbox, move_to_trash, bulk variants) | [reference/thread.md](reference/thread.md) |
 | Marker APIs (star, unstar, mark_important, unmark_important) | [reference/marker.md](reference/marker.md) |
-| Inbox triage / "emails that need a reply" workflow | [reference/triage.md](reference/triage.md) |
+| Inbox triage / "emails that need a reply" / "important emails" / "pick out highlights" — **READ BEFORE constructing a search query for these requests** | [reference/triage.md](reference/triage.md) |
 | Saving an email as PDF (prefer attached PDF over body conversion) | [examples.md §5](examples.md) |
 | Commitment extraction | [reference/commitment.md](reference/commitment.md) |
 | Operation history (`ccskill-gmail history`) | [reference/history.md](reference/history.md) |

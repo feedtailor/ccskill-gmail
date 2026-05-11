@@ -24,7 +24,7 @@ Google Apps Script (GAS) でホストされた Web API を通じて Gmail を操
 
 ```bash
 # GET（読み取りアクション）
-.ccskill-gmail/api get action=search query="is:unread"
+.ccskill-gmail/api get action=search query="from:boss@example.com" maxResults=10
 .ccskill-gmail/api get action=get_thread threadId=THREAD_ID
 
 # POST（書き込みアクション）
@@ -33,7 +33,78 @@ Google Apps Script (GAS) でホストされた Web API を通じて Gmail を操
 
 GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は書き込み（`create_draft`、`mark_read`、`add_label` 等）。間違ったメソッドを使うと `Unknown action` エラーが返ります。get サブコマンドは値を自動 URL エンコードするため日本語はそのまま渡せます。
 
+**❌ よくある間違い — これらは存在しません:**
+
+- `.ccskill-gmail/api.sh ...` — `.sh` 拡張子は無い。スクリプト名は `.ccskill-gmail/api`
+- `.ccskill-gmail/api search ...` — `search` は **action** であってサブコマンドではない
+- `.ccskill-gmail/api list_labels ...` — 同上。action は常に `action=...` で渡す
+
+サブコマンドはちょうど 5 つ: `get`、`post`、`download`、`save-html`、`save-pdf`。それ以外 (`search`、`get_thread`、`create_draft`、`mark_read` 等) はすべて `action` の値として `get` / `post` に渡します。
+
+> **「要返信メール」「重要なメール」「ピックアップ」等の依頼に `is:unread` / `is:important` を使ってはいけません。** ユーザーがレビュー・トリアージ・重要メール抽出を依頼した場合は、必ず先に [reference/triage.md](reference/triage.md) を読むこと。
+
 全アクション一覧と個別仕様は [reference/index.md](reference/index.md)、実行可能な例は [examples.md](examples.md) を参照。
+
+---
+
+## メールレビュー — 重要ルール
+
+ユーザーが受信箱をスキャン・レビュー・トリアージしたり、重要メール・要返信メールを抽出するよう依頼した場合に適用。発火フレーズ (部分マッチで反応すること):
+
+- 日本語: 「メールチェック」「メール確認」「返信すべき」「要返信」「未返信」「重要なメール」「優先度の高い」「ピックアップ」「目を通すべき」
+- English: "check my emails", "triage my inbox", "scan inbox", "emails I should reply to", "important emails", "high-priority", "highlights", "what needs my attention"
+
+### ⚠️ `is:unread` や `is:important` でフィルタしない
+
+- `is:unread` ≠ 未返信。ユーザーがどこかの Gmail クライアントで開いた瞬間に「既読」になるため、返信したかどうかの指標にならない。
+- `is:important` ≠ ユーザーの言う「重要」。Gmail の重要マーカーは自動付与で大量にノイズが含まれる。ユーザーは**人間判断**を期待している (送信者・内容・文脈で判定)。
+
+ベースクエリは以下。これで取得した上で各スレッドを判定する:
+
+```bash
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+```
+
+期間のデフォルトは `newer_than:7d` 〜 `newer_than:14d`。**`1d` に縮めるのは禁止** — 滞留している返信を見落とす。
+
+### ⚠️ 最終送信者の判定には `lastSentMessage` を使う (`messages[-1]` ではない)
+
+`get_thread` は下書きを送信済みメッセージと並べて返します。`messages[-1]` を読むと、直前に作成した自分の下書きが送信済み返信と誤認されます。「最後に発言したのは誰か」の判定には必ず `data.lastSentMessage` (下書きでない最新メッセージ) を読んでください。新しい下書きを作る前に `data.hasDraft` を確認し、既存の下書きの上に重ねないこと。
+
+### トリアージ依頼でのクエリ例
+
+**✅ OK — まずこれで取得してから各スレッドを判定:**
+
+```bash
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+```
+
+**❌ NG — トリアージ依頼の意図と合わない:**
+
+```bash
+# is:unread → 開封状態でのフィルタ。未返信とは別物。トリアージで使用禁止
+.ccskill-gmail/api get action=search query="is:unread"
+
+# is:important → Gmail の自動マーカー。ノイズが多い。トリアージで使用禁止
+.ccskill-gmail/api get action=search query="is:important"
+
+# newer_than:1d → 範囲が狭すぎて滞留した返信を見落とす。7d〜14d を使うこと
+.ccskill-gmail/api get action=search query="newer_than:1d in:inbox"
+```
+
+完全な分類フロー (reply-now / waiting / draft-needed / fyi / archive) は [reference/triage.md](reference/triage.md) を参照。
+
+---
+
+## PDF 保存 — `download` と `save-pdf` の使い分け
+
+ユーザーから「メールを PDF で保存して」と依頼された場合、以下の優先順位で取得元を選択:
+
+1. **添付 PDF (最優先)。** 必ず `list_attachments` を先に実行。`application/pdf` の添付があれば `download` で保存。発行元提供の添付ファイルは本文変換より優先。
+2. **本文中の PDF ダウンロードリンク。** 本文を変換せず、リンク先の PDF を取得。
+3. **`save-pdf` (本文 HTML の変換) — 最終手段。** 上記いずれも存在しない場合のみ使用。
+
+ステップ 1 を飛ばすと、添付 PDF が存在しているのに見栄えの悪い本文変換版を黙って生成してしまう。
 
 ---
 
@@ -144,7 +215,7 @@ Claude は JSON を直接読みます。レスポンスが大きく切り詰め�
 | 既読・未読 API (mark_read / mark_unread / bulk) | [reference/status.md](reference/status.md) |
 | スレッド API (archive / move_to_inbox / move_to_trash / bulk) | [reference/thread.md](reference/thread.md) |
 | マーカー API (star / unstar / mark_important / unmark_important) | [reference/marker.md](reference/marker.md) |
-| Inbox triage / 要返信メール抽出 | [reference/triage.md](reference/triage.md) |
+| Inbox triage / 要返信メール抽出 / 重要なメール / ピックアップ — **これらの依頼ではクエリ構築前に必ず参照すること** | [reference/triage.md](reference/triage.md) |
 | メールを PDF で保存（添付 PDF を本文変換より優先） | [examples.md §5](examples.md) |
 | 約束/依頼の構造化抽出 | [reference/commitment.md](reference/commitment.md) |
 | 操作履歴（`ccskill-gmail history`） | [reference/history.md](reference/history.md) |
