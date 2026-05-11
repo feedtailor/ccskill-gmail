@@ -10,13 +10,9 @@ A Claude Code skill for Gmail, designed to complement (not replace) the standard
 
 ## Overview
 
-This skill operates Gmail through a Web API built with Google Apps Script (GAS). Email search, reading, draft creation, label management, attachment download, and PDF export are supported.
+The skill talks to Gmail through a Web API hosted on Google Apps Script (GAS). Supported actions: search, reading, draft creation (no send), label management, attachment download, PDF export.
 
-**Positioning**: Companion to the standard Gmail connector available in Claude.ai and Codex. Use the standard connector for everyday search / read / draft. Use this skill for project-bound multi-account operation (different Google account per `cd`), attachment file downloads, email-to-PDF export, local audit log, and shell-script automation.
-
-**Design philosophy**: Send functionality is intentionally excluded. Drafts are created and then reviewed and sent by the human in Gmail — a safety-by-design approach.
-
-**Security**: The Web App is published as "Only myself" and authenticated via clasp's OAuth token. The active Google account is bound to the project directory you `cd` into — run `ccskill-gmail info` to confirm which account is active. Operation history is recorded locally; see [reference/history.md](reference/history.md).
+The Google account is bound to the project directory you `cd` into — run `ccskill-gmail info` to confirm which account is active.
 
 ---
 
