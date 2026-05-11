@@ -121,32 +121,6 @@ Write(".ccskill-gmail/tmp/payload.json") -> {"action":"create_reply_draft","thre
 
 ---
 
-## PDF 保存ガイダンス — `download` と `save-pdf` の使い分け
-
-ユーザーから「メールを PDF で保存して」と依頼された場合、以下の優先順位で取得元を選択すること:
-
-1. **添付 PDF（最優先）。** 必ず `list_attachments` を先に実行する。`application/pdf` の添付ファイルがあれば、`download` サブコマンドでそれを保存する。発行元が提供した添付ファイルは、本文を変換したものより優先する。
-2. **本文中の PDF ダウンロードリンク。** サービスによっては PDF を添付せず本文中にダウンロードリンクとして埋め込んでいることがある。本文を変換するのではなく、リンク先の PDF を取得する。
-3. **本文 HTML の変換（`save-pdf`）— 最終手段。** 添付 PDF も本文中の PDF リンクも無い場合にのみ使用する。`save-pdf` は本文 HTML を headless Chrome でレンダリングするため、レイアウトが崩れることがあり、添付 PDF が提供されているケースでは適切な選択肢ではない。
-
-ステップ 1 を飛ばすと、添付 PDF が存在しているのに見栄えの悪い本文変換版を黙って生成してしまう。
-
----
-
-## メールレビュー — 重要ルール
-
-ユーザーが受信箱をスキャンしたり、要返信メールを抽出するよう依頼した場合（例:「メールチェックして」「返信すべきメールある？」「顧客メール確認して」）は以下のルールを適用します。**reply-now / waiting / draft-needed / fyi / archive の完全な分類フローは必ず [reference/triage.md](reference/triage.md) を参照してください。**
-
-### ⚠️ `is:unread` でフィルタしない
-
-**未読 ≠ 未返信です。** ユーザーがどこかの Gmail クライアントでメールを開いた瞬間に「既読」になります — 返信したことを意味しません。代わりに `in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums` を使用してください。推奨クエリと理由は [reference/triage.md](reference/triage.md#recommended-search-query) を参照。
-
-### ⚠️ 最終送信者の判定には `lastSentMessage` を使う（`messages[-1]` ではない）
-
-`get_thread` は下書きを送信済みメッセージと並べて返します。`messages[-1]` を読むと、直前に作成した自分の下書きが送信済み返信と誤認されます。「最後に発言したのは誰か」の判定には必ず `data.lastSentMessage`（最新の **下書きでない** メッセージ）を読んでください。新しい下書きを作る前に `data.hasDraft` を確認し、既存の下書きの上に重ねないこと。
-
----
-
 ## レスポンス形式
 
 ```json
@@ -167,7 +141,8 @@ Claude は JSON を直接読みます。レスポンスが大きく切り詰め�
 | 読み取り API (get_thread, list_attachments 等) | [reference/read.md](reference/read.md) |
 | 下書き API (create_draft, create_reply_draft 等) | [reference/draft.md](reference/draft.md) |
 | ラベル / ステータス / スレッド / マーカー API | [reference/{label,status,thread,marker}.md](reference/) |
-| Inbox triage ワークフロー | [reference/triage.md](reference/triage.md) |
+| Inbox triage / 要返信メール抽出 | [reference/triage.md](reference/triage.md) |
+| メールを PDF で保存（添付 PDF を本文変換より優先） | [examples.md §5](examples.md) |
 | 約束/依頼の構造化抽出 | [reference/commitment.md](reference/commitment.md) |
 | 操作履歴（`ccskill-gmail history`） | [reference/history.md](reference/history.md) |
 | シェルスクリプト生成 | [reference/scripting.md](reference/scripting.md) |
