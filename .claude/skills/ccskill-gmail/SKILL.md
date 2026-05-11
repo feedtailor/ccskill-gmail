@@ -177,7 +177,7 @@ The get subcommand automatically URL-encodes values, so Japanese text can be use
 | get_message | Get message details | `messageId` (required) |
 | list_labels | List labels | - |
 | get_unread_count | Get unread email count | `label` (optional, default INBOX) |
-| list_attachments | List attachments | `messageId` (required) |
+| list_attachments | List attachments — **always call this before saving an email as PDF** (an attached PDF must be downloaded, not re-rendered) | `messageId` (required) |
 | get_attachment | Get attachment | `messageId` (required), `attachmentIndex` (required, 0-based) |
 | get_message_html | Get message body HTML | `messageId` (required), `includeHeaders` (optional, default true) |
 | list_drafts | List drafts | `maxResults` (optional, default 20, max 100) |
@@ -238,13 +238,15 @@ The get subcommand automatically URL-encodes values, so Japanese text can be use
 # Get unread count for a specific label
 .ccskill-gmail/api get action=get_unread_count label=Important
 
-# List attachments
+# List attachments — ALWAYS run this before saving an email as PDF
 .ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
 
-# Download attachment (recommended: download subcommand)
+# Download attachment (PREFERRED for receipts / invoices / statements
+#   when an application/pdf attachment exists — see "PDF Saving Guidance" below)
 .ccskill-gmail/api download MESSAGE_ID 0 .ccskill-gmail/tmp/attachment.pdf
 
-# Save email as PDF (recommended: save-pdf subcommand -- fetches HTML + converts to PDF in one step)
+# Save email as PDF — LAST RESORT (check list_attachments first;
+#   if an attached PDF exists, use `download` instead of this command)
 .ccskill-gmail/api save-pdf MESSAGE_ID ./email.pdf
 
 # Save email body as HTML
@@ -313,6 +315,18 @@ The get subcommand automatically URL-encodes values, so Japanese text can be use
 # Delete a draft
 .ccskill-gmail/api post '{"action":"delete_draft","draftId":"DRAFT_ID"}'
 ```
+
+---
+
+## PDF Saving Guidance — Choosing Between `download` and `save-pdf`
+
+When the user asks to save an email as a PDF, choose the source in this order:
+
+1. **Attached PDF (preferred).** Always run `list_attachments` first. If the message has an `application/pdf` attachment, save that via the `download` subcommand. This is the publisher's authoritative document and must take precedence — typical examples are receipts, invoices, statements, contracts.
+2. **PDF download link inside the body.** Some services (Stripe, PayPal, payroll systems, etc.) embed a "Download receipt/invoice" link in the email body instead of attaching the file. Fetch the linked PDF rather than re-rendering the body.
+3. **HTML body conversion (`save-pdf`) — last resort.** Use only when no attached PDF and no in-body PDF link exist. `save-pdf` renders the HTML body via headless Chrome, which can break formatting and is never the right choice when an authoritative PDF was provided.
+
+Skipping step 1 silently produces a lower-quality artifact (re-rendered HTML) when an authoritative PDF was right there. This is especially harmful for tax / accounting documents.
 
 ---
 

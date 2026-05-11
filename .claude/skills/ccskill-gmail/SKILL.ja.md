@@ -179,7 +179,7 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 | get_message | メッセージ詳細取得 | `messageId`（必須） |
 | list_labels | ラベル一覧 | - |
 | get_unread_count | 未読メール件数 | `label`（任意、デフォルト INBOX） |
-| list_attachments | 添付ファイル一覧 | `messageId`（必須） |
+| list_attachments | 添付ファイル一覧 — **メールを PDF で保存する前に必ず実行する**（添付 PDF がある場合は本文変換ではなくそれを保存する） | `messageId`（必須） |
 | get_attachment | 添付ファイル取得 | `messageId`（必須）、`attachmentIndex`（必須、0始まり） |
 | get_message_html | メール本文 HTML 取得 | `messageId`（必須）、`includeHeaders`（任意、デフォルト true） |
 | list_drafts | 下書き一覧 | `maxResults`（任意、デフォルト 20、最大 100） |
@@ -240,13 +240,15 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 # 特定ラベルの未読件数
 .ccskill-gmail/api get action=get_unread_count label=重要
 
-# 添付ファイル一覧
+# 添付ファイル一覧 — メールを PDF で保存する前に必ず実行
 .ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
 
-# 添付ファイルダウンロード（推奨: download サブコマンド）
+# 添付ファイルダウンロード（領収書・請求書・明細など application/pdf 添付がある場合は最優先で使用
+#   — 詳細は下記「PDF 保存ガイダンス」を参照）
 .ccskill-gmail/api download MESSAGE_ID 0 .ccskill-gmail/tmp/attachment.pdf
 
-# メールを PDF で保存（推奨: save-pdf サブコマンド — HTML 取得 + PDF 変換を一括で実行）
+# メールを PDF で保存 — 最終手段（先に list_attachments を確認すること。
+#   添付 PDF がある場合は `download` を使い、このコマンドは使わない）
 .ccskill-gmail/api save-pdf MESSAGE_ID ./email.pdf
 
 # メール本文を HTML で保存
@@ -315,6 +317,18 @@ get サブコマンドは値を自動的に URL エンコードするため、�
 # 下書き削除
 .ccskill-gmail/api post '{"action":"delete_draft","draftId":"DRAFT_ID"}'
 ```
+
+---
+
+## PDF 保存ガイダンス — `download` と `save-pdf` の使い分け
+
+ユーザーから「メールを PDF で保存して」と依頼された場合、以下の優先順位で取得元を選択すること:
+
+1. **添付 PDF（最優先）。** 必ず `list_attachments` を先に実行する。`application/pdf` の添付ファイルがあれば、`download` サブコマンドでそれを保存する。発行元が用意した正式書類であり、これを最優先に扱う — 領収書・請求書・明細・契約書などが典型例。
+2. **本文中の PDF ダウンロードリンク。** サービスによっては（Stripe、PayPal、給与システム等）PDF を添付せず本文に「領収書をダウンロード」リンクとして埋め込んでいることがある。本文を変換するのではなく、リンク先の PDF を取得する。
+3. **本文 HTML の変換（`save-pdf`）— 最終手段。** 添付 PDF も本文中の PDF リンクも無い場合にのみ使用する。`save-pdf` は本文 HTML を headless Chrome でレンダリングするため、レイアウトが崩れることがあり、正式 PDF が提供されているケースでは適切な選択肢ではない。
+
+ステップ 1 を飛ばすと、正式 PDF が存在しているのに見栄えの悪い本文変換版を黙って生成してしまう。特に税務・会計書類では実害が出やすい。
 
 ---
 
