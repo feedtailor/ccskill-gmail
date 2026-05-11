@@ -138,7 +138,10 @@ Claude reads the JSON directly. Only use `| jq` when the response is large enoug
 | Search query syntax | [reference/search.md](reference/search.md) |
 | Read APIs (get_thread, list_attachments, ...) | [reference/read.md](reference/read.md) |
 | Draft APIs (create_draft, create_reply_draft, ...) | [reference/draft.md](reference/draft.md) |
-| Label / status / thread / marker APIs | [reference/{label,status,thread,marker}.md](reference/) |
+| Label APIs (add_label, remove_label, bulk variants) | [reference/label.md](reference/label.md) |
+| Read/unread APIs (mark_read, mark_unread, bulk variants) | [reference/status.md](reference/status.md) |
+| Thread APIs (archive, move_to_inbox, move_to_trash, bulk variants) | [reference/thread.md](reference/thread.md) |
+| Marker APIs (star, unstar, mark_important, unmark_important) | [reference/marker.md](reference/marker.md) |
 | Inbox triage / "emails that need a reply" workflow | [reference/triage.md](reference/triage.md) |
 | Saving an email as PDF (prefer attached PDF over body conversion) | [examples.md §5](examples.md) |
 | Commitment extraction | [reference/commitment.md](reference/commitment.md) |

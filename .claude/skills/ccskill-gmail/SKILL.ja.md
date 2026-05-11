@@ -140,7 +140,10 @@ Claude は JSON を直接読みます。レスポンスが大きく切り詰め�
 | 検索クエリ構文 | [reference/search.md](reference/search.md) |
 | 読み取り API (get_thread, list_attachments 等) | [reference/read.md](reference/read.md) |
 | 下書き API (create_draft, create_reply_draft 等) | [reference/draft.md](reference/draft.md) |
-| ラベル / ステータス / スレッド / マーカー API | [reference/{label,status,thread,marker}.md](reference/) |
+| ラベル API (add_label / remove_label / bulk) | [reference/label.md](reference/label.md) |
+| 既読・未読 API (mark_read / mark_unread / bulk) | [reference/status.md](reference/status.md) |
+| スレッド API (archive / move_to_inbox / move_to_trash / bulk) | [reference/thread.md](reference/thread.md) |
+| マーカー API (star / unstar / mark_important / unmark_important) | [reference/marker.md](reference/marker.md) |
 | Inbox triage / 要返信メール抽出 | [reference/triage.md](reference/triage.md) |
 | メールを PDF で保存（添付 PDF を本文変換より優先） | [examples.md §5](examples.md) |
 | 約束/依頼の構造化抽出 | [reference/commitment.md](reference/commitment.md) |
