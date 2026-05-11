@@ -33,6 +33,14 @@ Google Apps Script (GAS) でホストされた Web API を通じて Gmail を操
 
 GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は書き込み（`create_draft`、`mark_read`、`add_label` 等）。間違ったメソッドを使うと `Unknown action` エラーが返ります。get サブコマンドは値を自動 URL エンコードするため日本語はそのまま渡せます。
 
+**❌ よくある間違い — これらは存在しません:**
+
+- `.ccskill-gmail/api.sh ...` — `.sh` 拡張子は無い。スクリプト名は `.ccskill-gmail/api`
+- `.ccskill-gmail/api search ...` — `search` は **action** であってサブコマンドではない
+- `.ccskill-gmail/api list_labels ...` — 同上。action は常に `action=...` で渡す
+
+サブコマンドはちょうど 5 つ: `get`、`post`、`download`、`save-html`、`save-pdf`。それ以外 (`search`、`get_thread`、`create_draft`、`mark_read` 等) はすべて `action` の値として `get` / `post` に渡します。
+
 > **「要返信メール」「重要なメール」「ピックアップ」等の依頼に `is:unread` / `is:important` を使ってはいけません。** ユーザーがレビュー・トリアージ・重要メール抽出を依頼した場合は、必ず先に [reference/triage.md](reference/triage.md) を読むこと。
 
 全アクション一覧と個別仕様は [reference/index.md](reference/index.md)、実行可能な例は [examples.md](examples.md) を参照。
@@ -62,6 +70,27 @@ GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は�
 ### ⚠️ 最終送信者の判定には `lastSentMessage` を使う (`messages[-1]` ではない)
 
 `get_thread` は下書きを送信済みメッセージと並べて返します。`messages[-1]` を読むと、直前に作成した自分の下書きが送信済み返信と誤認されます。「最後に発言したのは誰か」の判定には必ず `data.lastSentMessage` (下書きでない最新メッセージ) を読んでください。新しい下書きを作る前に `data.hasDraft` を確認し、既存の下書きの上に重ねないこと。
+
+### トリアージ依頼でのクエリ例
+
+**✅ OK — まずこれで取得してから各スレッドを判定:**
+
+```bash
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+```
+
+**❌ NG — トリアージ依頼の意図と合わない:**
+
+```bash
+# is:unread → 開封状態でのフィルタ。未返信とは別物。トリアージで使用禁止
+.ccskill-gmail/api get action=search query="is:unread"
+
+# is:important → Gmail の自動マーカー。ノイズが多い。トリアージで使用禁止
+.ccskill-gmail/api get action=search query="is:important"
+
+# newer_than:1d → 範囲が狭すぎて滞留した返信を見落とす。7d〜14d を使うこと
+.ccskill-gmail/api get action=search query="newer_than:1d in:inbox"
+```
 
 完全な分類フロー (reply-now / waiting / draft-needed / fyi / archive) は [reference/triage.md](reference/triage.md) を参照。
 
