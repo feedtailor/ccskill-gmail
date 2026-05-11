@@ -87,11 +87,25 @@ The default behavior (`skipSelf: true`, `replyAll: true`) correctly creates a re
 
 ## 5. Save Email as PDF (Print)
 
-```bash
-# Save an email as PDF (fetches HTML and converts to PDF in one step)
-.ccskill-gmail/api save-pdf MESSAGE_ID ./receipt.pdf
+When the user wants to save an email as a PDF (a typical case being a receipt or invoice), check for an attached PDF first. The attached file is the publisher's authoritative document; re-rendering the body with `save-pdf` is a last resort. See [SKILL.md "PDF Saving Guidance"](SKILL.md#pdf-saving-guidance--choosing-between-download-and-save-pdf) for the full rule.
 
-# To save as HTML instead
+### Example: save a monthly receipt that came as an attached PDF
+
+```bash
+# 1. ALWAYS check attachments first
+.ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
+
+# 2. If the response includes an application/pdf attachment, download it
+.ccskill-gmail/api download MESSAGE_ID 0 ./2026-05_acme_receipt.pdf
+```
+
+### Example: save the body when no PDF attachment exists
+
+```bash
+# Fallback when list_attachments returns no application/pdf entry
+.ccskill-gmail/api save-pdf MESSAGE_ID ./email.pdf
+
+# Or save the raw HTML
 .ccskill-gmail/api save-html MESSAGE_ID ./email.html
 ```
 
