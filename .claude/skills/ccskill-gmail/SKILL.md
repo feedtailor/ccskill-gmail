@@ -241,8 +241,8 @@ The get subcommand automatically URL-encodes values, so Japanese text can be use
 # List attachments — ALWAYS run this before saving an email as PDF
 .ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
 
-# Download attachment (PREFERRED for receipts / invoices / statements
-#   when an application/pdf attachment exists — see "PDF Saving Guidance" below)
+# Download attachment (PREFERRED when an application/pdf attachment exists
+#   — see "PDF Saving Guidance" below)
 .ccskill-gmail/api download MESSAGE_ID 0 .ccskill-gmail/tmp/attachment.pdf
 
 # Save email as PDF — LAST RESORT (check list_attachments first;
@@ -322,11 +322,11 @@ The get subcommand automatically URL-encodes values, so Japanese text can be use
 
 When the user asks to save an email as a PDF, choose the source in this order:
 
-1. **Attached PDF (preferred).** Always run `list_attachments` first. If the message has an `application/pdf` attachment, save that via the `download` subcommand. This is the publisher's authoritative document and must take precedence — typical examples are receipts, invoices, statements, contracts.
-2. **PDF download link inside the body.** Some services (Stripe, PayPal, payroll systems, etc.) embed a "Download receipt/invoice" link in the email body instead of attaching the file. Fetch the linked PDF rather than re-rendering the body.
-3. **HTML body conversion (`save-pdf`) — last resort.** Use only when no attached PDF and no in-body PDF link exist. `save-pdf` renders the HTML body via headless Chrome, which can break formatting and is never the right choice when an authoritative PDF was provided.
+1. **Attached PDF (preferred).** Always run `list_attachments` first. If the message has an `application/pdf` attachment, save it via the `download` subcommand. The publisher-provided attachment takes precedence over anything re-rendered from the email body.
+2. **PDF download link inside the body.** Some services embed a PDF download link in the body instead of attaching the file. Fetch the linked PDF rather than re-rendering the body.
+3. **HTML body conversion (`save-pdf`) — last resort.** Use only when no attached PDF and no in-body PDF link exists. `save-pdf` renders the HTML body via headless Chrome, which can break formatting and is never the right choice when an attached PDF was provided.
 
-Skipping step 1 silently produces a lower-quality artifact (re-rendered HTML) when an authoritative PDF was right there. This is especially harmful for tax / accounting documents.
+Skipping step 1 silently produces a lower-quality artifact (re-rendered HTML) when an authoritative PDF was right there.
 
 ---
 
