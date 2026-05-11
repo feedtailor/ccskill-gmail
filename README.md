@@ -8,17 +8,25 @@ For everyday search, reading, and reply drafting alone, the standard Gmail conne
 
 [日本語版 README はこちら](README.ja.md)
 
-## Comparison
+## Feature comparison
 
-| Use case | Standard connector or ccskill-gmail? |
-|---|---|
-| Mail search and reading | both |
-| Draft creation | both |
-| Multi-account support | ccskill-gmail |
-| Attachment downloads | ccskill-gmail |
-| Save mail body as PDF | ccskill-gmail |
-| Audit log | ccskill-gmail |
-| Build Gmail integration scripts | ccskill-gmail |
+| Capability / task | Gmail Connector | Workspace MCP (preview) | ccskill-gmail |
+|---|:---:|:---:|:---:|
+| Search and read mail | ○ | ○ | ○ |
+| Draft creation | ○ | ○ | ○ |
+| Label add / remove | × | ○ | ○ |
+| Move to trash | × | × | ○ |
+| Archive | × | × | ○ |
+| Toggle read / unread | × | × | ○ |
+| Add star | × | × | ○ |
+| Attachment download (invoice PDFs, etc.) | × | × | ○ |
+| Export mail body to PDF | × | × | ○ |
+| Prompt-injection defenses (neutralizes hidden prompts in HTML mail) | × | × | ○ |
+| Local audit log of every operation | × | × | ○ |
+| Multi-account support | × | × | ○ |
+| Build custom Gmail scripts | × | × | ○ |
+
+Sources: [Claude official docs — "Use Google Workspace Connectors"](https://support.claude.com/en/articles/10166901-use-google-workspace-connectors) / [Google — "Configure Workspace MCP servers"](https://developers.google.com/workspace/guides/configure-mcp-servers). Workspace MCP is in preview at the time of writing — the surface may change.
 
 ## Distinctive features
 
