@@ -37,6 +37,46 @@ For the full action list and per-action specs, see [reference/index.md](referenc
 
 ---
 
+## Email Review — Critical Rules
+
+Applies whenever the user asks to scan / review / triage the inbox or pick out important / reply-needed emails. Trigger phrases (partial match counts — apply this section if the request roughly matches any of these):
+
+- 「メールチェック」「メール確認」「返信すべき」「要返信」「未返信」「重要なメール」「優先度の高い」「ピックアップ」「目を通すべき」
+- "check my emails", "triage my inbox", "scan inbox", "emails I should reply to", "important emails", "high-priority", "highlights", "what needs my attention"
+
+### ⚠️ Do NOT filter with `is:unread` or `is:important`
+
+- `is:unread` ≠ unreplied. A message becomes "read" the moment the user opens it in any client — that says nothing about whether they replied.
+- `is:important` ≠ what the user means by "important". The Gmail Important marker is auto-assigned and noisy. The user expects **your human-style judgment** based on sender / content / context.
+
+Use this query as the base, then judge per-thread:
+
+```bash
+.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+```
+
+Date range default: `newer_than:7d` to `newer_than:14d`. **Do not shrink to `1d`** — it misses stalled replies.
+
+### ⚠️ Use `lastSentMessage` (NOT `messages[-1]`) to determine the last sender
+
+`get_thread` returns drafts inline with sent messages. Reading `messages[-1]` will misclassify your own freshly created draft as the latest reply. Always read `data.lastSentMessage` (most recent **non-draft** message). Inspect `data.hasDraft` before creating another draft — do NOT stack drafts on top.
+
+For the full classification workflow (reply-now / waiting / draft-needed / fyi / archive), read [reference/triage.md](reference/triage.md).
+
+---
+
+## PDF Saving — Choosing Between `download` and `save-pdf`
+
+When the user asks to save an email as PDF, choose the source in this order:
+
+1. **Attached PDF (preferred).** Run `list_attachments` first. If an `application/pdf` attachment exists, save it via `download`. The publisher-provided attachment takes precedence over anything re-rendered from the body.
+2. **PDF download link in the body.** Fetch the linked PDF rather than re-rendering the body.
+3. **`save-pdf` (HTML body conversion) — last resort.** Only when neither of the above exists.
+
+Skipping step 1 silently produces a lower-quality artifact when an authoritative PDF was right there.
+
+---
+
 ## Rules When Calling `.ccskill-gmail/api`
 
 The three blocks below are strict rules. Follow them whenever you invoke `.ccskill-gmail/api`, build JSON for POST requests, or read message content.
