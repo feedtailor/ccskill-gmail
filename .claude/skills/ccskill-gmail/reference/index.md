@@ -45,3 +45,11 @@
 |----------|------|-------------|
 | Inbox Triage | [triage.md](triage.md) | Structured inbox review and classification |
 | Commitment Extraction | [commitment.md](commitment.md) | Extract action items and promises from threads |
+
+## Other Topics
+
+| Topic | File | Description |
+|-------|------|-------------|
+| Operation History | [history.md](history.md) | Local audit log of every API operation (`ccskill-gmail history`) |
+| Shell Script Generation | [scripting.md](scripting.md) | Building standalone Gmail automation scripts |
+| Limitations | [limitations.md](limitations.md) | Permission control, size limits, and other constraints |
