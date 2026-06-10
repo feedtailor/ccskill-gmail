@@ -32,6 +32,7 @@ ccskill-gmail - Gmail Skill for Claude Code
 Usage: ccskill-gmail <command> [args...]
 
 Commands:
+  api <get|post|...> [args...]     Call the Gmail API (same as .ccskill-gmail/api)
   setup                            One-time setup (clasp + symlink)
   install [--user NAME] [NAME] [DIR]  Install to a project
   uninstall [DIR]                  Uninstall from a project
@@ -72,6 +73,9 @@ COMMAND="$1"
 shift
 
 case "$COMMAND" in
+    api)
+        exec "$CCSKILL_GMAIL_DIR/lib/api" "$@"
+        ;;
     setup)
         exec "$CCSKILL_GMAIL_DIR/commands/setup.sh" "$@"
         ;;
