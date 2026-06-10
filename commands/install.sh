@@ -259,182 +259,18 @@ fi
 echo -e "${GREEN}✓ api script copied, directory secured${NC}"
 
 # ========================================
-# 8. clasp create
+# 8-12. GAS プロビジョニング (作成 → push → デプロイ → 認可 → 検証)
 # ========================================
 
-echo "Step 3: Creating GAS project..."
-echo ""
+echo "Step 3: Provisioning GAS project..."
 
-# clasp create を一時ディレクトリで実行
-CLASP_TMPDIR=$(mktemp -d)
-/bin/cp "$CCSKILL_GMAIL_DIR/gas-template/appsscript.json" "$CLASP_TMPDIR/"
+source "$CCSKILL_GMAIL_DIR/lib/provision.sh"
 
-if ! (cd "$CLASP_TMPDIR" && _clasp create --type standalone --title "$GAS_PROJECT_TITLE"); then
-    echo ""
-    echo -e "${RED}Error: clasp create failed${NC}"
-    echo ""
-    echo "Possible causes:"
-    echo "  1. Apps Script API is not enabled for this account"
-    echo "     → Enable it at: https://script.google.com/home/usersettings"
-    echo "  2. Google credentials have expired"
-    echo "     → Run: ccskill-gmail setup"
-    echo ""
-    echo "After fixing, re-run: ccskill-gmail install"
-    rm -rf "$CLASP_TMPDIR"
-    exit 1
-fi
+provision_gas "$GAS_DIR" "$GAS_PROJECT_TITLE"
 
-# 生成された .clasp.json を $GAS_DIR に保存
-if [ -f "$CLASP_TMPDIR/.clasp.json" ]; then
-    /bin/cp "$CLASP_TMPDIR/.clasp.json" "$GAS_DIR/.clasp.json"
-else
-    echo -e "${RED}Error: clasp create did not produce .clasp.json${NC}"
-    echo ""
-    echo "Run the following to re-authenticate:"
-    echo "  ccskill-gmail setup"
-    rm -rf "$CLASP_TMPDIR"
-    exit 1
-fi
-
-rm -rf "$CLASP_TMPDIR"
-
-# rootDir を設定
-tmp=$(mktemp)
-jq '.rootDir = "."' "$GAS_DIR/.clasp.json" > "$tmp"
-mv "$tmp" "$GAS_DIR/.clasp.json"
-
-echo -e "${GREEN}✓ GAS project created${NC}"
-echo ""
-
-# ========================================
-# 9. push_gas で GAS コード push
-# ========================================
-
-echo "Pushing code to Google Apps Script..."
-push_gas "$GAS_DIR" "$CCSKILL_GMAIL_DIR"
-
-echo -e "${GREEN}✓ Code pushed${NC}"
-echo ""
-
-# ========================================
-# 10. deploy_gas で自動デプロイ
-# ========================================
-
-echo "Step 4: Deploying as Web App..."
-
-RESULT_FILE=$(mktemp)
-if ! deploy_gas "$GAS_DIR" "" "Initial deployment" "$RESULT_FILE"; then
-    echo -e "${RED}Error: Failed to deploy. Check clasp login status.${NC}"
-    rm -f "$RESULT_FILE"
-    exit 1
-fi
-
-DEPLOYMENT_ID=$(cat "$RESULT_FILE")
-rm -f "$RESULT_FILE"
-
-if [ -z "$DEPLOYMENT_ID" ]; then
-    echo -e "${RED}Error: Could not get deployment ID${NC}"
-    exit 1
-fi
-
-ENDPOINT_URL="https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec"
-
-echo -e "${GREEN}✓ Deployed successfully${NC}"
-echo "  Deployment ID: $DEPLOYMENT_ID"
-echo -e "  Endpoint URL: ${BLUE}$ENDPOINT_URL${NC}"
-echo ""
-
-# ========================================
-# 11. OAuth 認可
-# ========================================
-
-echo "================================================"
-echo "  Google Authorization Required (one-time only)"
-echo "================================================"
-echo ""
-echo "The Web App needs your permission to access Gmail."
-echo "A browser window will open - please click 'Allow' when prompted."
-echo ""
-echo -e "${YELLOW}NOTE: You may see 'This app isn't verified' warning.${NC}"
-echo "  Click 'Advanced' > 'Go to ... (unsafe)' > 'Allow'"
-echo ""
-
-echo "Authorization URL:"
-echo -e "  ${BLUE}$ENDPOINT_URL${NC}"
-echo ""
-echo "If the browser doesn't open automatically (e.g. SSH environment),"
-echo "open the URL above in your browser manually."
-echo ""
-echo -e "${YELLOW}If you see 'Unable to open file' or a redirect loop:${NC}"
-echo "  1. Open a private/incognito window"
-echo "  2. Go to https://accounts.google.com and sign in with"
-echo "     the Google account you want to use for this project"
-echo "  3. In the same window, paste this URL:"
-echo -e "     ${BLUE}$ENDPOINT_URL${NC}"
-echo ""
-
-read -p "Press Enter to open the authorization page..."
-
-open "$ENDPOINT_URL" 2>/dev/null || xdg-open "$ENDPOINT_URL" 2>/dev/null || true
-
-echo ""
-read -p "After the browser shows {\"ok\":true,...}, press Enter to continue..."
-
-# ========================================
-# 12. エンドポイント検証（Bearer トークン付き）
-# ========================================
-
-echo ""
-echo "Verifying endpoint..."
-
-source "$CCSKILL_GMAIL_DIR/lib/auth.sh"
-
-VERIFY_ATTEMPTS=0
-VERIFY_OK=false
-
-while [ $VERIFY_ATTEMPTS -lt 3 ]; do
-    RESPONSE=$(curl -sL --max-time 60 \
-        -H "Authorization: Bearer $(gas_token)" \
-        "$ENDPOINT_URL" 2>/dev/null)
-
-    if echo "$RESPONSE" | jq -e '.ok == true' >/dev/null 2>&1; then
-        echo -e "${GREEN}✓ Endpoint is working correctly${NC}"
-        VERIFY_OK=true
-        break
-    fi
-
-    VERIFY_ATTEMPTS=$((VERIFY_ATTEMPTS + 1))
-
-    if [ $VERIFY_ATTEMPTS -lt 3 ]; then
-        echo -e "${YELLOW}Endpoint not ready yet. This may happen if authorization is not complete.${NC}"
-        echo ""
-        echo "Please make sure you:"
-        echo "  1. Opened a private/incognito window"
-        echo "  2. Signed in at https://accounts.google.com with the correct account"
-        echo "  3. Pasted this URL in the same window:"
-        echo -e "     ${BLUE}$ENDPOINT_URL${NC}"
-        echo "  4. Clicked 'Allow' to authorize the script"
-        echo "  5. The browser shows {\"ok\":true,...}"
-        echo ""
-        read -p "Press Enter to retry (attempt $((VERIFY_ATTEMPTS + 1))/3)..."
-    fi
-done
-
-if [ "$VERIFY_OK" = false ]; then
-    echo -e "${YELLOW}Warning: Endpoint verification failed after 3 attempts.${NC}"
-    echo "The deployment was created but authorization may not be complete."
-    echo ""
-    echo "To complete setup later:"
-    echo "  1. Open a private/incognito browser window"
-    echo "  2. Sign in to your Google account at https://accounts.google.com"
-    echo "  3. In the same window, open this URL:"
-    echo -e "     ${BLUE}$ENDPOINT_URL${NC}"
-    echo "  4. Click 'Allow' to authorize the script"
-    echo "  5. Verify with:"
-    echo "     .ccskill-gmail/api get action=get_profile"
-fi
-
-echo ""
+DEPLOYMENT_ID="$PROVISION_DEPLOYMENT_ID"
+ENDPOINT_URL="$PROVISION_ENDPOINT"
+VERIFY_OK="$PROVISION_VERIFY_OK"
 
 # ========================================
 # 13. .ccskill-metadata.json 作成
