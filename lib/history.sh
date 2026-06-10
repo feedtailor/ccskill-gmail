@@ -241,6 +241,7 @@ _ccskill_history_record() {
         --arg id          "$record_id" \
         --arg timestamp   "$timestamp" \
         --arg project     "$project" \
+        --arg account     "${CCSKILL_HISTORY_ACCOUNT:-}" \
         --arg subcommand  "$subcommand" \
         --arg action      "$action" \
         --argjson identifiers  "$identifiers_json" \
@@ -253,6 +254,7 @@ _ccskill_history_record() {
             id:          $id,
             timestamp:   $timestamp,
             project:     $project,
+            account:     (if $account == "" then null else $account end),
             subcommand:  $subcommand,
             action:      $action,
             identifiers: $identifiers,
@@ -313,27 +315,31 @@ _ccskill_history_list() {
     local count="${1:-20}"
     local format="${2:-human}"
 
-    local dir="${CCSKILL_HISTORY_DIR:-}"
-    if [ -z "$dir" ]; then
+    # 複数ディレクトリ (コロン区切り CCSKILL_HISTORY_DIRS) に対応 (#125)。
+    # 未設定なら従来どおり CCSKILL_HISTORY_DIR 単独
+    local dirs="${CCSKILL_HISTORY_DIRS:-${CCSKILL_HISTORY_DIR:-}}"
+    if [ -z "$dirs" ]; then
         printf 'Error: CCSKILL_HISTORY_DIR is not set\n' >&2
         return 1
     fi
 
-    local audit_file="${dir}/audit.jsonl"
-    local backup_file="${dir}/audit.jsonl.1"
-
-    # バックアップ + 現行ファイルを連結して末尾 N 行を取得
+    # 各ディレクトリのバックアップ + 現行ファイルを連結
     local combined_lines=""
-    if [ -f "$backup_file" ] && [ -f "$audit_file" ]; then
-        combined_lines=$(cat "$backup_file" "$audit_file")
-    elif [ -f "$audit_file" ]; then
-        combined_lines=$(cat "$audit_file")
-    elif [ -f "$backup_file" ]; then
-        combined_lines=$(cat "$backup_file")
-    else
-        printf '(no history)\n'
-        return 0
-    fi
+    local d
+    local _ifs_bak="$IFS"
+    IFS=':'
+    for d in $dirs; do
+        IFS="$_ifs_bak"
+        [ -z "$d" ] && { IFS=':'; continue; }
+        if [ -f "$d/audit.jsonl.1" ]; then
+            combined_lines+=$(cat "$d/audit.jsonl.1")$'\n'
+        fi
+        if [ -f "$d/audit.jsonl" ]; then
+            combined_lines+=$(cat "$d/audit.jsonl")$'\n'
+        fi
+        IFS=':'
+    done
+    IFS="$_ifs_bak"
 
     if [ -z "$combined_lines" ]; then
         printf '(no history)\n'
@@ -358,9 +364,9 @@ _ccskill_history_list() {
         jq_filter="${jq_filter} | select(.response_ok == false)"
     fi
 
-    # フィルタ適用後に末尾 N 件を取得
+    # フィルタ適用 → 時系列ソート (複数ディレクトリの混在対応) → 末尾 N 件
     local lines
-    lines=$(printf '%s\n' "$combined_lines" | jq -c "$jq_filter" 2>/dev/null | tail -n "$count")
+    lines=$(printf '%s\n' "$combined_lines" | jq -c "$jq_filter" 2>/dev/null | jq -s -c 'sort_by(.timestamp)[]' 2>/dev/null | tail -n "$count")
 
     if [ -z "$lines" ]; then
         printf '(no history)\n'
@@ -376,7 +382,8 @@ _ccskill_history_list() {
             ( if .response_ok then \"OK\" else \"ERROR\" + (if .error then \": \" + .error else \"\" end) end ) as \$result |
             ( if .duration_ms != null then (.duration_ms / 1000 | . * 10 | round / 10 | tostring) + \"s\" else \"?s\" end ) as \$dur |
             ( .identifiers | to_entries | map(.key + \":\" + .value) | join(\" \") ) as \$ids |
-            \$dt + \" — \" + .action + \" (\" + (.subcommand | ascii_upcase) + \")\" + (if \$ids != \"\" then \" \" + \$ids else \"\" end) + \" → \" + \$result + \", \" + \$dur
+            ( if .account then \" @\" + .account else \"\" end ) as \$acct |
+            \$dt + \" — \" + .action + \" (\" + (.subcommand | ascii_upcase) + \")\" + (if \$ids != \"\" then \" \" + \$ids else \"\" end) + \" → \" + \$result + \", \" + \$dur + \$acct
         " 2>/dev/null
     fi
 }

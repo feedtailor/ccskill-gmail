@@ -262,6 +262,20 @@ accounts_list() {
     jq '.' "$(_accounts_file)"
 }
 
+# Write a project binding file (.ccskill-gmail/binding.json).
+# Usage: accounts_write_binding DIR EMAIL
+accounts_write_binding() {
+    local dir="$1"
+    local email="$2"
+    if [ -z "$dir" ] || [ -z "$email" ]; then
+        return 1
+    fi
+    mkdir -p "$dir/.ccskill-gmail" || return 1
+    printf '{"schema_version":"1.0","account":"%s","bound_at":"%s"}\n' \
+        "$email" "$(_accounts_now)" > "$dir/.ccskill-gmail/binding.json" || return 1
+    chmod 600 "$dir/.ccskill-gmail/binding.json" 2>/dev/null || true
+}
+
 # Number of registered accounts.
 accounts_count() {
     _accounts_has_jq || { echo 0; return 0; }

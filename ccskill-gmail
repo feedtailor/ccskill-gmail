@@ -35,6 +35,9 @@ Commands:
   api <get|post|...> [args...]     Call the Gmail API (same as .ccskill-gmail/api)
   account <add|list|default|remove>  Manage registered Gmail accounts
   skill <install|uninstall>        Register as a user skill (all projects)
+  bind <email|label> [DIR]         Pin a directory to an account (binding.json)
+  unbind [DIR]                     Remove a directory binding
+  migrate [--dry-run] [--yes]      Migrate legacy installs to central accounts
   setup                            One-time setup (clasp + symlink)
   install [--user NAME] [NAME] [DIR]  Install to a project
   uninstall [DIR]                  Uninstall from a project
@@ -83,6 +86,15 @@ case "$COMMAND" in
         ;;
     skill)
         exec "$CCSKILL_GMAIL_DIR/commands/skill.sh" "$@"
+        ;;
+    bind)
+        exec "$CCSKILL_GMAIL_DIR/commands/bind.sh" bind "$@"
+        ;;
+    unbind)
+        exec "$CCSKILL_GMAIL_DIR/commands/bind.sh" unbind "$@"
+        ;;
+    migrate)
+        exec "$CCSKILL_GMAIL_DIR/commands/migrate.sh" "$@"
         ;;
     setup)
         exec "$CCSKILL_GMAIL_DIR/commands/setup.sh" "$@"
