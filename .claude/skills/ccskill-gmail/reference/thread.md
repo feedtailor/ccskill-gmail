@@ -21,7 +21,7 @@ Archives a thread from the inbox. The email itself is not deleted and can be fou
 ### Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"archive","threadId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"archive","threadId":"19bf7f25b96ab637"}'
 ```
 
 ### Response Example
@@ -62,7 +62,7 @@ Restores an archived thread back to the inbox. The inverse operation of `archive
 ### Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"move_to_inbox","threadId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"move_to_inbox","threadId":"19bf7f25b96ab637"}'
 ```
 
 ### Response Example
@@ -104,7 +104,7 @@ Moves a thread to trash. It will be automatically deleted after 30 days.
 ### Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"move_to_trash","threadId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"move_to_trash","threadId":"19bf7f25b96ab637"}'
 ```
 
 ### Response Example
@@ -134,18 +134,18 @@ Moves a thread to trash. It will be automatically deleted after 30 days.
 
 ```bash
 # 1. Pick any one thread as a demo target (smoke test — NOT a triage query)
-.ccskill-gmail/api get action=search query="is:unread" maxResults=1
+ccskill-gmail api get action=search query="is:unread" maxResults=1
 
 # 2. View the content (THREAD_ID is obtained from step 1 results)
-.ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject'
+ccskill-gmail api get action=get_thread threadId=THREAD_ID | jq '.data.subject'
 
 # 3. Create a reply draft
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood."}'
+ccskill-gmail api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood."}'
 
 # 4. Mark as read and add label
-.ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
+ccskill-gmail api post '{"action":"mark_read","threadId":"THREAD_ID"}'
+ccskill-gmail api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 
 # 5. Archive to clean up the inbox
-.ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
+ccskill-gmail api post '{"action":"archive","threadId":"THREAD_ID"}'
 ```

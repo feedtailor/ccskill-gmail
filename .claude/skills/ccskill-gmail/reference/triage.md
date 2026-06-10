@@ -35,7 +35,7 @@ When the user asks to check, review, or triage their inbox, follow this structur
 
 ```bash
 # Fetch unread emails in primary inbox, filtering out automated senders
-.ccskill-gmail/api get action=search query="is:unread category:primary" maxResults=20
+ccskill-gmail api get action=search query="is:unread category:primary" maxResults=20
 ```
 
 If results are too many, narrow with date range (`after:YYYY/MM/DD`) or sender filters. See [search.md](search.md) Search Strategy for progressive refinement.
@@ -45,7 +45,7 @@ If results are too many, narrow with date range (`after:YYYY/MM/DD`) or sender f
 For each candidate thread, fetch the full conversation:
 
 ```bash
-.ccskill-gmail/api get action=get_thread threadId=THREAD_ID
+ccskill-gmail api get action=get_thread threadId=THREAD_ID
 ```
 
 ### Reading the response for triage
@@ -118,7 +118,7 @@ Do not take action without the user's confirmation.
 For "emails that need a reply", use:
 
 ```bash
-.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+ccskill-gmail api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
 ```
 
 Then for each thread call `get_thread` and read `data.lastSentMessage.from` (NOT `messages[-1].from`). If `lastSentMessage.from` is not the user, the thread is a reply-now / draft-needed candidate.

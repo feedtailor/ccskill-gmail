@@ -34,6 +34,7 @@ Usage: ccskill-gmail <command> [args...]
 Commands:
   api <get|post|...> [args...]     Call the Gmail API (same as .ccskill-gmail/api)
   account <add|list|default|remove>  Manage registered Gmail accounts
+  skill <install|uninstall>        Register as a user skill (all projects)
   setup                            One-time setup (clasp + symlink)
   install [--user NAME] [NAME] [DIR]  Install to a project
   uninstall [DIR]                  Uninstall from a project
@@ -79,6 +80,9 @@ case "$COMMAND" in
         ;;
     account)
         exec "$CCSKILL_GMAIL_DIR/commands/account.sh" "$@"
+        ;;
+    skill)
+        exec "$CCSKILL_GMAIL_DIR/commands/skill.sh" "$@"
         ;;
     setup)
         exec "$CCSKILL_GMAIL_DIR/commands/setup.sh" "$@"

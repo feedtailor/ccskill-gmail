@@ -21,7 +21,7 @@ Retrieves all messages in a thread by specifying the thread ID.
 ### Example
 
 ```bash
-.ccskill-gmail/api get action=get_thread threadId=19bf7f25b96ab637
+ccskill-gmail api get action=get_thread threadId=19bf7f25b96ab637
 ```
 
 ### Response Example
@@ -73,7 +73,7 @@ Retrieves details of a single message by specifying the message ID.
 ### Example
 
 ```bash
-.ccskill-gmail/api get action=get_message messageId=19bf7f25b96ab637
+ccskill-gmail api get action=get_message messageId=19bf7f25b96ab637
 ```
 
 ### Response Example
@@ -122,7 +122,7 @@ Retrieves a list of user-created labels.
 ### Example
 
 ```bash
-.ccskill-gmail/api get action=list_labels
+ccskill-gmail api get action=list_labels
 ```
 
 ### Response Example
@@ -165,10 +165,10 @@ Retrieves the unread email count for the inbox or a specific label.
 
 ```bash
 # Inbox unread count
-.ccskill-gmail/api get action=get_unread_count
+ccskill-gmail api get action=get_unread_count
 
 # Unread count for a specific label
-.ccskill-gmail/api get action=get_unread_count label="Important"
+ccskill-gmail api get action=get_unread_count label="Important"
 ```
 
 ### Response Example
@@ -214,7 +214,7 @@ Retrieves the list of attachments for a message. Use this to check sizes before 
 ### Example
 
 ```bash
-.ccskill-gmail/api get action=list_attachments messageId=19bf7f25b96ab637
+ccskill-gmail api get action=list_attachments messageId=19bf7f25b96ab637
 ```
 
 ### Response Example
@@ -265,7 +265,7 @@ Retrieves the content of an attachment as base64-encoded data. Returns an error 
 
 ```bash
 # Get an attachment and save locally (recommended: download subcommand)
-.ccskill-gmail/api download 19bf7f25b96ab637 0 .ccskill-gmail/tmp/report.pdf
+ccskill-gmail api download 19bf7f25b96ab637 0 .ccskill-gmail/tmp/report.pdf
 ```
 
 ### Response Example
@@ -323,10 +323,10 @@ Retrieves the email body as complete HTML. Used for PDF conversion or browser di
 
 ```bash
 # Save as HTML (recommended: save-html subcommand)
-.ccskill-gmail/api save-html 19bf7f25b96ab637 .ccskill-gmail/tmp/email.html
+ccskill-gmail api save-html 19bf7f25b96ab637 .ccskill-gmail/tmp/email.html
 
 # Save without headers
-.ccskill-gmail/api save-html 19bf7f25b96ab637 .ccskill-gmail/tmp/email.html false
+ccskill-gmail api save-html 19bf7f25b96ab637 .ccskill-gmail/tmp/email.html false
 ```
 
 ### Response Example
@@ -351,7 +351,7 @@ The `save-pdf` subcommand performs HTML retrieval and PDF conversion in a single
 
 ```bash
 # Recommended: One-step processing with save-pdf
-.ccskill-gmail/api save-pdf 19bf7f25b96ab637 ./email.pdf
+ccskill-gmail api save-pdf 19bf7f25b96ab637 ./email.pdf
 ```
 
 It auto-detects Chrome headless / wkhtmltopdf internally. If no tool is available, it saves the HTML and returns a guidance message.
@@ -371,7 +371,7 @@ Retrieves the account email address and unread count summary.
 ### Example
 
 ```bash
-.ccskill-gmail/api get action=get_profile
+ccskill-gmail api get action=get_profile
 ```
 
 ### Response Example

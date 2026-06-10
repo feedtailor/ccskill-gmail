@@ -21,10 +21,10 @@ Changes the read/unread status of a thread or message.
 
 ```bash
 # Mark an entire thread as read
-.ccskill-gmail/api post '{"action":"mark_read","threadId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"mark_read","threadId":"19bf7f25b96ab637"}'
 
 # Mark a specific message as read
-.ccskill-gmail/api post '{"action":"mark_read","messageId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"mark_read","messageId":"19bf7f25b96ab637"}'
 ```
 
 ### Response Example
@@ -59,10 +59,10 @@ Changes the read/unread status of a thread or message.
 
 ```bash
 # Mark an entire thread as unread
-.ccskill-gmail/api post '{"action":"mark_unread","threadId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"mark_unread","threadId":"19bf7f25b96ab637"}'
 
 # Mark a specific message as unread
-.ccskill-gmail/api post '{"action":"mark_unread","messageId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"mark_unread","messageId":"19bf7f25b96ab637"}'
 ```
 
 ### Response Example
