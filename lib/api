@@ -28,6 +28,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 _api_init() {
     local metadata_file="$SCRIPT_DIR/.ccskill-metadata.json"
 
+    # グローバル呼び出し (ccskill-gmail api 経由) では SCRIPT_DIR にメタデータが無い。
+    # その場合のみ cwd のインストール済みプロジェクトにフォールバックする (#122)。
+    # プロジェクトコピーの api (SCRIPT_DIR にメタデータあり) は従来どおり cwd を見ない。
+    if [ ! -f "$metadata_file" ] && [ -f "$PWD/.ccskill-gmail/.ccskill-metadata.json" ]; then
+        metadata_file="$PWD/.ccskill-gmail/.ccskill-metadata.json"
+    fi
+    _META_DIR="$(dirname "$metadata_file")"
+
     # マスターディレクトリを解決（installed_from → CCSKILL_GMAIL_DIR のフォールバック）
     if [ -z "${_MASTER_DIR:-}" ]; then
         if [ -f "$metadata_file" ] && command -v jq &>/dev/null; then
@@ -402,7 +410,9 @@ _api_init || exit 1
 # Audit Log 初期化
 # ========================================
 
-CCSKILL_HISTORY_DIR="$SCRIPT_DIR"
+# 監査ログは解決されたメタデータのディレクトリへ (グローバル呼び出し時は cwd の
+# .ccskill-gmail/。レガシー呼び出し時は従来どおり SCRIPT_DIR と同一)
+CCSKILL_HISTORY_DIR="${_META_DIR:-$SCRIPT_DIR}"
 if [ -f "$_MASTER_DIR/lib/history.sh" ]; then
     # shellcheck source=/dev/null
     source "$_MASTER_DIR/lib/history.sh"
