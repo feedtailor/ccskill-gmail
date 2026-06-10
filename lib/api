@@ -51,13 +51,19 @@ _api_init() {
     fi
 
     # ========================================
-    # アカウント解決 (#123)
+    # アカウント解決 (#123, #125)
     # 優先順: --account / CCSKILL_GMAIL_ACCOUNT (明示) > GMAIL_ENDPOINT 環境変数
-    #         > メタデータ (バインド) > accounts.json の default > 単一アカウント
-    #         > NO_ACCOUNT エラー
+    #         > binding.json (新バインド) > メタデータ (レガシーバインド)
+    #         > accounts.json の default > 単一アカウント > NO_ACCOUNT エラー
     # _ACCOUNT_EMAIL は accounts.json で解決した場合のみ設定され、
     # レスポンスへの account / account_source 注入の条件になる。
     # ========================================
+
+    # binding.json の所在: プロジェクトコピー (SCRIPT_DIR) → cwd の順
+    local binding_file="$SCRIPT_DIR/binding.json"
+    if [ ! -f "$binding_file" ]; then
+        binding_file="$PWD/.ccskill-gmail/binding.json"
+    fi
 
     _ACCOUNT_EMAIL=""
     if [ -n "${_ACCOUNT_IDENT:-}" ]; then
@@ -80,8 +86,27 @@ _api_init() {
     elif [ -n "$GMAIL_ENDPOINT" ]; then
         # レガシー: 環境変数 GMAIL_ENDPOINT (注入なし)
         _ACCOUNT_SOURCE="env-endpoint"
+    elif [ -f "$binding_file" ]; then
+        # 新バインド (#125): binding.json の account を accounts.json で解決
+        if ! command -v jq &>/dev/null; then
+            echo '{"ok":false,"error":"jq is required to resolve binding.json","error_code":"MISSING_DEPENDENCY","retryable":false}'
+            return 1
+        fi
+        # shellcheck source=/dev/null
+        source "$_MASTER_DIR/lib/accounts.sh"
+        local _bind_ident _bind_entry
+        _bind_ident=$(jq -r '.account // empty' "$binding_file" 2>/dev/null)
+        if [ -z "$_bind_ident" ] || ! _bind_entry=$(accounts_get "$_bind_ident"); then
+            echo "{\"ok\":false,\"error\":\"Bound account is not registered: ${_bind_ident:-unknown}\",\"error_code\":\"UNKNOWN_ACCOUNT\",\"hint\":\"Re-run: ccskill-gmail bind <email|label> (or register with: ccskill-gmail account add)\",\"retryable\":false}"
+            return 1
+        fi
+        _ACCOUNT_EMAIL=$(printf '%s' "$_bind_entry" | jq -r '.email // empty')
+        GMAIL_ENDPOINT=$(printf '%s' "$_bind_entry" | jq -r '.endpoint // empty')
+        _CLASP_USER=$(printf '%s' "$_bind_entry" | jq -r '.clasp_user // empty')
+        export _CLASP_USER
+        _ACCOUNT_SOURCE="binding"
     elif [ -f "$metadata_file" ]; then
-        # バインド (プロジェクトのメタデータ)。エンドポイントは従来フローで解決
+        # レガシーバインド (プロジェクトのメタデータ)。エンドポイントは従来フローで解決
         _ACCOUNT_SOURCE="binding"
     else
         # accounts.json の default / 単一アカウント
@@ -518,12 +543,23 @@ fi
 # Audit Log 初期化
 # ========================================
 
-# 監査ログは解決されたメタデータのディレクトリへ (グローバル呼び出し時は cwd の
-# .ccskill-gmail/。レガシー呼び出し時は従来どおり SCRIPT_DIR と同一)。
-# メタデータ無し (accounts.json / GMAIL_ENDPOINT 解決) の場合は記録先が無いため
-# 記録しない (アカウント別の中央集約は #125 で対応)。
-if [ "${_META_FOUND:-false}" = true ]; then
+# 監査ログの出力先 (#125):
+#   1. CCSKILL_HISTORY_DIR が事前設定済みならそれを尊重
+#   2. accounts.json で解決した呼び出し → ~/.ccskill-gmail/history/<email>/ に中央集約
+#   3. レガシーメタデータ → 従来どおりプロジェクトの .ccskill-gmail/
+#   4. いずれも無し (GMAIL_ENDPOINT 環境変数のみ等) → 記録しない
+_HISTORY_ENABLED=false
+if [ -n "${CCSKILL_HISTORY_DIR:-}" ]; then
+    _HISTORY_ENABLED=true
+elif [ -n "${_ACCOUNT_EMAIL:-}" ]; then
+    CCSKILL_HISTORY_DIR="$HOME/.ccskill-gmail/history/$_ACCOUNT_EMAIL"
+    _HISTORY_ENABLED=true
+elif [ "${_META_FOUND:-false}" = true ]; then
     CCSKILL_HISTORY_DIR="${_META_DIR:-$SCRIPT_DIR}"
+    _HISTORY_ENABLED=true
+fi
+export CCSKILL_HISTORY_ACCOUNT="${_ACCOUNT_EMAIL:-}"
+if [ "$_HISTORY_ENABLED" = true ]; then
     if [ -f "$_MASTER_DIR/lib/history.sh" ]; then
         # shellcheck source=/dev/null
         source "$_MASTER_DIR/lib/history.sh"
