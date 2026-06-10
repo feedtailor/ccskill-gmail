@@ -114,6 +114,24 @@ else
     echo "  - no central accounts registered (optional: ccskill-gmail account add)"
 fi
 
+# ユーザースキル登録 (#124)
+USER_SKILL="$HOME/.claude/skills/ccskill-gmail"
+if [ -L "$USER_SKILL" ]; then
+    skill_target=$(readlink "$USER_SKILL")
+    if [ -f "$USER_SKILL/SKILL.md" ]; then
+        echo -e "  $PASS user skill registered (symlink -> $skill_target)"
+    else
+        echo -e "  $FAIL user skill symlink is broken (-> $skill_target)"
+        echo "       Fix: ccskill-gmail skill install"
+        ERRORS=$((ERRORS + 1))
+    fi
+elif [ -d "$USER_SKILL" ]; then
+    echo -e "  $PASS user skill registered (copy)"
+    echo "       Note: copies do not auto-update. Refresh with: ccskill-gmail skill install --copy"
+else
+    echo "  - user skill not registered (optional: ccskill-gmail skill install)"
+fi
+
 # ccskill-gmail master updates (cached only — see #111)
 UPDATE_LINE=$(update_check_format_oneline_cached "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
 if [ -n "$UPDATE_LINE" ]; then
@@ -174,6 +192,34 @@ if [ ! -d "$GAS_DIR" ]; then
 fi
 
 echo -e "  $PASS .ccskill-gmail/ exists"
+
+# binding.json (#125)
+if [ -f "$GAS_DIR/binding.json" ]; then
+    bound_acct=$(jq -r '.account // empty' "$GAS_DIR/binding.json" 2>/dev/null)
+    if [ -n "$bound_acct" ] && [ -f "$ACCOUNTS_FILE" ] && jq -e --arg e "$bound_acct" '.accounts[$e]' "$ACCOUNTS_FILE" >/dev/null 2>&1; then
+        echo -e "  $PASS bound to account: $bound_acct"
+    else
+        echo -e "  $FAIL binding.json points to an unregistered account: ${bound_acct:-unknown}"
+        echo "       Fix: ccskill-gmail bind <email|label> (or: ccskill-gmail account add)"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # bind 専用ディレクトリ (フル install なし) なら以降のプロジェクトチェックは不要
+    if [ ! -f "$GAS_DIR/.ccskill-metadata.json" ]; then
+        echo -e "  $PASS bind-only directory (no project install — uses the account's shared deployment)"
+        echo ""
+        echo "================================================"
+        if [ "$ERRORS" -eq 0 ] && [ "$WARNINGS" -eq 0 ]; then
+            echo -e "Result: ${GREEN}All checks passed!${NC}"
+        elif [ "$ERRORS" -eq 0 ]; then
+            echo -e "Result: ${GREEN}No errors${NC}, ${YELLOW}$WARNINGS warning(s)${NC}"
+        else
+            echo -e "Result: ${RED}$ERRORS error(s)${NC}, ${YELLOW}$WARNINGS warning(s)${NC}"
+        fi
+        echo ""
+        exit 0
+    fi
+fi
 
 # .clasp.json
 if [ -f "$GAS_DIR/.clasp.json" ]; then
