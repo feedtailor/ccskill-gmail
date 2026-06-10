@@ -41,7 +41,8 @@ _ccskill_history_init_dir() {
         return 1
     fi
     if [ ! -d "$dir" ]; then
-        mkdir -p "$dir" && chmod 700 "$dir" || return 1
+        # sandbox 等で作成できない場合は無言でスキップ (記録なしで続行)
+        { mkdir -p "$dir" && chmod 700 "$dir"; } 2>/dev/null || return 1
     fi
     return 0
 }
