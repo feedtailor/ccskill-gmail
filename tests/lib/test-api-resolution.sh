@@ -71,14 +71,16 @@ test_global_cwd_fallback() {
     assert_contains "Blocked:" "$out"
 }
 
-# (3) グローバル呼び出し: メタデータが無いディレクトリでは MISSING_ENDPOINT
+# (3) グローバル呼び出し: メタデータもアカウント登録も無ければ NO_ACCOUNT (#123)
 test_global_no_metadata() {
     local empty out code
     empty=$(test_mktemp_d)
+    HOME=$(test_mktemp_d)   # 実環境の accounts.json を遮断
+    export HOME
 
-    out=$(cd "$empty" && GMAIL_ENDPOINT="" "$REPO_DIR/ccskill-gmail" api get action=search 2>&1) || true
+    out=$(cd "$empty" && GMAIL_ENDPOINT="" CCSKILL_GMAIL_ACCOUNT="" "$REPO_DIR/ccskill-gmail" api get action=search 2>&1) || true
     code=$(printf '%s' "$out" | jq -r '.error_code // empty' 2>/dev/null)
-    assert_eq "MISSING_ENDPOINT" "$code" "raw output: $out"
+    assert_eq "NO_ACCOUNT" "$code" "raw output: $out"
 }
 
 # (4) 優先順位: SCRIPT_DIR のメタデータが存在すれば cwd のメタデータは読まない
@@ -124,7 +126,7 @@ echo ""
 
 run_test "legacy: SCRIPT_DIR metadata is used regardless of cwd" test_legacy_script_dir_resolution
 run_test "global: falls back to cwd metadata"                    test_global_cwd_fallback
-run_test "global: MISSING_ENDPOINT when no metadata"             test_global_no_metadata
+run_test "global: NO_ACCOUNT when no metadata/accounts"          test_global_no_metadata
 run_test "precedence: SCRIPT_DIR metadata wins over cwd"         test_script_dir_wins_over_cwd
 run_test "global: audit log goes to project .ccskill-gmail/"     test_global_history_location
 run_test "global: usage error without subcommand"                test_global_usage_error
