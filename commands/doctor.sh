@@ -92,6 +92,28 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
+# 中央アカウントレジストリ (#123)
+ACCOUNTS_FILE="$HOME/.ccskill-gmail/accounts.json"
+ACCOUNTS_COUNT=0
+if [ -f "$ACCOUNTS_FILE" ]; then
+    if jq empty "$ACCOUNTS_FILE" 2>/dev/null; then
+        ACCOUNTS_COUNT=$(jq -r '.accounts | length' "$ACCOUNTS_FILE" 2>/dev/null || echo 0)
+        default_acct=$(jq -r '.default_account // empty' "$ACCOUNTS_FILE" 2>/dev/null)
+        echo -e "  $PASS accounts.json valid ($ACCOUNTS_COUNT account(s), default: ${default_acct:-none})"
+        if [ -n "$default_acct" ] && ! jq -e --arg e "$default_acct" '.accounts[$e]' "$ACCOUNTS_FILE" >/dev/null 2>&1; then
+            echo -e "  $FAIL default_account '$default_acct' is not a registered account"
+            echo "       Fix: ccskill-gmail account default <email|label>"
+            ERRORS=$((ERRORS + 1))
+        fi
+    else
+        echo -e "  $FAIL accounts.json is corrupted ($ACCOUNTS_FILE)"
+        echo "       Fix: ccskill-gmail account list (recreates with backup)"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo "  - no central accounts registered (optional: ccskill-gmail account add)"
+fi
+
 # ccskill-gmail master updates (cached only — see #111)
 UPDATE_LINE=$(update_check_format_oneline_cached "$CCSKILL_GMAIL_DIR" 2>/dev/null || true)
 if [ -n "$UPDATE_LINE" ]; then
@@ -124,8 +146,23 @@ echo "----------------------------------------"
 
 # .ccskill-gmail/ ディレクトリ
 if [ ! -d "$GAS_DIR" ]; then
+    if [ "${ACCOUNTS_COUNT:-0}" -gt 0 ] 2>/dev/null; then
+        # プロジェクト install なしでも中央アカウントで利用可能 (#123)
+        echo -e "  $PASS no project install (central account mode: ccskill-gmail api ...)"
+        echo ""
+        echo "================================================"
+        if [ "$ERRORS" -eq 0 ] && [ "$WARNINGS" -eq 0 ]; then
+            echo -e "Result: ${GREEN}All checks passed!${NC}"
+        elif [ "$ERRORS" -eq 0 ]; then
+            echo -e "Result: ${GREEN}No errors${NC}, ${YELLOW}$WARNINGS warning(s)${NC}"
+        else
+            echo -e "Result: ${RED}$ERRORS error(s)${NC}, ${YELLOW}$WARNINGS warning(s)${NC}"
+        fi
+        echo ""
+        exit 0
+    fi
     echo -e "  $FAIL .ccskill-gmail/ not found"
-    echo "       Fix: ccskill-gmail install"
+    echo "       Fix: ccskill-gmail install (or: ccskill-gmail account add)"
     ERRORS=$((ERRORS + 1))
     # これ以降のチェックはスキップ
     echo ""

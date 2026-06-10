@@ -263,12 +263,14 @@ _ccskill_history_record() {
             duration_ms: $duration_ms
         }')
 
-    # ---- ファイルに追記 ----
-    printf '%s\n' "$json_line" >> "$audit_file"
+    # ---- ファイルに追記 (sandbox 等で書き込めない場合は無言でスキップ) ----
+    if ! { printf '%s\n' "$json_line" >> "$audit_file"; } 2>/dev/null; then
+        return 0
+    fi
 
     # 新規ファイルにパーミッション設定
     if [ "$file_is_new" = true ]; then
-        chmod 600 "$audit_file"
+        chmod 600 "$audit_file" 2>/dev/null || true
     fi
 
     # ---- ローテーション ----

@@ -35,6 +35,8 @@ _api_init() {
         metadata_file="$PWD/.ccskill-gmail/.ccskill-metadata.json"
     fi
     _META_DIR="$(dirname "$metadata_file")"
+    _META_FOUND=false
+    [ -f "$metadata_file" ] && _META_FOUND=true
 
     # マスターディレクトリを解決（installed_from → CCSKILL_GMAIL_DIR のフォールバック）
     if [ -z "${_MASTER_DIR:-}" ]; then
@@ -44,6 +46,65 @@ _api_init() {
         [ -z "$_MASTER_DIR" ] && _MASTER_DIR="${CCSKILL_GMAIL_DIR:-}"
         if [ -z "$_MASTER_DIR" ] || [ ! -d "$_MASTER_DIR" ]; then
             echo '{"ok":false,"error":"Master directory not found. Run: ccskill-gmail install","error_code":"MASTER_NOT_FOUND","hint":"ccskill-gmail のインストール元が見つかりません。再インストールしてください","retryable":false}'
+            return 1
+        fi
+    fi
+
+    # ========================================
+    # アカウント解決 (#123)
+    # 優先順: --account / CCSKILL_GMAIL_ACCOUNT (明示) > GMAIL_ENDPOINT 環境変数
+    #         > メタデータ (バインド) > accounts.json の default > 単一アカウント
+    #         > NO_ACCOUNT エラー
+    # _ACCOUNT_EMAIL は accounts.json で解決した場合のみ設定され、
+    # レスポンスへの account / account_source 注入の条件になる。
+    # ========================================
+
+    _ACCOUNT_EMAIL=""
+    if [ -n "${_ACCOUNT_IDENT:-}" ]; then
+        # 明示指定 (flag/env) は最優先
+        if ! command -v jq &>/dev/null; then
+            echo '{"ok":false,"error":"jq is required for --account","error_code":"MISSING_DEPENDENCY","retryable":false}'
+            return 1
+        fi
+        # shellcheck source=/dev/null
+        source "$_MASTER_DIR/lib/accounts.sh"
+        local _acct_entry
+        if ! _acct_entry=$(accounts_get "$_ACCOUNT_IDENT"); then
+            echo "{\"ok\":false,\"error\":\"Unknown account: ${_ACCOUNT_IDENT}\",\"error_code\":\"UNKNOWN_ACCOUNT\",\"hint\":\"Check registered accounts with: ccskill-gmail account list\",\"retryable\":false}"
+            return 1
+        fi
+        _ACCOUNT_EMAIL=$(printf '%s' "$_acct_entry" | jq -r '.email // empty')
+        GMAIL_ENDPOINT=$(printf '%s' "$_acct_entry" | jq -r '.endpoint // empty')
+        _CLASP_USER=$(printf '%s' "$_acct_entry" | jq -r '.clasp_user // empty')
+        export _CLASP_USER
+    elif [ -n "$GMAIL_ENDPOINT" ]; then
+        # レガシー: 環境変数 GMAIL_ENDPOINT (注入なし)
+        _ACCOUNT_SOURCE="env-endpoint"
+    elif [ -f "$metadata_file" ]; then
+        # バインド (プロジェクトのメタデータ)。エンドポイントは従来フローで解決
+        _ACCOUNT_SOURCE="binding"
+    else
+        # accounts.json の default / 単一アカウント
+        if command -v jq &>/dev/null && [ -f "$HOME/.ccskill-gmail/accounts.json" ]; then
+            # shellcheck source=/dev/null
+            source "$_MASTER_DIR/lib/accounts.sh"
+            local _acct_email
+            if _acct_email=$(accounts_resolve_default); then
+                local _acct_default_entry
+                _acct_default_entry=$(accounts_get "$_acct_email")
+                _ACCOUNT_EMAIL="$_acct_email"
+                GMAIL_ENDPOINT=$(printf '%s' "$_acct_default_entry" | jq -r '.endpoint // empty')
+                _CLASP_USER=$(printf '%s' "$_acct_default_entry" | jq -r '.clasp_user // empty')
+                export _CLASP_USER
+                if [ "$(jq -r '.default_account // empty' "$HOME/.ccskill-gmail/accounts.json" 2>/dev/null)" = "$_acct_email" ]; then
+                    _ACCOUNT_SOURCE="default"
+                else
+                    _ACCOUNT_SOURCE="single"
+                fi
+            fi
+        fi
+        if [ -z "$_ACCOUNT_EMAIL" ]; then
+            echo '{"ok":false,"error":"No account configured. Register one with: ccskill-gmail account add","error_code":"NO_ACCOUNT","hint":"Run: ccskill-gmail account add (or cd into a project where ccskill-gmail is installed)","retryable":false}'
             return 1
         fi
     fi
@@ -394,10 +455,30 @@ cmd_save_pdf() {
 # メインディスパッチャ
 # ========================================
 
+# --account フラグ (先頭のみ) と CCSKILL_GMAIL_ACCOUNT 環境変数 (#123)
+_ACCOUNT_IDENT=""
+_ACCOUNT_SOURCE=""
+case "${1:-}" in
+    --account=*)
+        _ACCOUNT_IDENT="${1#--account=}"
+        _ACCOUNT_SOURCE="flag"
+        shift
+        ;;
+    --account)
+        _ACCOUNT_IDENT="${2:-}"
+        _ACCOUNT_SOURCE="flag"
+        shift 2 2>/dev/null || shift
+        ;;
+esac
+if [ -z "$_ACCOUNT_IDENT" ] && [ -n "${CCSKILL_GMAIL_ACCOUNT:-}" ]; then
+    _ACCOUNT_IDENT="$CCSKILL_GMAIL_ACCOUNT"
+    _ACCOUNT_SOURCE="env"
+fi
+
 SUBCOMMAND="${1:-}"
 
 if [ -z "$SUBCOMMAND" ]; then
-    echo '{"ok":false,"error":"Usage: .ccskill-gmail/api <get|post|download|save-html|save-pdf> [args...]"}'
+    echo '{"ok":false,"error":"Usage: [--account EMAIL_OR_LABEL] <get|post|download|save-html|save-pdf|whoami> [args...]"}'
     exit 1
 fi
 
@@ -407,19 +488,50 @@ shift
 _api_init || exit 1
 
 # ========================================
+# サブコマンド: whoami (解決されたアカウントの確認、API 呼び出しなし)
+# ========================================
+
+if [ "$SUBCOMMAND" = "whoami" ]; then
+    _WHO_EMAIL="${_ACCOUNT_EMAIL:-}"
+    # バインド解決時はレジストリから email を引く (ベストエフォート)
+    if [ -z "$_WHO_EMAIL" ] && [ "${_ACCOUNT_SOURCE:-}" = "binding" ] \
+       && command -v jq &>/dev/null && [ -f "$_MASTER_DIR/.registry.json" ]; then
+        _WHO_PROJ="$(dirname "$_META_DIR")"
+        _WHO_EMAIL=$(jq -r --arg p "$_WHO_PROJ" '.installations[$p].email // empty' "$_MASTER_DIR/.registry.json" 2>/dev/null)
+    fi
+    if command -v jq &>/dev/null; then
+        jq -cn --arg email "$_WHO_EMAIL" --arg src "${_ACCOUNT_SOURCE:-}" \
+               --arg ep "$GMAIL_ENDPOINT" --arg cu "${_CLASP_USER:-}" \
+            '{ok: true, data: {
+                account: (if $email == "" then null else $email end),
+                account_source: (if $src == "" then null else $src end),
+                endpoint: $ep,
+                clasp_user: (if $cu == "" then null else $cu end)
+             }}'
+    else
+        printf '{"ok":true,"data":{"account":"%s","account_source":"%s"}}\n' "$_WHO_EMAIL" "${_ACCOUNT_SOURCE:-}"
+    fi
+    exit 0
+fi
+
+# ========================================
 # Audit Log 初期化
 # ========================================
 
 # 監査ログは解決されたメタデータのディレクトリへ (グローバル呼び出し時は cwd の
-# .ccskill-gmail/。レガシー呼び出し時は従来どおり SCRIPT_DIR と同一)
-CCSKILL_HISTORY_DIR="${_META_DIR:-$SCRIPT_DIR}"
-if [ -f "$_MASTER_DIR/lib/history.sh" ]; then
-    # shellcheck source=/dev/null
-    source "$_MASTER_DIR/lib/history.sh"
-elif [ -f "$SCRIPT_DIR/history.sh" ]; then
-    # 後方互換: 旧形式のローカルコピー
-    # shellcheck source=/dev/null
-    source "$SCRIPT_DIR/history.sh"
+# .ccskill-gmail/。レガシー呼び出し時は従来どおり SCRIPT_DIR と同一)。
+# メタデータ無し (accounts.json / GMAIL_ENDPOINT 解決) の場合は記録先が無いため
+# 記録しない (アカウント別の中央集約は #125 で対応)。
+if [ "${_META_FOUND:-false}" = true ]; then
+    CCSKILL_HISTORY_DIR="${_META_DIR:-$SCRIPT_DIR}"
+    if [ -f "$_MASTER_DIR/lib/history.sh" ]; then
+        # shellcheck source=/dev/null
+        source "$_MASTER_DIR/lib/history.sh"
+    elif [ -f "$SCRIPT_DIR/history.sh" ]; then
+        # 後方互換: 旧形式のローカルコピー
+        # shellcheck source=/dev/null
+        source "$SCRIPT_DIR/history.sh"
+    fi
 fi
 
 # 開始時刻（ミリ秒）
@@ -436,30 +548,40 @@ _LOG_EXIT_CODE=0
 
 case "$SUBCOMMAND" in
     get)
-        cmd_get "$@" | tee "$_LOG_TMPFILE"
-        _LOG_EXIT_CODE=${PIPESTATUS[0]}
+        cmd_get "$@" > "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=$?
         ;;
     post)
-        cmd_post "$@" | tee "$_LOG_TMPFILE"
-        _LOG_EXIT_CODE=${PIPESTATUS[0]}
+        cmd_post "$@" > "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=$?
         ;;
     download)
-        cmd_download "$@" | tee "$_LOG_TMPFILE"
-        _LOG_EXIT_CODE=${PIPESTATUS[0]}
+        cmd_download "$@" > "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=$?
         ;;
     save-html)
-        cmd_save_html "$@" | tee "$_LOG_TMPFILE"
-        _LOG_EXIT_CODE=${PIPESTATUS[0]}
+        cmd_save_html "$@" > "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=$?
         ;;
     save-pdf)
-        cmd_save_pdf "$@" | tee "$_LOG_TMPFILE"
-        _LOG_EXIT_CODE=${PIPESTATUS[0]}
+        cmd_save_pdf "$@" > "$_LOG_TMPFILE"
+        _LOG_EXIT_CODE=$?
         ;;
     *)
-        echo "{\"ok\":false,\"error\":\"Unknown subcommand: ${SUBCOMMAND}. Use: get, post, download, save-html, save-pdf\"}" | tee "$_LOG_TMPFILE"
+        echo "{\"ok\":false,\"error\":\"Unknown subcommand: ${SUBCOMMAND}. Use: get, post, download, save-html, save-pdf, whoami\"}" > "$_LOG_TMPFILE"
         _LOG_EXIT_CODE=1
         ;;
 esac
+
+# レスポンス出力。accounts.json で解決した場合のみ account / account_source を
+# 注入する (#123)。バインド/レガシー経路は従来どおりバイト無加工で出力する。
+if [ -n "${_ACCOUNT_EMAIL:-}" ] && command -v jq &>/dev/null \
+   && jq -e 'type == "object"' "$_LOG_TMPFILE" >/dev/null 2>&1; then
+    jq -c --arg a "$_ACCOUNT_EMAIL" --arg s "${_ACCOUNT_SOURCE:-}" \
+        '. + {account: $a, account_source: $s}' "$_LOG_TMPFILE"
+else
+    cat "$_LOG_TMPFILE"
+fi
 
 _LOG_RESPONSE=$(cat "$_LOG_TMPFILE" 2>/dev/null)
 rm -f "$_LOG_TMPFILE"

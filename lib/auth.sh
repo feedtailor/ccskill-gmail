@@ -80,16 +80,17 @@ gas_token() {
     expires_in=$(echo "$response" | jq -r '.expires_in // 3600')
     new_expiry=$((now_ms + expires_in * 1000))
 
-    local tmp
-    tmp=$(mktemp)
-    jq --arg u "$USER" --arg token "$new_token" --argjson expiry "$new_expiry" \
+    # 書き戻しは同一ディレクトリの一時ファイル経由 (atomic)。
+    # sandbox 等で HOME に書き込めない場合も、リフレッシュ済みトークンで
+    # 処理は続行する (次回呼び出し時に再リフレッシュされるだけ)。
+    local tmp="${RC_FILE}.tmp.$$"
+    if { jq --arg u "$USER" --arg token "$new_token" --argjson expiry "$new_expiry" \
         '.tokens[$u].access_token = $token | .tokens[$u].expiry_date = $expiry' \
-        "$RC_FILE" > "$tmp"
-    if [ -s "$tmp" ]; then
-        /bin/mv "$tmp" "$RC_FILE"
-        chmod 600 "$RC_FILE"
+        "$RC_FILE" > "$tmp"; } 2>/dev/null && [ -s "$tmp" ]; then
+        { /bin/mv "$tmp" "$RC_FILE" && chmod 600 "$RC_FILE"; } 2>/dev/null \
+            || /bin/rm -f "$tmp" 2>/dev/null
     else
-        /bin/rm -f "$tmp"
+        /bin/rm -f "$tmp" 2>/dev/null
     fi
 
     echo "$new_token"
