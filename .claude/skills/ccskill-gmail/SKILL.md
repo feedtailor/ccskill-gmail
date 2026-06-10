@@ -6,11 +6,9 @@ allowed-tools: Bash, Write
 
 # Gmail Skill
 
-A Claude Code skill for Gmail, designed to complement (not replace) the standard Gmail connector.
-
 ## Overview
 
-The skill talks to Gmail through a Web API hosted on Google Apps Script (GAS). Supported actions: search, reading, draft creation (no send), label management, attachment download, PDF export.
+A Claude Code skill for Gmail that complements (not replaces) the standard Gmail connector. Talks to Gmail through a Web API hosted on Google Apps Script (GAS). Supported actions: search, reading, draft creation (no send), label management, attachment download, PDF export.
 
 The Google account is bound to the project directory you `cd` into — run `ccskill-gmail info` to confirm which account is active.
 
@@ -39,8 +37,6 @@ GET is for read actions (`search`, `get_thread`, `list_labels`, ...). POST is fo
 
 The subcommands are exactly five: `get`, `post`, `download`, `save-html`, `save-pdf`. Everything else (`search`, `get_thread`, `create_draft`, `mark_read`, ...) is an `action` value passed to `get` or `post`.
 
-> **Do not use `is:unread` to find "emails that need a reply" / "important emails" / "highlights".** Always read [reference/triage.md](reference/triage.md) first when the user asks to review, triage, or pick out emails.
-
 For the full action list and per-action specs, see [reference/index.md](reference/index.md). For runnable examples, see [examples.md](examples.md).
 
 ---
@@ -57,21 +53,13 @@ Applies whenever the user asks to scan / review / triage the inbox or pick out i
 - `is:unread` ≠ unreplied. A message becomes "read" the moment the user opens it in any client — that says nothing about whether they replied.
 - `is:important` ≠ what the user means by "important". The Gmail Important marker is auto-assigned and noisy. The user expects **your human-style judgment** based on sender / content / context.
 
-Use this query as the base, then judge per-thread:
-
-```bash
-.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
-```
-
-Date range default: `newer_than:7d` to `newer_than:14d`. **Do not shrink to `1d`** — it misses stalled replies.
-
 ### ⚠️ Use `lastSentMessage` (NOT `messages[-1]`) to determine the last sender
 
 `get_thread` returns drafts inline with sent messages. Reading `messages[-1]` will misclassify your own freshly created draft as the latest reply. Always read `data.lastSentMessage` (most recent **non-draft** message). Inspect `data.hasDraft` before creating another draft — do NOT stack drafts on top.
 
 ### Example queries for triage requests
 
-**✅ OK — start with this and judge per-thread:**
+**✅ OK — start with this and judge per-thread.** Date range default: `newer_than:7d` to `newer_than:14d`.
 
 ```bash
 .ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
@@ -103,6 +91,26 @@ When the user asks to save an email as PDF, choose the source in this order:
 3. **`save-pdf` (HTML body conversion) — last resort.** Only when neither of the above exists.
 
 Skipping step 1 silently produces a lower-quality artifact when an authoritative PDF was right there.
+
+---
+
+## Draft Replies — Critical Rules
+
+### ⚠️ For thread replies, always use `create_reply_draft` (not `create_draft`)
+
+`create_draft` does NOT accept a `threadId` parameter. Passing it has no effect — the API silently ignores it and creates a stand-alone (non-thread) draft, **breaking the thread association you intended**. `create_reply_draft` is the only API that attaches a draft to an existing thread.
+
+### ⚠️ `create_reply_draft` does NOT accept `to`
+
+The recipient is computed from the thread context (`skipSelf` / `replyAll`). If the auto-selected recipient is wrong (e.g., the latest non-self message came from an internal colleague who was relaying a conversation, but the user wants to reply to the external partner), **there is no API path to override**:
+
+- Create the draft as-is
+- Surface the actual `To` from the response to the user
+- Ask the user to swap `To` / `Cc` manually in Gmail UI before sending
+
+`update_draft` cannot change the recipient on a reply draft either (same GmailApp limitation).
+
+For full pitfall details (internal-relayed thread example, etc.), see [reference/draft.md](reference/draft.md).
 
 ---
 

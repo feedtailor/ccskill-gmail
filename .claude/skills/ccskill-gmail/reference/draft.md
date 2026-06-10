@@ -57,6 +57,8 @@ Retrieves a list of drafts in a lightweight format.
 
 Creates a new email draft. For replies to existing threads, use `create_reply_draft`.
 
+> **⚠️ `create_draft` does NOT accept a `threadId` parameter.** Passing it has no effect — the API silently ignores it and creates a stand-alone (non-thread) draft, breaking the thread association you intended. For thread replies, `create_reply_draft` is the only API that attaches a draft to an existing thread.
+
 ## Design Philosophy
 
 **Send functionality is intentionally excluded.**
@@ -172,6 +174,8 @@ Create a JSON file with the Write tool, then send:
 
 Creates a reply draft to an existing thread.
 
+> **⚠️ `to` is NOT a valid parameter for `create_reply_draft`.** The recipient is computed from the thread context according to `skipSelf` / `replyAll` (see Behavior Details below). If the auto-selected recipient is wrong, **edit it in Gmail UI after the draft is created** — there is no API path to override it. (Same constraint applies to `update_draft` on reply drafts.)
+
 ## Request
 
 **Method**: POST
@@ -239,6 +243,18 @@ Creates a reply draft to an existing thread.
 - **replyAll (default true)**: Creates a "reply all" draft that auto-preserves the original message's to/cc
 - The subject is automatically set to "Re: original subject" format
 - The recipient returned is the actual draft recipient (`draft.getMessage().getTo()`)
+
+### Common pitfall: internal-relayed thread
+
+When a thread mixes internal and external participants, the auto-selected recipient may not match user intent.
+
+**Example**: A thread proceeds chronologically as `you → internal_colleague → external_partner → you → internal_colleague` (the latest non-self message is from your internal colleague who is relaying the conversation). With `skipSelf: true`, the API picks the **most recent non-self message** — which is `internal_colleague`. The draft's `To` becomes the internal colleague, even if the user wanted to reply to the external partner.
+
+**What to do**:
+
+- Create the draft as-is, then **tell the user to swap To/Cc manually in Gmail UI** before sending
+- There is no API parameter to override this — `to` is rejected (see the Note at the top of this section), and `update_draft` cannot change the recipient on a reply draft either
+- Before reporting "draft created" to the user, surface the actual `To` from the response and call out if it looks misaligned with intent (e.g., the user asked to reply to `external_partner` but `To` came back as `internal_colleague`)
 
 ---
 

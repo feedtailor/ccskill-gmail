@@ -8,11 +8,9 @@ allowed-tools: Bash, Write
 
 # Gmail スキル
 
-標準 Gmail コネクタを**置き換えるのではなく補完する**位置付けの Claude Code 用 Gmail スキル。
-
 ## 概要
 
-Google Apps Script (GAS) でホストされた Web API を通じて Gmail を操作します。対応アクション: 検索・閲覧・下書き作成（送信なし）・ラベル管理・添付ダウンロード・PDF 出力。
+標準 Gmail コネクタを**置き換えるのではなく補完する** Claude Code 用 Gmail スキル。Google Apps Script (GAS) でホストされた Web API を通じて Gmail を操作します。対応アクション: 検索・閲覧・下書き作成（送信なし）・ラベル管理・添付ダウンロード・PDF 出力。
 
 操作対象の Google アカウントは `cd` したプロジェクトディレクトリに紐づきます。`ccskill-gmail info` でアクティブなアカウントを確認できます。
 
@@ -41,8 +39,6 @@ GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は�
 
 サブコマンドはちょうど 5 つ: `get`、`post`、`download`、`save-html`、`save-pdf`。それ以外 (`search`、`get_thread`、`create_draft`、`mark_read` 等) はすべて `action` の値として `get` / `post` に渡します。
 
-> **「要返信メール」「重要なメール」「ピックアップ」等の依頼に `is:unread` / `is:important` を使ってはいけません。** ユーザーがレビュー・トリアージ・重要メール抽出を依頼した場合は、必ず先に [reference/triage.md](reference/triage.md) を読むこと。
-
 全アクション一覧と個別仕様は [reference/index.md](reference/index.md)、実行可能な例は [examples.md](examples.md) を参照。
 
 ---
@@ -59,21 +55,13 @@ GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は�
 - `is:unread` ≠ 未返信。ユーザーがどこかの Gmail クライアントで開いた瞬間に「既読」になるため、返信したかどうかの指標にならない。
 - `is:important` ≠ ユーザーの言う「重要」。Gmail の重要マーカーは自動付与で大量にノイズが含まれる。ユーザーは**人間判断**を期待している (送信者・内容・文脈で判定)。
 
-ベースクエリは以下。これで取得した上で各スレッドを判定する:
-
-```bash
-.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
-```
-
-期間のデフォルトは `newer_than:7d` 〜 `newer_than:14d`。**`1d` に縮めるのは禁止** — 滞留している返信を見落とす。
-
 ### ⚠️ 最終送信者の判定には `lastSentMessage` を使う (`messages[-1]` ではない)
 
 `get_thread` は下書きを送信済みメッセージと並べて返します。`messages[-1]` を読むと、直前に作成した自分の下書きが送信済み返信と誤認されます。「最後に発言したのは誰か」の判定には必ず `data.lastSentMessage` (下書きでない最新メッセージ) を読んでください。新しい下書きを作る前に `data.hasDraft` を確認し、既存の下書きの上に重ねないこと。
 
 ### トリアージ依頼でのクエリ例
 
-**✅ OK — まずこれで取得してから各スレッドを判定:**
+**✅ OK — まずこれで取得してから各スレッドを判定。** 期間のデフォルトは `newer_than:7d` 〜 `newer_than:14d`。
 
 ```bash
 .ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
@@ -105,6 +93,26 @@ GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は�
 3. **`save-pdf` (本文 HTML の変換) — 最終手段。** 上記いずれも存在しない場合のみ使用。
 
 ステップ 1 を飛ばすと、添付 PDF が存在しているのに見栄えの悪い本文変換版を黙って生成してしまう。
+
+---
+
+## 返信下書き — 重要ルール
+
+### ⚠️ スレッド返信は必ず `create_reply_draft` を使う (`create_draft` ではない)
+
+`create_draft` は `threadId` パラメータを受け付けません。渡しても API は静かに無視し、スレッドに紐付かない単独メールが作成され、**意図したスレッド継続が壊れます**。スレッドに下書きを紐付ける API は `create_reply_draft` だけです。
+
+### ⚠️ `create_reply_draft` は `to` を受け付けない
+
+宛先はスレッド文脈から自動算出されます (`skipSelf` / `replyAll`)。自動選択された宛先が意図と違う場合 (例: 最新の非自分メッセージが社内中継者からのもので、ユーザーは社外パートナーに返信したい)、**API では上書きできません**:
+
+- まず下書きを作成する
+- レスポンスの実際の `To` をユーザーに提示する
+- 送信前に Gmail UI で `To` / `Cc` を手動で入れ替えてもらう
+
+`update_draft` でも返信下書きの宛先は変更できません (同じ GmailApp 制約)。
+
+詳細な落とし穴 (社内中継スレッドの例など) は [reference/draft.md](reference/draft.md) を参照。
 
 ---
 
