@@ -2,7 +2,7 @@
 
 ---
 name: ccskill-gmail
-description: 標準 Gmail コネクタを補完する Claude Code 用 companion Gmail スキル。Gmail でのメール検索・閲覧・下書き作成（添付対応）・添付ダウンロード・PDF 保存・Gmail 自動化用シェルスクリプト生成。プロジェクト単位の multi-account 固定運用に最適化。送信機能なし。
+description: 標準 Gmail コネクタを補完する Claude Code 用 companion Gmail スキル。Gmail でのメール検索・閲覧・下書き作成（添付対応）・添付ダウンロード・PDF 保存・Gmail 自動化用シェルスクリプト生成。グローバル CLI (ccskill-gmail) によりどのディレクトリからでも利用可能。中央マルチアカウント対応（デフォルト指定 + 呼び出し単位の切替）。送信機能なし。
 allowed-tools: Bash, Write
 ---
 
@@ -12,34 +12,59 @@ allowed-tools: Bash, Write
 
 標準 Gmail コネクタを**置き換えるのではなく補完する** Claude Code 用 Gmail スキル。Google Apps Script (GAS) でホストされた Web API を通じて Gmail を操作します。対応アクション: 検索・閲覧・下書き作成（送信なし）・ラベル管理・添付ダウンロード・PDF 出力。
 
-操作対象の Google アカウントは `cd` したプロジェクトディレクトリに紐づきます。`ccskill-gmail info` でアクティブなアカウントを確認できます。
+Gmail アカウントは中央登録され (`ccskill-gmail account add`)、呼び出しごとに解決されます: 明示の `--account` > プロジェクトバインド (ccskill-gmail を install したディレクトリ) > デフォルトアカウント。`ccskill-gmail api whoami` でどのアカウントに繋がるか確認できます。後述の「アカウント選択 — 重要ルール」を参照。
 
 ---
 
 ## クイックスタート
 
-本スキルは単一の CLI `.ccskill-gmail/api` を通して呼び出します。サブコマンドは2つです。
+本スキルは単一の CLI `ccskill-gmail api` を通して呼び出します（どのディレクトリからでも動きます）。
 
 ```bash
 # GET（読み取りアクション）
-.ccskill-gmail/api get action=search query="from:boss@example.com" maxResults=10
-.ccskill-gmail/api get action=get_thread threadId=THREAD_ID
+ccskill-gmail api get action=search query="from:boss@example.com" maxResults=10
+ccskill-gmail api get action=get_thread threadId=THREAD_ID
 
 # POST（書き込みアクション）
-.ccskill-gmail/api post '{"action":"create_draft","to":"user@example.com","subject":"件名","body":"本文"}'
+ccskill-gmail api post '{"action":"create_draft","to":"user@example.com","subject":"件名","body":"本文"}'
+
+# 特定の登録アカウントを使う（ユーザーがアカウントを指名した時のみ）
+ccskill-gmail api --account info@example.com get action=search query="subject:請求書"
 ```
 
 GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は書き込み（`create_draft`、`mark_read`、`add_label` 等）。間違ったメソッドを使うと `Unknown action` エラーが返ります。get サブコマンドは値を自動 URL エンコードするため日本語はそのまま渡せます。
 
 **❌ よくある間違い — これらは存在しません:**
 
-- `.ccskill-gmail/api.sh ...` — `.sh` 拡張子は無い。スクリプト名は `.ccskill-gmail/api`
-- `.ccskill-gmail/api search ...` — `search` は **action** であってサブコマンドではない
-- `.ccskill-gmail/api list_labels ...` — 同上。action は常に `action=...` で渡す
+- `ccskill-gmail get ...` — `api` サブコマンドが必須: `ccskill-gmail api get ...`
+- `ccskill-gmail api search ...` — `search` は **action** であってサブコマンドではない
+- `ccskill-gmail api list_labels ...` — 同上。action は常に `action=...` で渡す
 
-サブコマンドはちょうど 5 つ: `get`、`post`、`download`、`save-html`、`save-pdf`。それ以外 (`search`、`get_thread`、`create_draft`、`mark_read` 等) はすべて `action` の値として `get` / `post` に渡します。
+api のサブコマンドはちょうど 6 つ: `get`、`post`、`download`、`save-html`、`save-pdf`、`whoami`。それ以外 (`search`、`get_thread`、`create_draft`、`mark_read` 等) はすべて `action` の値として `get` / `post` に渡します。
+
+（レガシー注記: グローバル CLI 以前に install したプロジェクトでは同じスクリプトが `.ccskill-gmail/api` としても存在し、どちらでも動きますが、`ccskill-gmail api` を推奨します。）
 
 全アクション一覧と個別仕様は [reference/index.md](reference/index.md)、実行可能な例は [examples.md](examples.md) を参照。
+
+---
+
+## アカウント選択 — 重要ルール
+
+複数の Gmail アカウントを登録できます（`ccskill-gmail account list` で一覧）。どのアカウントに対して操作するかは自動解決されます: `--account` フラグ > プロジェクトバインド > デフォルトアカウント。中央レジストリで解決された成功レスポンスには `account` / `account_source` フィールドが付きます。
+
+### ⚠️ 使ったアカウントを必ずユーザーに伝える
+
+結果を報告するときは対象アカウントを明示すること（例:「oishi@example.com の受信トレイでは…」）。レスポンスの `account` フィールドから読み取る。`account` フィールドが無い場合（プロジェクトバインドのレガシー呼び出し）は `ccskill-gmail api whoami` で確認できる。
+
+### ⚠️ `--account` はユーザーがアカウントを指名した時のみ付ける
+
+- 「info@example.com のほうで」「work アカウントで」→ `ccskill-gmail api --account info@example.com get ...`（email / label どちらでも可）
+- ユーザーがアカウントに言及していない → **`--account` を付けない**。デフォルト/バインドの解決に任せる
+- 指名が曖昧（「仕事のほう」等、どの登録アカウントか不明）→ `ccskill-gmail account list` を実行し、**実行前にユーザーに確認する**
+
+### ⚠️ 書き込みは直前の読み取りと同じアカウントで行う
+
+検索・閲覧（`get`）の後に下書き作成・ラベル変更・アーカイブ（`post`）を行うときは、読み取りで使ったのと**同じ `--account`** を渡す（使っていなければ付けない）。タスクの途中で暗黙にアカウントを切り替えないこと — 別アカウントに作られた下書きにユーザーは気づきにくい。
 
 ---
 
@@ -64,20 +89,20 @@ GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は�
 **✅ OK — まずこれで取得してから各スレッドを判定。** 期間のデフォルトは `newer_than:7d` 〜 `newer_than:14d`。
 
 ```bash
-.ccskill-gmail/api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
+ccskill-gmail api get action=search query="in:inbox -from:me newer_than:7d -category:promotions -category:social -category:updates -category:forums" maxResults=30
 ```
 
 **❌ NG — トリアージ依頼の意図と合わない:**
 
 ```bash
 # is:unread → 開封状態でのフィルタ。未返信とは別物。トリアージで使用禁止
-.ccskill-gmail/api get action=search query="is:unread"
+ccskill-gmail api get action=search query="is:unread"
 
 # is:important → Gmail の自動マーカー。ノイズが多い。トリアージで使用禁止
-.ccskill-gmail/api get action=search query="is:important"
+ccskill-gmail api get action=search query="is:important"
 
 # newer_than:1d → 範囲が狭すぎて滞留した返信を見落とす。7d〜14d を使うこと
-.ccskill-gmail/api get action=search query="newer_than:1d in:inbox"
+ccskill-gmail api get action=search query="newer_than:1d in:inbox"
 ```
 
 完全な分類フロー (reply-now / waiting / draft-needed / fyi / archive) は [reference/triage.md](reference/triage.md) を参照。
@@ -116,11 +141,11 @@ GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は�
 
 ---
 
-## `.ccskill-gmail/api` を呼ぶときのルール
+## `ccskill-gmail api` を呼ぶときのルール
 
-以下の3ブロックは厳守ルールです。`.ccskill-gmail/api` を呼ぶとき、POST 用 JSON を作るとき、メール本文を読むとき、必ず守ってください。
+以下の3ブロックは厳守ルールです。`ccskill-gmail api` を呼ぶとき、POST 用 JSON を作るとき、メール本文を読むとき、必ず守ってください。
 
-<important if="Gmail 用の .ccskill-gmail/api を呼ぶ、または Bash コマンドを構築する場合">
+<important if="Gmail 用の ccskill-gmail api を呼ぶ、または Bash コマンドを構築する場合">
 
 ### API コマンド構築ルール
 
@@ -130,7 +155,7 @@ GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は�
 - 唯一の例外: 出力サイズ削減のための `| jq '...'` は許可
 
 **禁止事項（確認プロンプトが発生する）:**
-- `bash` プレフィックス（`bash .ccskill-gmail/api` ではなく `.ccskill-gmail/api` を直接使う）
+- `bash` プレフィックス（`bash ccskill-gmail api` ではなく `ccskill-gmail api` を直接使う）
 - `$()` やバッククォート
 - `&&` によるコマンド連結
 - `>` によるリダイレクト
@@ -138,7 +163,7 @@ GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は�
 
 </important>
 
-<important if="POST リクエスト用の JSON ペイロードを .ccskill-gmail/api 用に作成する場合">
+<important if="POST リクエスト用の JSON ペイロードを ccskill-gmail api 用に作成する場合">
 
 ### POST リクエストの JSON 作成方法
 
@@ -149,7 +174,7 @@ JSON ファイルは **Write ツールで作成する必要があります**。B
 Write(".ccskill-gmail/tmp/payload.json") -> {"action":"create_reply_draft","threadId":"...","body":"..."}
 
 # Step 2: Bash で API を呼ぶ（tmp ファイルは呼び出し後に自動削除）
-.ccskill-gmail/api post @.ccskill-gmail/tmp/payload.json
+ccskill-gmail api post @.ccskill-gmail/tmp/payload.json
 ```
 
 **禁止:** `cat <<EOF`、`cat > .ccskill-gmail/tmp/file`、`echo '...' > .ccskill-gmail/tmp/file` — いずれも確認プロンプトが発生します。
@@ -182,20 +207,20 @@ Write(".ccskill-gmail/tmp/payload.json") -> {"action":"create_reply_draft","thre
 
 ```bash
 # OK: Bash 呼び出し1回につき API コール1回。連鎖は別 Bash 呼び出しで
-.ccskill-gmail/api get action=search query="subject:報告書"
+ccskill-gmail api get action=search query="subject:報告書"
 
 # NG: && で連結
-.ccskill-gmail/api get ... && .ccskill-gmail/api get ...
+ccskill-gmail api get ... && ccskill-gmail api get ...
 
 # NG: $()（リテラル値でも禁止）
-.ccskill-gmail/api get action=get_message messageId=$(echo '19cad22f211cf5b1')
+ccskill-gmail api get action=get_message messageId=$(echo '19cad22f211cf5b1')
 
 # OK: ファイル保存は専用サブコマンド
-.ccskill-gmail/api download MESSAGE_ID 0 ./report.pdf
-.ccskill-gmail/api save-pdf MESSAGE_ID ./email.pdf
+ccskill-gmail api download MESSAGE_ID 0 ./report.pdf
+ccskill-gmail api save-pdf MESSAGE_ID ./email.pdf
 
 # NG: パイプ + リダイレクト
-.ccskill-gmail/api get action=get_attachment ... | jq -r '.data.content' | base64 -d > ./report.pdf
+ccskill-gmail api get action=get_attachment ... | jq -r '.data.content' | base64 -d > ./report.pdf
 ```
 
 ---
@@ -203,11 +228,11 @@ Write(".ccskill-gmail/tmp/payload.json") -> {"action":"create_reply_draft","thre
 ## レスポンス形式
 
 ```json
-{"ok": true,  "data":  {...}}     // 成功
-{"ok": false, "error": "メッセージ"} // エラー
+{"ok": true,  "data": {...}, "account": "you@example.com", "account_source": "default"}  // 成功
+{"ok": false, "error": "メッセージ", "error_code": "..."}                                  // エラー
 ```
 
-Claude は JSON を直接読みます。レスポンスが大きく切り詰められそうなときのみ `| jq` を使用してください。
+Claude は JSON を直接読みます。レスポンスが大きく切り詰められそうなときのみ `| jq` を使用してください。`account` / `account_source` は中央アカウントレジストリで解決された呼び出しに付与されます — 報告時のアカウント明示に使うこと（前述「アカウント選択」参照）。
 
 ---
 

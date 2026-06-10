@@ -2,17 +2,17 @@
 
 ## Prerequisites
 
-`.ccskill-gmail/api` is a standalone script. The endpoint and authentication are automatically resolved internally by the script.
+`ccskill-gmail api` works from any directory. The account, endpoint and authentication are resolved automatically per call (`--account` flag > project binding > default account — see "Account Selection" in [SKILL.md](../SKILL.md)). `ccskill-gmail api whoami` shows the resolved account.
 
 ## Read Operations (GET)
 
 | API | File | Example |
 |-----|------|---------|
-| search | [search.md](search.md) | `.ccskill-gmail/api get action=search query="is:unread"` |
-| get_thread | [read.md](read.md) | `.ccskill-gmail/api get action=get_thread threadId=ID` |
-| get_message | [read.md](read.md) | `.ccskill-gmail/api get action=get_message messageId=ID` |
-| list_labels | [read.md](read.md) | `.ccskill-gmail/api get action=list_labels` |
-| get_unread_count | [read.md](read.md) | `.ccskill-gmail/api get action=get_unread_count` |
+| search | [search.md](search.md) | `ccskill-gmail api get action=search query="is:unread"` |
+| get_thread | [read.md](read.md) | `ccskill-gmail api get action=get_thread threadId=ID` |
+| get_message | [read.md](read.md) | `ccskill-gmail api get action=get_message messageId=ID` |
+| list_labels | [read.md](read.md) | `ccskill-gmail api get action=list_labels` |
+| get_unread_count | [read.md](read.md) | `ccskill-gmail api get action=get_unread_count` |
 
 ## Write Operations (POST)
 

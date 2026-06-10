@@ -5,7 +5,7 @@ When the user asks to extract commitments, tasks, or action items from email thr
 ## Step 1: Fetch Full Thread
 
 ```bash
-.ccskill-gmail/api get action=get_thread threadId=THREAD_ID
+ccskill-gmail api get action=get_thread threadId=THREAD_ID
 ```
 
 If multiple threads are involved, fetch them in parallel Bash calls.
@@ -70,7 +70,7 @@ After the table, call out items that need attention:
 
 When asked to analyze commitments across multiple threads (e.g., "what do I owe to ACME Corp?"):
 
-1. Search for relevant threads: `.ccskill-gmail/api get action=search query="from:acme.com OR to:acme.com" maxResults=10`
+1. Search for relevant threads: `ccskill-gmail api get action=search query="from:acme.com OR to:acme.com" maxResults=10`
 2. Fetch each thread in parallel
 3. Extract commitments from all threads
 4. Consolidate and deduplicate (same commitment may be referenced across threads)

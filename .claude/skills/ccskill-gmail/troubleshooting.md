@@ -2,7 +2,7 @@
 
 Common issues and solutions for the Gmail Skill.
 
-> **Recommended**: Using the `.ccskill-gmail/api` standalone script automatically applies `-L`, `--max-time 60`, `--data`, and Bearer authentication, which avoids most of the issues described below.
+> **Recommended**: Using the `ccskill-gmail api` command automatically applies `-L`, `--max-time 60`, `--data`, and Bearer authentication, which avoids most of the issues described below.
 
 ---
 
@@ -16,7 +16,9 @@ Common issues and solutions for the Gmail Skill.
 | Invalid JSON | JSON syntax error | Validate JSON beforehand |
 | Thread/Message not found | Wrong ID or deleted | Get the latest ID with `search` |
 | Japanese search not working | Encoding issue when using curl directly | Use the get subcommand (auto-encodes) |
-| Endpoint not set | Missing endpoint file / install not completed | Run `ccskill-gmail update` |
+| Endpoint not set | Broken project install | Run `ccskill-gmail update` |
+| No account configured (NO_ACCOUNT) | No central account and no project install in this directory | Run `ccskill-gmail account add` (or `cd` into an installed project) |
+| Unknown account (UNKNOWN_ACCOUNT) | `--account` value is not registered | Check with `ccskill-gmail account list` |
 | Action "xxx" is denied by permissions config | Denied by permissions setting | Remove the action from `permissions.deny` in `config.js` |
 
 ---
@@ -87,7 +89,7 @@ permissions: {
    curl -sL "https://script.google.com/.../exec?action=list_labels"
 
    # OK: Via api script (auto-authentication)
-   .ccskill-gmail/api get action=list_labels
+   ccskill-gmail api get action=list_labels
    ```
 
 ---
@@ -102,7 +104,7 @@ permissions: {
 
 ```bash
 # Retry
-.ccskill-gmail/api get action=list_labels
+ccskill-gmail api get action=list_labels
 ```
 
 ---
@@ -117,10 +119,10 @@ permissions: {
 
 ```bash
 # OK: search with get
-.ccskill-gmail/api get action=search query="is:unread"
+ccskill-gmail api get action=search query="is:unread"
 
 # NG: calling search with post
-.ccskill-gmail/api post '{"action":"search","query":"is:unread"}'
+ccskill-gmail api post '{"action":"search","query":"is:unread"}'
 ```
 
 ---
@@ -137,7 +139,7 @@ permissions: {
 echo '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"Hello"}' | jq .
 
 # Wrap in single quotes (prevents shell variable expansion)
-.ccskill-gmail/api post '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"Hello"}'
+ccskill-gmail api post '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"Hello"}'
 ```
 
 ---
@@ -153,7 +155,7 @@ echo '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"
 **Solution**: Re-fetch the latest ID using `search`
 
 ```bash
-.ccskill-gmail/api get action=search query="is:unread" maxResults=5
+ccskill-gmail api get action=search query="is:unread" maxResults=5
 ```
 
 ---
@@ -168,7 +170,7 @@ echo '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"
 
 ```bash
 # OK: Japanese can be used directly
-.ccskill-gmail/api get action=search query="from:田中太郎"
+ccskill-gmail api get action=search query="from:田中太郎"
 
 # Manual encoding is not needed
 ```
@@ -191,15 +193,30 @@ echo '{"action":"create_draft","to":"test@example.com","subject":"Test","body":"
 
 **Symptom**: `{"ok":false,"error":"GMAIL_ENDPOINT not set..."}`
 
-**Cause**: The `.ccskill-gmail/endpoint` file does not exist, or install/update has not been completed
+**Cause**: The project install in this directory is broken (metadata exists but has no endpoint)
 
 **Solution**:
 ```bash
-# update auto-generates the endpoint file
+# update repairs the metadata
 ccskill-gmail update
+```
 
-# Check the endpoint file content
-cat .ccskill-gmail/endpoint
+---
+
+### No Account Configured (NO_ACCOUNT)
+
+**Symptom**: `{"ok":false,"error":"No account configured...","error_code":"NO_ACCOUNT"}`
+
+**Cause**: This directory has no project install AND no account is registered in the central registry
+
+**Solution**:
+```bash
+# Register an account once (works from any directory afterwards)
+ccskill-gmail account add
+
+# Or check what is registered / which account would be used
+ccskill-gmail account list
+ccskill-gmail api whoami
 ```
 
 ---
@@ -209,28 +226,27 @@ cat .ccskill-gmail/endpoint
 ### Health Check
 
 ```bash
-.ccskill-gmail/api get
+ccskill-gmail api get
 # Expected: {"ok":true,"data":{"status":"ok","message":"Gmail Skill is running","version":"1.0.0"}}
 ```
 
-### Token Verification
+### Environment Diagnosis
 
 ```bash
-# Source auth.sh directly to check the token (for debugging)
-source .ccskill-gmail/auth.sh && gas_token
-# If an access token is displayed, it is working correctly
+# Checks clasp login, OAuth tokens, accounts.json, endpoint connectivity
+ccskill-gmail doctor
 ```
 
-### Endpoint Verification
+### Account / Endpoint Verification
 
 ```bash
-cat .ccskill-gmail/endpoint
-# If a URL is displayed, the endpoint file is correctly configured
+ccskill-gmail api whoami
+# Shows the resolved account, its source (flag/binding/default) and endpoint
 ```
 
 ### Response Inspection
 
 ```bash
 # Pretty-print the response
-.ccskill-gmail/api get action=list_labels | jq .
+ccskill-gmail api get action=list_labels | jq .
 ```

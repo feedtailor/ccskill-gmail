@@ -18,10 +18,10 @@ Retrieves a list of drafts in a lightweight format.
 
 ```bash
 # List drafts (default 20 items)
-.ccskill-gmail/api get action=list_drafts
+ccskill-gmail api get action=list_drafts
 
 # Specify count
-.ccskill-gmail/api get action=list_drafts maxResults=50
+ccskill-gmail api get action=list_drafts maxResults=50
 ```
 
 ---
@@ -111,25 +111,25 @@ Drafts are saved in Gmail's "Drafts" folder and can be reviewed, edited, and sen
 ### Basic Draft
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_draft","to":"recipient@example.com","subject":"Price Quote","body":"Hi,\n\nPlease find attached the price quote as discussed.\n\nBest regards."}'
+ccskill-gmail api post '{"action":"create_draft","to":"recipient@example.com","subject":"Price Quote","body":"Hi,\n\nPlease find attached the price quote as discussed.\n\nBest regards."}'
 ```
 
 ### With CC/BCC
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_draft","to":"client@example.com","cc":"manager@example.com","bcc":"archive@example.com","subject":"Project Progress Report","body":"Hi team,\n\nHere is the progress update."}'
+ccskill-gmail api post '{"action":"create_draft","to":"client@example.com","cc":"manager@example.com","bcc":"archive@example.com","subject":"Project Progress Report","body":"Hi team,\n\nHere is the progress update."}'
 ```
 
 ### Multiple Recipients
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_draft","to":"user1@example.com,user2@example.com","subject":"Team Meeting Notice","body":"We will have a meeting tomorrow at 10am."}'
+ccskill-gmail api post '{"action":"create_draft","to":"user1@example.com,user2@example.com","subject":"Team Meeting Notice","body":"We will have a meeting tomorrow at 10am."}'
 ```
 
 ### HTML Email
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_draft","to":"recipient@example.com","subject":"Monthly Report","body":"Here is the monthly report.","htmlBody":"<h1>Monthly Report</h1><p>Please see the details below.</p>"}'
+ccskill-gmail api post '{"action":"create_draft","to":"recipient@example.com","subject":"Monthly Report","body":"Here is the monthly report.","htmlBody":"<h1>Monthly Report</h1><p>Please see the details below.</p>"}'
 ```
 
 ### With Attachments
@@ -137,7 +137,7 @@ Drafts are saved in Gmail's "Drafts" folder and can be reviewed, edited, and sen
 Create a JSON file with the Write tool, then send:
 
 ```bash
-.ccskill-gmail/api post @.ccskill-gmail/tmp/draft-with-attachment.json
+ccskill-gmail api post @.ccskill-gmail/tmp/draft-with-attachment.json
 ```
 
 ---
@@ -200,19 +200,19 @@ Creates a reply draft to an existing thread.
 ### Basic Reply Draft
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"Thank you for reaching out.\n\nUnderstood."}'
+ccskill-gmail api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"Thank you for reaching out.\n\nUnderstood."}'
 ```
 
 ### Reply with CC
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"Confirmed.","cc":"manager@example.com"}'
+ccskill-gmail api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"Confirmed.","cc":"manager@example.com"}'
 ```
 
 ### HTML Reply
 
 ```bash
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"Thank you.","htmlBody":"<p>Thank you.<br>Understood.</p>"}'
+ccskill-gmail api post '{"action":"create_reply_draft","threadId":"19bf7f25b96ab637","body":"Thank you.","htmlBody":"<p>Thank you.<br>Understood.</p>"}'
 ```
 
 ---
@@ -281,7 +281,7 @@ Updates an existing draft.
 ## Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"update_draft","draftId":"r-123456789","subject":"[Updated] Price Quote"}'
+ccskill-gmail api post '{"action":"update_draft","draftId":"r-123456789","subject":"[Updated] Price Quote"}'
 ```
 
 ## Response Example
@@ -331,7 +331,7 @@ Deletes a draft.
 ## Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"delete_draft","draftId":"r-123456789"}'
+ccskill-gmail api post '{"action":"delete_draft","draftId":"r-123456789"}'
 ```
 
 ## Response Example

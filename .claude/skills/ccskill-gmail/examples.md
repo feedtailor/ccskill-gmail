@@ -7,7 +7,7 @@ ccskill-gmail is a **companion** to the standard Gmail connector available in Cl
 | Task | Recommended |
 |---|---|
 | Quick "what's unread", "show me this thread", chat-driven reply drafting | Standard Gmail connector |
-| Project-bound multi-account operation (different account per `cd`) | **ccskill-gmail** |
+| Multi-account operation (default account + per-request `--account` switching + per-project binding) | **ccskill-gmail** |
 | Downloading attachment file contents (the connector returns metadata only) | **ccskill-gmail** |
 | Saving emails as HTML / PDF for archival | **ccskill-gmail** |
 | Bulk operations across many threads | **ccskill-gmail** |
@@ -18,8 +18,8 @@ The examples that follow focus on workflows where ccskill-gmail is the right cho
 
 ## Prerequisites
 
-The workflow examples below use the `.ccskill-gmail/api` command.
-The endpoint and authentication are automatically resolved internally by the script.
+The workflow examples below use the `ccskill-gmail api` command, which works from any directory.
+The account, endpoint and authentication are resolved automatically (see "Account Selection" in [SKILL.md](SKILL.md)).
 
 ---
 
@@ -27,10 +27,10 @@ The endpoint and authentication are automatically resolved internally by the scr
 
 ```bash
 # Get unread email list
-.ccskill-gmail/api get action=search query="is:unread" maxResults=10
+ccskill-gmail api get action=search query="is:unread" maxResults=10
 
 # View a specific thread in detail
-.ccskill-gmail/api get action=get_thread threadId=THREAD_ID
+ccskill-gmail api get action=get_thread threadId=THREAD_ID
 ```
 
 ---
@@ -39,7 +39,7 @@ The endpoint and authentication are automatically resolved internally by the scr
 
 ```bash
 # Unread emails from a specific sender
-.ccskill-gmail/api get action=search query="is:unread from:boss@company.com"
+ccskill-gmail api get action=search query="is:unread from:boss@company.com"
 ```
 
 ---
@@ -48,19 +48,19 @@ The endpoint and authentication are automatically resolved internally by the scr
 
 ```bash
 # 1. Search for unread emails
-.ccskill-gmail/api get action=search query="is:unread" maxResults=1
+ccskill-gmail api get action=search query="is:unread" maxResults=1
 
 # 2. Get thread details (THREAD_ID is obtained from step 1 results)
-.ccskill-gmail/api get action=get_thread threadId=THREAD_ID
+ccskill-gmail api get action=get_thread threadId=THREAD_ID
 
 # 3. Create a reply draft (recipient and subject are auto-populated; defaults to reply-all)
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Thank you for reaching out.\n\nUnderstood. I will take care of it.\n\nBest regards."}'
+ccskill-gmail api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Thank you for reaching out.\n\nUnderstood. I will take care of it.\n\nBest regards."}'
 
 # To reply only to the sender (replyAll: false)
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood.","replyAll":false}'
+ccskill-gmail api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood.","replyAll":false}'
 
 # To reply to the last message without skipping your own sent messages
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"One more thing.","skipSelf":false,"replyAll":false}'
+ccskill-gmail api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"One more thing.","skipSelf":false,"replyAll":false}'
 
 # 4. Review and send the draft in Gmail
 # https://mail.google.com/mail/u/0/#drafts
@@ -74,13 +74,13 @@ The default behavior (`skipSelf: true`, `replyAll: true`) correctly creates a re
 
 ```bash
 # Unread emails with attachments
-.ccskill-gmail/api get action=search query="is:unread has:attachment"
+ccskill-gmail api get action=search query="is:unread has:attachment"
 
 # Check the attachment list (MESSAGE_ID is obtained from the above results)
-.ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
+ccskill-gmail api get action=list_attachments messageId=MESSAGE_ID
 
 # Download an attachment (attachment at index=0)
-.ccskill-gmail/api download MESSAGE_ID 0 .ccskill-gmail/tmp/attachment.pdf
+ccskill-gmail api download MESSAGE_ID 0 .ccskill-gmail/tmp/attachment.pdf
 ```
 
 ---
@@ -93,20 +93,20 @@ When the user wants to save an email as a PDF (a typical case being a receipt or
 
 ```bash
 # 1. ALWAYS check attachments first
-.ccskill-gmail/api get action=list_attachments messageId=MESSAGE_ID
+ccskill-gmail api get action=list_attachments messageId=MESSAGE_ID
 
 # 2. If the response includes an application/pdf attachment, download it
-.ccskill-gmail/api download MESSAGE_ID 0 ./2026-05_acme_receipt.pdf
+ccskill-gmail api download MESSAGE_ID 0 ./2026-05_acme_receipt.pdf
 ```
 
 ### Example: save the body when no PDF attachment exists
 
 ```bash
 # Fallback when list_attachments returns no application/pdf entry
-.ccskill-gmail/api save-pdf MESSAGE_ID ./email.pdf
+ccskill-gmail api save-pdf MESSAGE_ID ./email.pdf
 
 # Or save the raw HTML
-.ccskill-gmail/api save-html MESSAGE_ID ./email.html
+ccskill-gmail api save-html MESSAGE_ID ./email.html
 ```
 
 `save-pdf` auto-detects Chrome headless / wkhtmltopdf. If no tool is available, it saves the HTML and provides instructions for printing via a browser.
@@ -117,10 +117,10 @@ When the user wants to save an email as a PDF (a typical case being a receipt or
 
 ```bash
 # Emails from this month
-.ccskill-gmail/api get action=search query="after:2024/01/01 before:2024/02/01"
+ccskill-gmail api get action=search query="after:2024/01/01 before:2024/02/01"
 
 # Past 7 days
-.ccskill-gmail/api get action=search query="newer_than:7d"
+ccskill-gmail api get action=search query="newer_than:7d"
 ```
 
 ---
@@ -129,10 +129,10 @@ When the user wants to save an email as a PDF (a typical case being a receipt or
 
 ```bash
 # Get label list
-.ccskill-gmail/api get action=list_labels | jq '.data.labels[] | select(.unreadCount > 0)'
+ccskill-gmail api get action=list_labels | jq '.data.labels[] | select(.unreadCount > 0)'
 
 # Emails with a specific label
-.ccskill-gmail/api get action=search query="label:Projects is:unread"
+ccskill-gmail api get action=search query="label:Projects is:unread"
 ```
 
 ---
@@ -141,7 +141,7 @@ When the user wants to save an email as a PDF (a typical case being a receipt or
 
 ```bash
 # Send a notification to all team members
-.ccskill-gmail/api post '{"action":"create_draft","to":"member1@example.com,member2@example.com,member3@example.com","cc":"manager@example.com","subject":"Weekly Meeting Notice","body":"Hi team,\n\nThe weekly meeting is scheduled as follows:\n\nDate: Tuesday, Jan 30 at 3:00 PM\nLocation: Conference Room A\n\nPlease plan to attend."}'
+ccskill-gmail api post '{"action":"create_draft","to":"member1@example.com,member2@example.com,member3@example.com","cc":"manager@example.com","subject":"Weekly Meeting Notice","body":"Hi team,\n\nThe weekly meeting is scheduled as follows:\n\nDate: Tuesday, Jan 30 at 3:00 PM\nLocation: Conference Room A\n\nPlease plan to attend."}'
 ```
 
 For long JSON, use the Write tool + `@file` pattern:
@@ -154,7 +154,7 @@ Write(".ccskill-gmail/tmp/draft.json") with the following content:
 
 ```bash
 # Step 2: Send via Bash
-.ccskill-gmail/api post @.ccskill-gmail/tmp/draft.json
+ccskill-gmail api post @.ccskill-gmail/tmp/draft.json
 ```
 
 ---
@@ -163,13 +163,13 @@ Write(".ccskill-gmail/tmp/draft.json") with the following content:
 
 ```bash
 # 1. Get unread emails (note the THREAD_ID)
-.ccskill-gmail/api get action=search query="is:unread" maxResults=1
+ccskill-gmail api get action=search query="is:unread" maxResults=1
 
 # 2. View the content
-.ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
+ccskill-gmail api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
 # 3. Mark as read
-.ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
+ccskill-gmail api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 ```
 
 ---
@@ -178,14 +178,14 @@ Write(".ccskill-gmail/tmp/draft.json") with the following content:
 
 ```bash
 # 1. Search for unread important emails (note the THREAD_ID)
-.ccskill-gmail/api get action=search query="is:unread is:important" maxResults=1
+ccskill-gmail api get action=search query="is:unread is:important" maxResults=1
 
 # 2. Add an "ActionRequired" label
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"ActionRequired"}'
+ccskill-gmail api post '{"action":"add_label","threadId":"THREAD_ID","label":"ActionRequired"}'
 
 # 3. After handling, change the label
-.ccskill-gmail/api post '{"action":"remove_label","threadId":"THREAD_ID","label":"ActionRequired"}'
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
+ccskill-gmail api post '{"action":"remove_label","threadId":"THREAD_ID","label":"ActionRequired"}'
+ccskill-gmail api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 ```
 
 ---
@@ -194,19 +194,19 @@ Write(".ccskill-gmail/tmp/draft.json") with the following content:
 
 ```bash
 # 1. Search for unread emails (note the THREAD_ID)
-.ccskill-gmail/api get action=search query="is:unread" maxResults=1
+ccskill-gmail api get action=search query="is:unread" maxResults=1
 
 # 2. View the thread content
-.ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
+ccskill-gmail api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
 # 3. Create a reply draft
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood."}'
+ccskill-gmail api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood."}'
 
 # 4. Mark as read
-.ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
+ccskill-gmail api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 
 # 5. Add a label
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
+ccskill-gmail api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 
 # 6. Review and send the draft in Gmail
 # https://mail.google.com/mail/u/0/#drafts
@@ -218,10 +218,10 @@ Write(".ccskill-gmail/tmp/draft.json") with the following content:
 
 ```bash
 # Unread count in inbox
-.ccskill-gmail/api get action=get_unread_count
+ccskill-gmail api get action=get_unread_count
 
 # Unread count for a specific label
-.ccskill-gmail/api get action=get_unread_count label=Important
+ccskill-gmail api get action=get_unread_count label=Important
 ```
 
 ---
@@ -230,14 +230,14 @@ Write(".ccskill-gmail/tmp/draft.json") with the following content:
 
 ```bash
 # 1. Process unread emails (note the THREAD_ID)
-.ccskill-gmail/api get action=search query="is:unread" maxResults=1
+ccskill-gmail api get action=search query="is:unread" maxResults=1
 
 # 2. Mark as read and add label
-.ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
+ccskill-gmail api post '{"action":"mark_read","threadId":"THREAD_ID"}'
+ccskill-gmail api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 
 # 3. Archive to clean up the inbox
-.ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
+ccskill-gmail api post '{"action":"archive","threadId":"THREAD_ID"}'
 ```
 
 ---
@@ -246,10 +246,10 @@ Write(".ccskill-gmail/tmp/draft.json") with the following content:
 
 ```bash
 # 1. Search for old promotional emails (note the THREAD_ID)
-.ccskill-gmail/api get action=search query="category:promotions older_than:30d" maxResults=1
+ccskill-gmail api get action=search query="category:promotions older_than:30d" maxResults=1
 
 # 2. Move to trash (auto-deleted after 30 days)
-.ccskill-gmail/api post '{"action":"move_to_trash","threadId":"THREAD_ID"}'
+ccskill-gmail api post '{"action":"move_to_trash","threadId":"THREAD_ID"}'
 ```
 
 ---
@@ -258,28 +258,28 @@ Write(".ccskill-gmail/tmp/draft.json") with the following content:
 
 ```bash
 # 1. Check unread count
-.ccskill-gmail/api get action=get_unread_count | jq '.data.unreadCount'
+ccskill-gmail api get action=get_unread_count | jq '.data.unreadCount'
 
 # 2. Get unread emails (note the THREAD_ID)
-.ccskill-gmail/api get action=search query="is:unread" maxResults=1
+ccskill-gmail api get action=search query="is:unread" maxResults=1
 
 # 3. View the content
-.ccskill-gmail/api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
+ccskill-gmail api get action=get_thread threadId=THREAD_ID | jq '.data.subject, .data.messages[-1].body'
 
 # 4. Create a reply draft
-.ccskill-gmail/api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood."}'
+ccskill-gmail api post '{"action":"create_reply_draft","threadId":"THREAD_ID","body":"Understood."}'
 
 # 5. Mark as read
-.ccskill-gmail/api post '{"action":"mark_read","threadId":"THREAD_ID"}'
+ccskill-gmail api post '{"action":"mark_read","threadId":"THREAD_ID"}'
 
 # 6. Add a label
-.ccskill-gmail/api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
+ccskill-gmail api post '{"action":"add_label","threadId":"THREAD_ID","label":"Handled"}'
 
 # 7. Archive
-.ccskill-gmail/api post '{"action":"archive","threadId":"THREAD_ID"}'
+ccskill-gmail api post '{"action":"archive","threadId":"THREAD_ID"}'
 
 # 8. Re-check unread count
-.ccskill-gmail/api get action=get_unread_count | jq '.data.unreadCount'
+ccskill-gmail api get action=get_unread_count | jq '.data.unreadCount'
 
 # Review and send drafts in Gmail: https://mail.google.com/mail/u/0/#drafts
 ```
@@ -310,7 +310,7 @@ Write(".ccskill-gmail/tmp/draft-with-attachment.json") with the following conten
 
 ```bash
 # Step 2: Send via Bash
-.ccskill-gmail/api post @.ccskill-gmail/tmp/draft-with-attachment.json
+ccskill-gmail api post @.ccskill-gmail/tmp/draft-with-attachment.json
 ```
 
 - `attachments` is an array that supports multiple files
@@ -322,7 +322,7 @@ Write(".ccskill-gmail/tmp/draft-with-attachment.json") with the following conten
 
 ## 17. Generate Shell Scripts for Gmail Automation
 
-The `.ccskill-gmail/api` command works as a Gmail bridge API callable from shell scripts. Ask Claude Code to generate a script and it will produce a working automation — no manual API research needed.
+The `ccskill-gmail api` command works as a Gmail bridge API callable from shell scripts. Ask Claude Code to generate a script and it will produce a working automation — no manual API research needed.
 
 ### Use Case: Extract Spam Analysis Data
 
@@ -335,14 +335,14 @@ Claude Code generates a script like:
 set -euo pipefail
 
 # Search spam emails
-result=$(.ccskill-gmail/api get action=search query="in:spam" maxResults=50)
+result=$(ccskill-gmail api get action=search query="in:spam" maxResults=50)
 
 # Extract thread IDs
 thread_ids=$(echo "$result" | jq -r '.data.threads[].id')
 
 # Fetch each thread and output NDJSON
 for tid in $thread_ids; do
-  thread=$(.ccskill-gmail/api get action=get_thread threadId="$tid")
+  thread=$(ccskill-gmail api get action=get_thread threadId="$tid")
   echo "$thread" | jq -c '.data.messages[0] | {
     from: .from,
     subject: .subject,
@@ -363,17 +363,17 @@ set -euo pipefail
 mkdir -p ./invoices
 
 # Search for invoice emails with attachments
-result=$(.ccskill-gmail/api get action=search query="invoice has:attachment newer_than:30d" maxResults=50)
+result=$(ccskill-gmail api get action=search query="invoice has:attachment newer_than:30d" maxResults=50)
 
 # Process each message
 echo "$result" | jq -r '.data.threads[].messages[].id' | while read -r msg_id; do
   # List attachments
-  attachments=$(.ccskill-gmail/api get action=list_attachments messageId="$msg_id")
+  attachments=$(ccskill-gmail api get action=list_attachments messageId="$msg_id")
   
   # Download PDF attachments
   echo "$attachments" | jq -r '.data.attachments[] | select(.mimeType == "application/pdf") | .index' | while read -r idx; do
     filename=$(echo "$attachments" | jq -r ".data.attachments[$idx].filename")
-    .ccskill-gmail/api download "$msg_id" "$idx" "./invoices/${msg_id}_${filename}"
+    ccskill-gmail api download "$msg_id" "$idx" "./invoices/${msg_id}_${filename}"
     echo "Downloaded: $filename"
   done
 done
@@ -390,7 +390,7 @@ set -euo pipefail
 echo "# Unread Email Summary — $(date +%Y-%m-%d)"
 echo ""
 
-result=$(.ccskill-gmail/api get action=search query="is:unread newer_than:1d" maxResults=30)
+result=$(ccskill-gmail api get action=search query="is:unread newer_than:1d" maxResults=30)
 count=$(echo "$result" | jq '.data.threads | length')
 
 echo "**$count unread emails today**"
@@ -403,8 +403,8 @@ echo "$result" | jq -r '.data.threads[] | "| \(.from) | \(.subject) | \(.date) |
 
 ### Key Points for Generated Scripts
 
-- **Run from the project directory** where ccskill-gmail is installed
-- **Authentication is automatic** — `.ccskill-gmail/api` handles OAuth tokens
+- **Scripts run from any directory** once an account is registered. The account is resolved per call (project binding > default); pin it explicitly in scripts with `--account <email|label>` or the `CCSKILL_GMAIL_ACCOUNT` env var
+- **Authentication is automatic** — `ccskill-gmail api` handles OAuth tokens
 - **Standard shell features are allowed** — `$()`, pipes, loops, `jq`, `&&` are all fine in scripts (the restrictions in SKILL.md apply only to interactive Bash tool calls)
 - **JSON responses** — all API responses are `{"ok": true, "data": ...}`, use `jq` for parsing
 
@@ -418,14 +418,14 @@ Identify threads where the last message is from someone else (i.e., you haven't 
 
 ```bash
 # 1. Get your own email address
-.ccskill-gmail/api get action=get_profile | jq -r '.data.email'
+ccskill-gmail api get action=get_profile | jq -r '.data.email'
 
 # 2. Search recent emails (ALWAYS include id in jq output)
-.ccskill-gmail/api get action=search query="is:unread" maxResults=20 \
+ccskill-gmail api get action=search query="is:unread" maxResults=20 \
   | jq '.data.threads[] | {id, subject, from, date}'
 
 # 3. For each thread, check who sent the last message
-.ccskill-gmail/api get action=get_thread threadId=THREAD_ID \
+ccskill-gmail api get action=get_thread threadId=THREAD_ID \
   | jq '{subject: .data.subject, lastFrom: .data.messages[-1].from, lastDate: .data.messages[-1].date}'
 
 # 4. Determine unreplied status:
@@ -453,17 +453,17 @@ When scanning the inbox for actionable emails, exclude automated senders to redu
 
 ```bash
 # Filter out automated notifications and surface human-sent emails
-.ccskill-gmail/api get action=search query="newer_than:1d in:inbox -category:promotions -category:updates -category:social -from:noreply -from:no-reply -from:donotreply -from:notification -from:alert" maxResults=20
+ccskill-gmail api get action=search query="newer_than:1d in:inbox -category:promotions -category:updates -category:social -from:noreply -from:no-reply -from:donotreply -from:notification -from:alert" maxResults=20
 ```
 
 ### Customizing the Filter
 
 ```bash
 # Customer emails only (if a label exists)
-.ccskill-gmail/api get action=search query="newer_than:1d label:customers"
+ccskill-gmail api get action=search query="newer_than:1d label:customers"
 
 # Broader time range
-.ccskill-gmail/api get action=search query="newer_than:7d in:inbox -from:noreply -from:no-reply"
+ccskill-gmail api get action=search query="newer_than:7d in:inbox -from:noreply -from:no-reply"
 
 # Combined with unreplied check (see §18)
 # First filter with smart query, then check last sender per thread

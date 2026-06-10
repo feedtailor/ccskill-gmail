@@ -24,7 +24,7 @@ AI triage can use these to surface actionable items to the human reader.
 ### Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"star","messageId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"star","messageId":"19bf7f25b96ab637"}'
 ```
 
 ### Response Example
@@ -57,7 +57,7 @@ AI triage can use these to surface actionable items to the human reader.
 ### Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"unstar","messageId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"unstar","messageId":"19bf7f25b96ab637"}'
 ```
 
 ---
@@ -79,7 +79,7 @@ Marks an entire thread as important. This feeds into Gmail's Priority Inbox clas
 ### Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"mark_important","threadId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"mark_important","threadId":"19bf7f25b96ab637"}'
 ```
 
 ### Response Example
@@ -112,7 +112,7 @@ Marks an entire thread as important. This feeds into Gmail's Priority Inbox clas
 ### Example
 
 ```bash
-.ccskill-gmail/api post '{"action":"unmark_important","threadId":"19bf7f25b96ab637"}'
+ccskill-gmail api post '{"action":"unmark_important","threadId":"19bf7f25b96ab637"}'
 ```
 
 ---

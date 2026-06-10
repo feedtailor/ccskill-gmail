@@ -32,13 +32,13 @@ Pick the query by **what you want**, not by the first operator that comes to min
 
 ```bash
 # Unread emails
-.ccskill-gmail/api get action=search query="is:unread"
+ccskill-gmail api get action=search query="is:unread"
 
 # From a specific sender (latest 10)
-.ccskill-gmail/api get action=search query="from:boss@company.com" maxResults=10
+ccskill-gmail api get action=search query="from:boss@company.com" maxResults=10
 
 # Query containing non-ASCII characters (get subcommand auto-encodes)
-.ccskill-gmail/api get action=search query="subject:invoice"
+ccskill-gmail api get action=search query="subject:invoice"
 ```
 
 ## Response Example
