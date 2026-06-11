@@ -13,7 +13,8 @@
 #
 
 # Registry file path (set when sourced)
-_REGISTRY_FILE="${CCSKILL_GMAIL_DIR:-.}/.registry.json"
+# CCSKILL_GMAIL_REGISTRY_FILE はテスト用の上書き (migrate.sh と共通)
+_REGISTRY_FILE="${CCSKILL_GMAIL_REGISTRY_FILE:-${CCSKILL_GMAIL_DIR:-.}/.registry.json}"
 
 # Flag to show jq warning only once per script execution
 _REGISTRY_JQ_WARNED=false
@@ -37,11 +38,10 @@ _registry_now() {
     date '+%Y-%m-%d %H:%M:%S'
 }
 
-# Atomic write: write to tmpfile then mv
+# Atomic write: write to tmpfile (同一ディレクトリ) then mv
 _registry_write() {
     local content="$1"
-    local tmp
-    tmp=$(mktemp)
+    local tmp="${_REGISTRY_FILE}.tmp.$$"
     echo "$content" > "$tmp"
     /bin/mv -f "$tmp" "$_REGISTRY_FILE"
 }
@@ -119,8 +119,7 @@ registry_upsert() {
     local existing_email
     existing_email=$(jq -r --arg path "$target_dir" '.installations[$path].email // ""' "$_REGISTRY_FILE" 2>/dev/null)
 
-    local tmp
-    tmp=$(mktemp)
+    local tmp="${_REGISTRY_FILE}.tmp.$$"
     jq --arg path "$target_dir" \
        --arg project_name "${project_name:-$(basename "$target_dir")}" \
        --arg installed_at "${installed_at:-$now}" \
@@ -165,8 +164,7 @@ registry_update_email() {
         return 0
     fi
 
-    local tmp
-    tmp=$(mktemp)
+    local tmp="${_REGISTRY_FILE}.tmp.$$"
     jq --arg path "$target_dir" \
        --arg email "$email" \
        '.installations[$path].email = $email' \
@@ -194,8 +192,7 @@ registry_remove() {
 
     local now
     now=$(_registry_now)
-    local tmp
-    tmp=$(mktemp)
+    local tmp="${_REGISTRY_FILE}.tmp.$$"
     jq --arg path "$target_dir" --arg now "$now" \
        'del(.installations[$path]) | .updated_at = $now' \
        "$_REGISTRY_FILE" > "$tmp"

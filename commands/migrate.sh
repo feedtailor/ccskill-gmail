@@ -200,6 +200,17 @@ while [ $i -lt ${#REP_EMAILS[@]} ]; do
 
         accounts_upsert "$email" "${clasp_user:-default}" "$script_id" "$deployment_id" "$endpoint" ""
         echo -e "${GREEN}✓ Registered: $email${NC}"
+
+        # 代表プロジェクトの config.js をアカウント GAS ディレクトリへ引き継ぐ (#126)。
+        # これが無いと account update がテンプレート config を push してしまい、
+        # 移行元でカスタムした permissions (move_to_trash 許可等) が失われる
+        acct_gdir="$HOME/.ccskill-gmail/gas/${clasp_user:-default}"
+        if [ -f "$rep_path/.ccskill-gmail/config.js" ] && [ ! -f "$acct_gdir/config.js" ]; then
+            mkdir -p "$acct_gdir"
+            chmod 700 "$HOME/.ccskill-gmail" "$HOME/.ccskill-gmail/gas" "$acct_gdir" 2>/dev/null || true
+            /bin/cp "$rep_path/.ccskill-gmail/config.js" "$acct_gdir/config.js"
+            echo "  (config.js carried over from $rep_path)"
+        fi
     fi
 
     i=$((i + 1))

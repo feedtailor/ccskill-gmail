@@ -32,6 +32,19 @@ ccskill-gmail api --account info@example.com get action=search query="subject:in
 
 GET is for read actions (`search`, `get_thread`, `list_labels`, ...). POST is for write actions (`create_draft`, `mark_read`, `add_label`, ...). Using the wrong method returns an `Unknown action` error. The get subcommand auto URL-encodes values, so Japanese text can be passed as-is.
 
+### Two Command Families
+
+The `ccskill-gmail` CLI has two distinct families. Do not mix them:
+
+| Family | Form | Subcommands |
+|---|---|---|
+| **API** (Gmail operations — what you mostly use) | `ccskill-gmail api <sub>` | `get`, `post`, `download`, `save-html`, `save-pdf`, `whoami` — these six ONLY |
+| **Management** (setup & config) | `ccskill-gmail <cmd>` (no `api`) | `account`, `bind`, `unbind`, `info`, `status`, `history`, `doctor`, ... |
+
+- `ccskill-gmail api info` / `api history` / `api unbind` are **invalid** — those are management commands: `ccskill-gmail info` etc.
+- `ccskill-gmail get ...` is **invalid** — API subcommands live under `api`: `ccskill-gmail api get ...`
+- To check the active account: `ccskill-gmail api whoami` (resolution source included) or `ccskill-gmail api get action=get_profile` (email + unread counts)
+
 **❌ Common mistakes — these do NOT exist:**
 
 - `ccskill-gmail get ...` — the `api` subcommand is required: `ccskill-gmail api get ...`

@@ -112,6 +112,16 @@ test_dry_run_writes_nothing() {
     [ ! -f "$PROJ1/.ccskill-gmail/binding.json" ]
 }
 
+# (5.5) 代表プロジェクトの config.js がアカウント GAS ディレクトリへ引き継がれる (#126)
+test_config_carried_over() {
+    setup_fixture
+    echo "// custom config" > "$PROJ1/.ccskill-gmail/config.js"
+    run_migrate --yes >/dev/null || return 1
+    # PROJ1 (a@example.com の代表) の clasp_user は user1
+    assert_file_exists "$HOME/.ccskill-gmail/gas/user1/config.js" || return 1
+    grep -q "custom config" "$HOME/.ccskill-gmail/gas/user1/config.js"
+}
+
 # (6) email 不明のプロジェクトはスキップされ、警告が出る
 test_unknown_email_skipped() {
     setup_fixture
@@ -133,6 +143,7 @@ run_test "binding.json written to each project"            test_bindings_written
 run_test "existing accounts.json entry not clobbered"      test_existing_account_not_clobbered
 run_test "surplus deployments listed"                      test_surplus_deployments_listed
 run_test "--dry-run writes nothing"                        test_dry_run_writes_nothing
+run_test "config.js carried over to account gas dir"       test_config_carried_over
 run_test "unknown email is skipped with warning"           test_unknown_email_skipped
 
 test_summary

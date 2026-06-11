@@ -106,8 +106,9 @@ _api_init() {
         export _CLASP_USER
         _ACCOUNT_SOURCE="binding"
     elif [ -f "$metadata_file" ]; then
-        # レガシーバインド (プロジェクトのメタデータ)。エンドポイントは従来フローで解決
-        _ACCOUNT_SOURCE="binding"
+        # レガシーバインド (プロジェクトのメタデータ)。エンドポイントは従来フローで解決。
+        # binding.json 由来 ("binding") と区別する (#120)
+        _ACCOUNT_SOURCE="binding-legacy"
     else
         # accounts.json の default / 単一アカウント
         if command -v jq &>/dev/null && [ -f "$HOME/.ccskill-gmail/accounts.json" ]; then
@@ -509,6 +510,14 @@ fi
 
 shift
 
+# 管理コマンドの取り違え検知 (#120): アカウント解決より前に弾く
+case "$SUBCOMMAND" in
+    setup|install|uninstall|update|update-all|apply-config|register|info|status|history|doctor|release|account|bind|unbind|skill|migrate)
+        echo "{\"ok\":false,\"error\":\"'${SUBCOMMAND}' is a management command, not an api subcommand. Use: ccskill-gmail ${SUBCOMMAND} ... (without 'api')\",\"error_code\":\"WRONG_CLI\",\"hint\":\"api subcommands are: get, post, download, save-html, save-pdf, whoami\",\"retryable\":false}"
+        exit 1
+        ;;
+esac
+
 # 初期化（共通）
 _api_init || exit 1
 
@@ -518,8 +527,8 @@ _api_init || exit 1
 
 if [ "$SUBCOMMAND" = "whoami" ]; then
     _WHO_EMAIL="${_ACCOUNT_EMAIL:-}"
-    # バインド解決時はレジストリから email を引く (ベストエフォート)
-    if [ -z "$_WHO_EMAIL" ] && [ "${_ACCOUNT_SOURCE:-}" = "binding" ] \
+    # レガシーバインド解決時はレジストリから email を引く (ベストエフォート)
+    if [ -z "$_WHO_EMAIL" ] && [ "${_ACCOUNT_SOURCE:-}" = "binding-legacy" ] \
        && command -v jq &>/dev/null && [ -f "$_MASTER_DIR/.registry.json" ]; then
         _WHO_PROJ="$(dirname "$_META_DIR")"
         _WHO_EMAIL=$(jq -r --arg p "$_WHO_PROJ" '.installations[$p].email // empty' "$_MASTER_DIR/.registry.json" 2>/dev/null)

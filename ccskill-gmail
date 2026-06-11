@@ -33,7 +33,7 @@ Usage: ccskill-gmail <command> [args...]
 
 Commands:
   api <get|post|...> [args...]     Call the Gmail API (same as .ccskill-gmail/api)
-  account <add|list|default|remove>  Manage registered Gmail accounts
+  account <add|list|default|remove|update>  Manage registered Gmail accounts
   skill <install|uninstall>        Register as a user skill (all projects)
   bind <email|label> [DIR]         Pin a directory to an account (binding.json)
   unbind [DIR]                     Remove a directory binding
@@ -139,6 +139,29 @@ case "$COMMAND" in
     version|--version|-v)
         echo "ccskill-gmail $VERSION"
         exit 0
+        ;;
+    # API サブコマンドの取り違え検知 (#120): api を付け忘れたケース
+    get|post|download|save-html|save-pdf|whoami)
+        echo "Error: '$COMMAND' is an api subcommand."
+        echo ""
+        echo "Did you mean:"
+        echo "  ccskill-gmail api $COMMAND ..."
+        exit 1
+        ;;
+    # API action の直打ち検知 (#120): action はサブコマンドではない
+    search|get_thread|get_message|list_labels|get_unread_count|list_attachments|get_attachment|get_message_html|list_drafts|get_profile)
+        echo "Error: '$COMMAND' is an API action, not a command."
+        echo ""
+        echo "Did you mean:"
+        echo "  ccskill-gmail api get action=$COMMAND ..."
+        exit 1
+        ;;
+    create_draft|create_reply_draft|update_draft|delete_draft|mark_read|mark_unread|add_label|remove_label|archive|move_to_inbox|move_to_trash|star|unstar|mark_important|unmark_important|bulk_mark_read|bulk_mark_unread|bulk_add_label|bulk_remove_label|bulk_archive)
+        echo "Error: '$COMMAND' is an API action, not a command."
+        echo ""
+        echo "Did you mean:"
+        echo "  ccskill-gmail api post '{\"action\":\"$COMMAND\",...}'"
+        exit 1
         ;;
     *)
         echo "Error: Unknown command '$COMMAND'"

@@ -151,6 +151,43 @@ test_binding_json_beats_legacy_metadata() {
     assert_contains '"account":"b@example.com"' "$out"
 }
 
+# (9.5) unbind: レガシーメタデータが残る場合は警告を出す (#126)
+test_unbind_warns_about_legacy() {
+    use_fixture_home
+    seed_account "a@example.com"
+    local proj out
+    proj=$(test_mktemp_d)
+    make_legacy_metadata "$proj"
+    (cd "$proj" && "$REPO_DIR/ccskill-gmail" bind a@example.com --yes >/dev/null 2>&1) || return 1
+    out=$(cd "$proj" && "$REPO_DIR/ccskill-gmail" unbind --yes 2>&1) || return 1
+    assert_contains "legacy" "$out" || return 1
+    assert_contains "purge-legacy" "$out"
+}
+
+# (9.6) unbind --purge-legacy: レガシー install ファイルを除去し audit は残す (#126)
+test_unbind_purge_legacy() {
+    use_fixture_home
+    seed_account "a@example.com"
+    local proj out src
+    proj=$(test_mktemp_d)
+    make_legacy_metadata "$proj"
+    printf '{"scriptId":"S","rootDir":"."}\n' > "$proj/.ccskill-gmail/.clasp.json"
+    echo "// config" > "$proj/.ccskill-gmail/config.js"
+    echo '{"x":1}' > "$proj/.ccskill-gmail/audit.jsonl"
+    /bin/cp "$REPO_DIR/lib/api" "$proj/.ccskill-gmail/api"
+    (cd "$proj" && "$REPO_DIR/ccskill-gmail" bind a@example.com --yes >/dev/null 2>&1) || return 1
+    (cd "$proj" && "$REPO_DIR/ccskill-gmail" unbind --purge-legacy --yes >/dev/null 2>&1) || return 1
+    [ ! -f "$proj/.ccskill-gmail/binding.json" ] || return 1
+    [ ! -f "$proj/.ccskill-gmail/.ccskill-metadata.json" ] || { echo "    metadata should be purged" >&2; return 1; }
+    [ ! -f "$proj/.ccskill-gmail/.clasp.json" ] || return 1
+    [ ! -f "$proj/.ccskill-gmail/config.js" ] || return 1
+    assert_file_exists "$proj/.ccskill-gmail/audit.jsonl" || return 1
+    # 掃除後は default 解決になる
+    out=$(cd "$proj" && GMAIL_ENDPOINT="" CCSKILL_GMAIL_ACCOUNT="" "$REPO_DIR/ccskill-gmail" api whoami 2>&1) || true
+    src=$(printf '%s' "$out" | jq -r '.data.account_source // empty' 2>/dev/null)
+    assert_eq "default" "$src" "raw: $out"
+}
+
 # (10) whoami が binding.json 解決を報告する
 test_whoami_binding_json() {
     use_fixture_home
@@ -178,6 +215,8 @@ run_test "api: binding.json beats default"                  test_binding_beats_d
 run_test "api: --account flag beats binding.json"           test_flag_beats_binding_json
 run_test "api: binding to removed account -> UNKNOWN"       test_binding_to_removed_account
 run_test "api: binding.json beats legacy metadata"          test_binding_json_beats_legacy_metadata
+run_test "unbind: warns about remaining legacy metadata"    test_unbind_warns_about_legacy
+run_test "unbind --purge-legacy: cleans legacy, keeps audit" test_unbind_purge_legacy
 run_test "api: whoami reports binding.json resolution"      test_whoami_binding_json
 
 test_summary

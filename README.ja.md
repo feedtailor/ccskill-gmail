@@ -38,15 +38,22 @@ ccskill-gmail は、Claude Code 標準の Gmail コネクタ (MCP) を補完す�
 
 ### 複数アカウント対応
 
-標準の Gmail コネクタは Claude に紐付いた一つのアカウントにしかアクセスできませんが、ccskill-gmail はプロジェクトディレクトリごとに任意の Gmail アカウントを個別に接続できます。
+標準の Gmail コネクタは Claude に紐付いた一つのアカウントにしかアクセスできませんが、ccskill-gmail は任意の数の Gmail アカウントを中央登録し、デフォルト指定と呼び出し単位の切り替えができます。
 
 ```bash
-cd /path/to/work-project    # work@company.com を操作
-cd /path/to/personal-blog   # you@gmail.com を操作
-cd /path/to/client-x        # sales@client-x.example を操作
+ccskill-gmail account add --label work      # アカウント登録（各 1 回）
+ccskill-gmail account add --label personal
+
+ccskill-gmail api get action=get_profile                     # デフォルトアカウント
+ccskill-gmail api --account personal get action=get_profile  # 呼び出し単位で切替
 ```
 
-1つのプロジェクトディレクトリに紐づけられる Gmail アカウントは1つです。
+Claude Code には「個人アカウントのほうで確認して」のように話すだけで切り替わります。特定のディレクトリを特定のアカウントに固定（ピン留め）することもできます:
+
+```bash
+cd /path/to/work-project
+ccskill-gmail bind work     # このディレクトリは常に work アカウントを操作
+```
 
 ### 操作履歴の記録と振り返り
 
@@ -58,7 +65,7 @@ ccskill-gmail が行った作業を振り返ることができます。
 
 ### Gmail を使う独自スクリプトの開発
 
-本スキルが内蔵する `.ccskill-gmail/api` は Gmail 操作スクリプトとして機能します。このスクリプトを使って、Gmail と連携するプログラムを Claude Code に開発してもらうことができます。OAuthを前提とする GCP のAPIキーの発行は不要です。
+`ccskill-gmail api` コマンドは、どこからでも呼べる Gmail 操作スクリプトとして機能します。このコマンドを使って、Gmail と連携するプログラムを Claude Code に開発してもらうことができます。OAuthを前提とする GCP のAPIキーの発行は不要です。
 
 ### セキュリティ
 
@@ -133,33 +140,42 @@ cd ~/projects/ccskill-gmail
 ./ccskill-gmail setup
 ```
 
-### 3. プロジェクトにインストール
+### 3. Gmail アカウントの登録
 
-本スキルを使うプロジェクトのディレクトリでインストールコマンドを実行します。
+使いたい Gmail アカウントを登録します（アカウントごとに 1 回）。GAS プロジェクトの作成・デプロイは自動で行われます。途中で Google の認証のためブラウザが開きますので「許可」してください。
+
+```bash
+ccskill-gmail account add
+```
+
+### 4. スキルの全プロジェクト登録
+
+```bash
+ccskill-gmail skill install
+```
+
+ccskill-gmail を Claude Code の**ユーザースキル**（`~/.claude/skills/`）として登録します。これにより、この Mac 上のどのプロジェクトでもプロジェクト単位のインストールなしで Claude Code から Gmail を扱えるようになります。
+
+### 5. 確認
+
+```bash
+ccskill-gmail api whoami
+ccskill-gmail api get action=get_profile
+```
+
+`whoami` は「いまのディレクトリからの呼び出しがどのアカウントに解決されるか（とその理由）」を、`get_profile` はアカウントのメールアドレスと未読数を返します。
+
+### （任意）プロジェクト単位のセットアップ
+
+特定のプロジェクトディレクトリを特定アカウントに固定したい場合や、そのプロジェクトでの Claude Code の確認プロンプトを減らしたい場合は、対象ディレクトリで `install` を実行します:
 
 ```bash
 cd /path/to/your-project
-ccskill-gmail install
+ccskill-gmail install                  # デフォルトアカウントに固定 + ファイル配置 + permission 設定
+ccskill-gmail install --account work   # 特定の登録済みアカウントに固定
 ```
 
-GAS プロジェクトの作成、デプロイを自動で行います。途中で Google の認証のためブラウザが開きますので「許可」してください。
-
-### 4. 確認
-
-インストール完了後、`ccskill-gmail info` を実行してください。以下のような情報が表示されますので、意図した通りにプロジェクトディレクトリと Gmail が連携していることを確認してください。
-
-```bash
-  Account:       ccskill-gmail@example.com
-  Directory:     /path/to/your-project
-  Version:       999ce0e
-  Installed:     2026-05-06 01:23:45
-
-  Permissions:
-    Denied:      move_to_trash
-
-  Inbox:         xxxx unread
-  Starred:       xx unread
-```
+このとき新しい GAS プロジェクトは**作成されません**（登録済みアカウントへのピン留めと、スキルファイルの配置・permission 設定のみ）。プロジェクト専用の GAS デプロイが必要な上級ユースケース（プロジェクト別の `config.js` 権限制御など）では `ccskill-gmail install --dedicated` を使ってください。
 
 ## 更新
 
@@ -167,7 +183,7 @@ ccskill-gmail は機能追加や不具合修正で更新されることがあり
 
 ### git clone の場合
 
-ccskill-gmail をインストールしたディレクトリで `git pull` を実行したのち、アップデートコマンドを実行してください。ccskill-gmail がインストールされたプロジェクトディレクトリを検出し全てのプロジェクトにアップデートをかけます。
+ccskill-gmail をインストールしたディレクトリで `git pull` を実行したのち、アップデートコマンドを実行してください。アカウント共有 GAS の更新**と**、インストール済み全プロジェクトの更新を行います。
 
 ```bash
 cd ~/projects/ccskill-gmail
@@ -175,11 +191,14 @@ git pull
 ccskill-gmail update-all
 ```
 
-個別にプロジェクト単位でアップデートすることもできます。
+（`ccskill-gmail skill install` で登録したユーザースキルは本リポジトリへの symlink のため、`git pull` した時点で最新になっています。）
+
+アカウント共有 GAS のみ、またはプロジェクト単位の個別アップデートもできます。
 
 ```bash
+ccskill-gmail account update          # 全登録アカウントの共有 GAS
 cd /path/to/your-project/
-ccskill-gmail update
+ccskill-gmail update                  # プロジェクト 1 つ
 ```
 
 ### zip 配布の場合
@@ -189,34 +208,50 @@ ccskill-gmail update
 ## アンインストール
 
 ```bash
-ccskill-gmail uninstall
+ccskill-gmail uninstall          # プロジェクト単位のインストールを削除
+ccskill-gmail skill uninstall    # ユーザースキル登録を解除
+ccskill-gmail account remove <email|label>   # アカウント登録を解除
 ```
 
-ローカルファイル（`.ccskill-gmail/`、スキル定義、パーミッション設定）が削除されます。Google Apps Script のプロジェクトは自動削除されないため、[script.google.com](https://script.google.com) から手動で削除してください。
+`uninstall` はローカルのプロジェクトファイル（`.ccskill-gmail/`、スキル定義、パーミッション設定）を削除します。Google Apps Script のプロジェクトは自動削除されないため、[script.google.com](https://script.google.com) から手動で削除してください。
 
 ## その他のコマンド
 
 ```bash
 ccskill-gmail help                # 全コマンドの表示
+ccskill-gmail api whoami          # いまのディレクトリがどのアカウントに解決されるか表示
+ccskill-gmail account list        # 登録アカウントの一覧
+ccskill-gmail account default <email|label>  # デフォルトアカウントの変更
+ccskill-gmail bind <email|label>  # いまのディレクトリをアカウントに固定
+ccskill-gmail unbind [--purge-legacy]  # 固定の解除（レガシー install の掃除も可）
+ccskill-gmail migrate             # 中央レジストリ以前の install を移行
 ccskill-gmail info [--json]       # 現在のプロジェクトの詳細表示（アカウント、権限、未読数）
 ccskill-gmail status [--refresh]  # インストール状況の一覧表示
 ccskill-gmail doctor              # 環境・セットアップの診断
-ccskill-gmail history             # API 操作の監査ログ表示
-ccskill-gmail apply-config        # config.js の変更を GAS に反映
+ccskill-gmail history [--all]     # API 操作の監査ログ表示
+ccskill-gmail apply-config        # config.js の変更を GAS に反映（専用 GAS の install 向け）
 ccskill-gmail register <PATH>     # 既存インストールの登録
 ccskill-gmail release             # 配布用 zip ファイルの作成
 ```
 
 ## 複数アカウント利用
 
-Google アカウントを使い分けたい場合は `--user` オプションを使います。`--user` には英数字・ハイフン・アンダースコアのみ使用できます。（例: `work`, `personal2`, `info-ft`）
+各アカウントをラベル付きで 1 回ずつ登録します。ラベルには英数字・ハイフン・アンダースコアのみ使用できます（例: `work`, `personal2`, `info-ft`）。アカウントごとに Google ログインが必要です。
 
 ```bash
-cd /path/to/work-project
-ccskill-gmail install --user work
+ccskill-gmail account add --label work
+ccskill-gmail account add --label personal
+ccskill-gmail account list                  # * がデフォルト
+ccskill-gmail account default personal     # デフォルトの変更
 ```
 
-途中、Google ログインが別途必要な場合があります。プロジェクトディレクトリに Google アカウントが紐づきます。
+呼び出しごとのアカウント決定は 3 通りです（優先順）:
+
+1. **明示指定**: `ccskill-gmail api --account work get ...` — Claude Code には依頼文でアカウント名を言うだけ
+2. **ディレクトリ固定**: `ccskill-gmail bind work` — そのディレクトリでの操作は常に work アカウント
+3. **デフォルト**: 上記以外はデフォルトアカウント
+
+`ccskill-gmail api whoami` で「どのアカウントが・なぜ選ばれるか」をいつでも確認できます。
 
 ## 技術情報
 
@@ -243,7 +278,7 @@ flowchart LR
     style Gmail fill:#c5221f,stroke:#ea4335,color:#fff
 ```
 
-Google アカウントはプロジェクトディレクトリに紐づくため、操作する Gmail をプロジェクトごとに変えることができます。
+GAS Web App は登録 Google アカウントごとに 1 つデプロイされ、全ディレクトリで共有されます。操作対象のアカウントは呼び出しごとに「明示の `--account` > ディレクトリ固定（`bind`） > デフォルトアカウント」の順で決まります。各 Web App へのアクセスはデプロイした Google アカウント自身（MYSELF）に制限されます。
 
 
 
@@ -282,9 +317,9 @@ API の仕様やトラブルシューティングは、スキル定義ドキュ�
 
 ## トラブルシューティング
 
-### install が途中で失敗した場合
+### アカウント登録が途中で失敗した場合
 
-`ccskill-gmail install` を再度実行してください。「Overwrite?」と聞かれるので `y` で上書きすれば最初からやり直せます。失敗時に GAS プロジェクトが Google 側に残ることがあります。[script.google.com](https://script.google.com) から手動で削除してから再実行してください。
+`ccskill-gmail account add` を再度実行してください。失敗時に GAS プロジェクトが Google 側に残ることがあります。[script.google.com](https://script.google.com) から手動で削除してから再実行してください。
 
 ### ブラウザが開いた時にリダイレクトループエラーや、「ファイルを開くことができません」のエラーが表示される
 
@@ -302,7 +337,7 @@ API の仕様やトラブルシューティングは、スキル定義ドキュ�
 
 ### マルチアカウントのOAuth認証エラー
 
-`--user` を使用して認証エラーが発生する場合は、プロジェクトディレクトリで `ccskill-gmail doctor` を実行してください。clasp のログイン状態、OAuth トークン、エンドポイント接続まで一通りチェックし、問題箇所と修正方法を提示します。
+複数アカウントの利用で認証エラーが発生する場合は `ccskill-gmail doctor` を実行してください。clasp のログイン状態、OAuth トークン、アカウントレジストリ、エンドポイント接続まで一通りチェックし、問題箇所と修正方法を提示します。
 
 ### update 後に正常動作しない場合
 

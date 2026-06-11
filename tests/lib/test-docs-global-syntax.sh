@@ -56,6 +56,17 @@ test_tmp_dir_guidance_kept() {
     grep -q -F '.ccskill-gmail/tmp/' "$SKILL_DIR/SKILL.ja.md"
 }
 
+# (5) 二段構造 (管理系 / API 系) の早見表がある (#120)
+test_two_families_table_present() {
+    grep -q 'Two Command Families' "$SKILL_DIR/SKILL.md" || { echo "    missing 'Two Command Families' in SKILL.md" >&2; return 1; }
+    grep -q 'コマンドは 2 系統' "$SKILL_DIR/SKILL.ja.md" || { echo "    missing 'コマンドは 2 系統' in SKILL.ja.md" >&2; return 1; }
+}
+
+# (6) reference/index.md に get_profile が記載されている (#120)
+test_index_has_get_profile() {
+    grep -q 'get_profile' "$SKILL_DIR/reference/index.md"
+}
+
 echo ""
 echo "test-docs-global-syntax.sh (#124)"
 echo ""
@@ -65,5 +76,7 @@ run_test "global syntax present in SKILL.md/examples"  test_global_syntax_presen
 run_test "account rules present (SKILL.md)"            test_account_rules_present_en
 run_test "account rules present (SKILL.ja.md)"         test_account_rules_present_ja
 run_test ".ccskill-gmail/tmp/ guidance kept"           test_tmp_dir_guidance_kept
+run_test "two command families table present (#120)"   test_two_families_table_present
+run_test "index.md has get_profile (#120)"             test_index_has_get_profile
 
 test_summary

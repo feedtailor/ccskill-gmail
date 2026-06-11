@@ -51,6 +51,16 @@ echo "Master version: $MASTER_VERSION"
 echo ""
 
 # ========================================
+# 2.5 アカウント共有 GAS の更新 (#126)
+# ========================================
+
+echo "Updating account-level shared GAS..."
+if ! "$CCSKILL_GMAIL_DIR/commands/account.sh" update; then
+    echo -e "${YELLOW}Warning: some account GAS updates failed (see above). Continuing with projects.${NC}"
+fi
+echo ""
+
+# ========================================
 # 3. Find update targets
 # ========================================
 

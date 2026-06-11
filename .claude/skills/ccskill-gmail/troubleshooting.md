@@ -241,7 +241,7 @@ ccskill-gmail doctor
 
 ```bash
 ccskill-gmail api whoami
-# Shows the resolved account, its source (flag/binding/default) and endpoint
+# Shows the resolved account, its source (flag/env/binding/binding-legacy/default/single) and endpoint
 ```
 
 ### Response Inspection

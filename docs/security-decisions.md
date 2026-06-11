@@ -14,6 +14,7 @@ These are foundational constraints that shape the entire security model:
 
 - **No send API** — Only draft creation is supported. Users review and send manually from Gmail. This eliminates the risk of AI-initiated unsolicited emails.
 - **No permanent delete API** — Only `move_to_trash` is available, and it is denied by default via `config.js`. This prevents irreversible data loss through AI operations.
+- **One Web App per Google account, MYSELF access** — Since the central account registry (#121–#126), the Web App is deployed once per registered account and shared across directories. The `MYSELF` access restriction is unchanged; only the deployment granularity moved from per-project to per-account. Dedicated per-project deployments remain available via `ccskill-gmail install --dedicated` (e.g., to keep per-project `config.js` permission sets).
 
 ## Adopted Security Measures
 
