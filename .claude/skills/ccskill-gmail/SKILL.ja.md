@@ -34,6 +34,19 @@ ccskill-gmail api --account info@example.com get action=search query="subject:�
 
 GET は読み取り（`search`、`get_thread`、`list_labels` 等）、POST は書き込み（`create_draft`、`mark_read`、`add_label` 等）。間違ったメソッドを使うと `Unknown action` エラーが返ります。get サブコマンドは値を自動 URL エンコードするため日本語はそのまま渡せます。
 
+### コマンドは 2 系統
+
+`ccskill-gmail` CLI には性質の異なる 2 系統があります。混在させないこと:
+
+| 系統 | 形 | サブコマンド |
+|---|---|---|
+| **API 系**（Gmail 操作 — 主に使うのはこちら） | `ccskill-gmail api <sub>` | `get`、`post`、`download`、`save-html`、`save-pdf`、`whoami` の **6 つのみ** |
+| **管理系**（セットアップ・設定） | `ccskill-gmail <cmd>`（`api` なし） | `account`、`bind`、`unbind`、`info`、`status`、`history`、`doctor` 等 |
+
+- `ccskill-gmail api info` / `api history` / `api unbind` は**無効** — これらは管理コマンド: `ccskill-gmail info` 等
+- `ccskill-gmail get ...` は**無効** — API サブコマンドは `api` の下: `ccskill-gmail api get ...`
+- アクティブアカウントの確認: `ccskill-gmail api whoami`（解決経路つき）または `ccskill-gmail api get action=get_profile`（email と未読数）
+
 **❌ よくある間違い — これらは存在しません:**
 
 - `ccskill-gmail get ...` — `api` サブコマンドが必須: `ccskill-gmail api get ...`

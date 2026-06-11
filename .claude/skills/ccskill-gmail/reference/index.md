@@ -13,6 +13,7 @@
 | get_message | [read.md](read.md) | `ccskill-gmail api get action=get_message messageId=ID` |
 | list_labels | [read.md](read.md) | `ccskill-gmail api get action=list_labels` |
 | get_unread_count | [read.md](read.md) | `ccskill-gmail api get action=get_unread_count` |
+| get_profile | [read.md](read.md) | `ccskill-gmail api get action=get_profile` (account email + unread counts) |
 
 ## Write Operations (POST)
 
