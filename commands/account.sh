@@ -36,6 +36,7 @@ Subcommands:
   list                                    Show registered accounts
   default <email|label>                   Set the default account
   remove <email|label> [--yes]            Remove an account from the registry
+  update [<email|label>] [--force]        Push & deploy the account's shared GAS (default: all)
 EOF
 }
 
@@ -286,6 +287,106 @@ cmd_remove() {
 }
 
 # ========================================
+# update — アカウント共有 GAS のコード更新 (#126)
+# ========================================
+
+cmd_update() {
+    local IDENT=""
+    local FORCE=false
+    for arg in "$@"; do
+        case "$arg" in
+            --force|-f) FORCE=true ;;
+            *) IDENT="$arg" ;;
+        esac
+    done
+
+    if ! command -v jq &> /dev/null; then
+        echo -e "${RED}Error: jq is not installed${NC}"
+        exit 1
+    fi
+
+    source "$CCSKILL_GMAIL_DIR/lib/clasp.sh"
+    source "$CCSKILL_GMAIL_DIR/lib/push-gas.sh"
+
+    local file="$HOME/.ccskill-gmail/accounts.json"
+    if [ ! -f "$file" ] || [ "$(accounts_count)" = "0" ]; then
+        echo "(no accounts registered)"
+        return 0
+    fi
+
+    local MASTER_VERSION
+    if [ -f "$CCSKILL_GMAIL_DIR/VERSION" ]; then
+        MASTER_VERSION=$(cat "$CCSKILL_GMAIL_DIR/VERSION")
+    else
+        MASTER_VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    fi
+
+    local emails
+    if [ -n "$IDENT" ]; then
+        local _e
+        _e=$(accounts_get "$IDENT") || {
+            echo -e "${RED}Error: account not found: $IDENT${NC}"
+            exit 1
+        }
+        emails=$(printf '%s' "$_e" | jq -r '.email')
+    else
+        emails=$(jq -r '.accounts | keys[]' "$file")
+    fi
+
+    local updated=0 skipped=0 failed=0
+    while IFS= read -r email; do
+        [ -z "$email" ] && continue
+        local entry clasp_user script_id deployment_id endpoint label version
+        entry=$(accounts_get "$email") || continue
+        clasp_user=$(printf '%s' "$entry" | jq -r '.clasp_user // empty')
+        script_id=$(printf '%s' "$entry" | jq -r '.script_id // empty')
+        deployment_id=$(printf '%s' "$entry" | jq -r '.deployment_id // empty')
+        endpoint=$(printf '%s' "$entry" | jq -r '.endpoint // empty')
+        label=$(printf '%s' "$entry" | jq -r '.label // empty')
+        version=$(printf '%s' "$entry" | jq -r '.version // empty')
+
+        if [ "$FORCE" != true ] && [ "$version" = "$MASTER_VERSION" ]; then
+            echo "  = $email (up to date: $version)"
+            skipped=$((skipped + 1))
+            continue
+        fi
+        if [ -z "$script_id" ] || [ -z "$deployment_id" ]; then
+            echo -e "  ${YELLOW}! $email: script_id / deployment_id not recorded — skipped${NC}"
+            echo "      (re-register with: ccskill-gmail account add --user $clasp_user)"
+            failed=$((failed + 1))
+            continue
+        fi
+
+        local gdir="$HOME/.ccskill-gmail/gas/$clasp_user"
+        mkdir -p "$gdir"
+        chmod 700 "$HOME/.ccskill-gmail" "$HOME/.ccskill-gmail/gas" "$gdir" 2>/dev/null || true
+        if [ ! -f "$gdir/.clasp.json" ]; then
+            printf '{"scriptId":"%s","rootDir":"."}\n' "$script_id" > "$gdir/.clasp.json"
+        fi
+        if [ ! -f "$gdir/config.js" ]; then
+            /bin/cp "$CCSKILL_GMAIL_DIR/gas-template/config.js.template" "$gdir/config.js"
+        fi
+
+        export _CLASP_USER="$clasp_user"
+        echo "Updating shared GAS for $email (${version:-unknown} -> $MASTER_VERSION)..."
+        if push_gas "$gdir" "$CCSKILL_GMAIL_DIR" && deploy_gas "$gdir" "$deployment_id" "Update to $MASTER_VERSION"; then
+            accounts_upsert "$email" "$clasp_user" "$script_id" "$deployment_id" "$endpoint" "$label"
+            echo -e "  ${GREEN}✓ $email updated${NC}"
+            updated=$((updated + 1))
+        else
+            echo -e "  ${RED}✗ $email update failed${NC}"
+            failed=$((failed + 1))
+        fi
+    done <<EOF
+$emails
+EOF
+
+    echo ""
+    echo "Account GAS update: $updated updated, $skipped up to date, $failed failed"
+    [ "$failed" -eq 0 ]
+}
+
+# ========================================
 # ディスパッチ
 # ========================================
 
@@ -304,6 +405,9 @@ case "$SUBCOMMAND" in
         ;;
     remove)
         cmd_remove "$@"
+        ;;
+    update)
+        cmd_update "$@"
         ;;
     ""|help|--help|-h)
         show_usage

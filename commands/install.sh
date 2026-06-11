@@ -61,6 +61,9 @@ source "$CCSKILL_GMAIL_DIR/lib/update_check.sh"
 
 # フラグのパース
 _USER_OVERRIDE=""
+_ACCOUNT_OVERRIDE=""
+_DEDICATED=false
+_AUTO_YES=false
 positional_args=()
 
 for arg in "$@"; do
@@ -68,16 +71,33 @@ for arg in "$@"; do
         --user)
             _next_is_user=true
             ;;
+        --account)
+            _next_is_account=true
+            ;;
+        --dedicated)
+            _DEDICATED=true
+            ;;
+        --yes|-y)
+            _AUTO_YES=true
+            ;;
         *)
             if [ "${_next_is_user:-}" = true ]; then
                 _USER_OVERRIDE="$arg"
                 _next_is_user=false
+            elif [ "${_next_is_account:-}" = true ]; then
+                _ACCOUNT_OVERRIDE="$arg"
+                _next_is_account=false
             else
                 positional_args+=("$arg")
             fi
             ;;
     esac
 done
+
+# --user はプロジェクト専用 GAS (従来動作) を意味するため --dedicated を含意する
+if [ -n "$_USER_OVERRIDE" ]; then
+    _DEDICATED=true
+fi
 
 PROJECT_NAME_INPUT="${positional_args[0]:-}"
 TARGET_DIR="${positional_args[1]:-.}"
@@ -95,6 +115,124 @@ if [ -z "$PROJECT_NAME_INPUT" ] || [ "$PROJECT_NAME_INPUT" = "-" ]; then
     PROJECT_NAME=$(basename "$TARGET_DIR")
 else
     PROJECT_NAME="$PROJECT_NAME_INPUT"
+fi
+
+# ========================================
+# 1.5 セントラルモード (デフォルト, #126)
+# 専用 GAS は作らず「アカウント解決 + bind + ファイル配置」のみ行う。
+# プロジェクト専用 GAS が必要な場合は --dedicated (--user 指定時も同様)。
+# ========================================
+
+if [ "$_DEDICATED" != true ]; then
+    if ! command -v jq &> /dev/null; then
+        echo -e "${RED}Error: jq is not installed${NC}"
+        echo ""
+        echo "Please install jq first:"
+        echo "  brew install jq"
+        exit 1
+    fi
+
+    source "$CCSKILL_GMAIL_DIR/lib/accounts.sh"
+
+    # アカウント解決: --account 指定 > デフォルトアカウント
+    ACCOUNT_EMAIL=""
+    if [ -n "$_ACCOUNT_OVERRIDE" ]; then
+        _acct_entry=$(accounts_get "$_ACCOUNT_OVERRIDE") || {
+            echo -e "${RED}Error: account not found: $_ACCOUNT_OVERRIDE${NC}"
+            echo ""
+            echo "Registered accounts:"
+            "$CCSKILL_GMAIL_DIR/commands/account.sh" list || true
+            exit 1
+        }
+        ACCOUNT_EMAIL=$(printf '%s' "$_acct_entry" | jq -r '.email')
+    elif ! ACCOUNT_EMAIL=$(accounts_resolve_default); then
+        echo -e "${RED}No account registered yet.${NC}"
+        echo ""
+        echo "Register a Gmail account first (one-time, opens a browser):"
+        echo -e "  ${BLUE}ccskill-gmail account add${NC}"
+        echo ""
+        echo "Then re-run: ccskill-gmail install"
+        echo ""
+        echo "(To create a dedicated per-project GAS instead: ccskill-gmail install --dedicated)"
+        exit 1
+    fi
+
+    echo "Mode:    central account (no dedicated GAS)"
+    echo "Account: $ACCOUNT_EMAIL"
+    echo ""
+
+    SKILL_DIR="$TARGET_DIR/.claude/skills/ccskill-gmail"
+    GAS_DIR="$TARGET_DIR/.ccskill-gmail"
+
+    # 既存インストールチェック
+    if { [ -d "$SKILL_DIR" ] || [ -d "$GAS_DIR" ]; } && [ "$_AUTO_YES" != true ]; then
+        echo -e "${YELLOW}Warning: Existing installation found${NC}"
+        echo ""
+        read -p "Overwrite existing installation? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Installation cancelled."
+            exit 0
+        fi
+        echo ""
+    fi
+
+    # スキル定義コピー
+    echo "Step 1: Installing skill definition..."
+    mkdir -p "$SKILL_DIR"
+    if [ -d "$CCSKILL_GMAIL_DIR/.claude/skills/ccskill-gmail" ] && [ "$(ls -A "$CCSKILL_GMAIL_DIR/.claude/skills/ccskill-gmail" 2>/dev/null)" ]; then
+        cp -r "$CCSKILL_GMAIL_DIR/.claude/skills/ccskill-gmail/"* "$SKILL_DIR/" 2>/dev/null || true
+    fi
+    echo -e "${GREEN}✓ Skill definition installed${NC}"
+
+    # api スクリプト + tmp/ + ディレクトリ保護
+    echo "Step 2: Setting up project files..."
+    mkdir -p "$GAS_DIR/tmp"
+    /bin/cp "$CCSKILL_GMAIL_DIR/lib/api" "$GAS_DIR/api"
+    chmod +x "$GAS_DIR/api"
+    chmod 700 "$GAS_DIR"
+    _INNER_GITIGNORE="$GAS_DIR/.gitignore"
+    if [ ! -f "$_INNER_GITIGNORE" ] || ! grep -qF "tmp/" "$_INNER_GITIGNORE"; then
+        echo "tmp/" >> "$_INNER_GITIGNORE"
+    fi
+    echo -e "${GREEN}✓ Project files ready${NC}"
+
+    # バインド
+    accounts_write_binding "$TARGET_DIR" "$ACCOUNT_EMAIL"
+    echo -e "${GREEN}✓ Bound to: $ACCOUNT_EMAIL${NC}"
+    echo ""
+
+    # パーミッション設定 (opt-in)
+    if [ "$_AUTO_YES" = true ]; then
+        setup_permissions "$TARGET_DIR" "--yes"
+    else
+        setup_permissions "$TARGET_DIR"
+    fi
+    echo ""
+
+    # レジストリ登録
+    registry_upsert "$TARGET_DIR"
+    registry_update_email "$TARGET_DIR" "$ACCOUNT_EMAIL"
+
+    # .gitignore 自動設定
+    GITIGNORE="$TARGET_DIR/.gitignore"
+    if [ ! -f "$GITIGNORE" ] || ! grep -qF ".ccskill-gmail/" "$GITIGNORE"; then
+        echo ".ccskill-gmail/" >> "$GITIGNORE"
+        echo -e "${GREEN}✓ .gitignore updated (added .ccskill-gmail/)${NC}"
+    fi
+    echo ""
+
+    echo "================================================"
+    echo -e "${GREEN}  Installation Complete!${NC}"
+    echo "================================================"
+    echo ""
+    echo "Installed to: $TARGET_DIR (account: $ACCOUNT_EMAIL)"
+    echo ""
+    echo "Verify:"
+    echo -e "  ${BLUE}ccskill-gmail api whoami${NC}"
+    echo -e "  ${BLUE}ccskill-gmail api get action=get_profile${NC}"
+    echo ""
+    exit 0
 fi
 
 GAS_PROJECT_TITLE="Gmail Skill - $PROJECT_NAME"

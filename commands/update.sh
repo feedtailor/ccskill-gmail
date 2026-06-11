@@ -266,6 +266,32 @@ echo -e "${GREEN}✓ Skill definition and helpers updated${NC}"
 echo ""
 
 # ========================================
+# 7.5 セントラルモード (#126): GAS push/デプロイは不要
+# ========================================
+
+if [ -f "$GAS_DIR/binding.json" ] && [ ! -f "$GAS_DIR/.clasp.json" ]; then
+    echo "Central-account mode (bind-only): skipping GAS push/deploy."
+    echo "(The account's shared GAS is updated with: ccskill-gmail account update)"
+    echo ""
+
+    if [ "$AUTO_YES" = true ]; then
+        setup_permissions "$TARGET_DIR" "--yes"
+    else
+        setup_permissions "$TARGET_DIR"
+    fi
+
+    registry_upsert "$TARGET_DIR"
+
+    echo ""
+    echo "================================================"
+    echo -e "${GREEN}  Update Complete!${NC}"
+    echo "================================================"
+    echo ""
+    echo "Updated to version: $GLOBAL_VERSION"
+    exit 0
+fi
+
+# ========================================
 # 8. Master Architecture マイグレーション
 # ========================================
 
