@@ -208,7 +208,7 @@ test_whoami_default() {
     assert_eq "default" "$src"
 }
 
-# (11) whoami: バインド
+# (11) whoami: レガシーバインド (メタデータ) は binding-legacy (#120)
 test_whoami_binding() {
     use_fixture_home
     local proj out src
@@ -216,7 +216,7 @@ test_whoami_binding() {
     make_metadata "$proj"
     out=$(api_in "$proj" api whoami)
     src=$(printf '%s' "$out" | jq -r '.data.account_source // empty' 2>/dev/null)
-    assert_eq "binding" "$src" "raw: $out"
+    assert_eq "binding-legacy" "$src" "raw: $out"
 }
 
 # (12) whoami: 未設定なら NO_ACCOUNT
