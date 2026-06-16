@@ -207,36 +207,36 @@ ccskill-gmail update                  # one project
 
 Download the new zip, extract it over the project directory, then apply with `ccskill-gmail update`.
 
-## Upgrading from a pre-central version
+## Already using ccskill-gmail? (older per-project setup)
 
-Earlier versions installed a dedicated GAS deployment per project directory (`ccskill-gmail install` was required in each one). Since the central account registry, accounts are registered once and shared across directories. **If you upgraded from such a version, nothing breaks and no action is required** — read on only if you want to consolidate.
+**This section is for you if you used to run `ccskill-gmail install` in each project** — the older setup where every project directory had its own Gmail (GAS) deployment. The current version lets you register an account once and use it from any project, and adds multi-account support.
 
-### Nothing changes unless you opt in
+**You don't have to do anything — your existing setup keeps working as-is.** Read on only if you want to switch to the new shared setup or use more than one account.
 
-Your existing per-project installs keep working exactly as before. A project's `.ccskill-gmail/api` resolves through its own `.ccskill-metadata.json` (a "legacy bind") and never touches the central registry. You can keep using them indefinitely.
+### Nothing changes unless you choose to migrate
 
-### Consolidating into the central registry (optional)
+Each project that has a `.ccskill-gmail/` folder keeps resolving through its own local settings and never touches the new shared account list. You can keep using your existing projects indefinitely, exactly as before.
 
-If you'd rather manage everything through one central account list:
+### Switching to the shared setup (optional)
+
+If you'd rather register your account once and use it from anywhere — or use more than one Gmail account:
 
 ```bash
-ccskill-gmail account add              # register the account centrally (one-time; re-uses existing auth)
-ccskill-gmail migrate --dry-run        # preview which projects bind to which account
-ccskill-gmail migrate                  # group legacy installs by email, register a representative
-                                       #   deployment, and write binding.json into each project
-ccskill-gmail unbind --purge-legacy    # (optional, per project) remove legacy install files and
-                                       #   follow the central default account instead
+ccskill-gmail account add              # register your account once (re-uses your existing sign-in)
+ccskill-gmail migrate --dry-run        # preview which projects would move to which account
+ccskill-gmail migrate                  # move your existing project installs onto the shared account
+ccskill-gmail unbind --purge-legacy    # (optional, per project) remove the old per-project files
 ```
 
-- `migrate` does **not** re-authorize (it re-uses the already-authorized GAS) and does **not** delete anything — surplus per-project deployments are only *listed* for manual cleanup at [script.google.com](https://script.google.com). Your custom `config.js` permissions are carried over.
-- Legacy metadata is left in place; only `unbind --purge-legacy` removes it (the audit log is kept).
+- `migrate` does **not** ask you to sign in again, and **deletes nothing** — leftover per-project deployments are only *listed* so you can remove them by hand at [script.google.com](https://script.google.com) if you want. Your custom permission settings (`config.js`) are carried over.
+- Your old project settings are left untouched; only `unbind --purge-legacy` removes them (your local history log is kept).
 
-### Heads-up: the same account can point at two deployments
+### Heads-up: one account, possibly two deployments
 
-After migrating, a directory may resolve to the **central shared GAS** (via `binding.json`) while its old **dedicated GAS** still exists. They are the same Gmail account but different deployments. If a change or operation "doesn't take effect", confirm which endpoint you're hitting:
+After migrating, a project may start using the **shared** deployment while its **old per-project** one still exists. It's the same Gmail account, but two separate deployments. If something you changed "doesn't seem to take effect", check which one you're actually talking to:
 
 ```bash
-ccskill-gmail api whoami               # shows account, source, and endpoint
+ccskill-gmail api whoami               # shows your account and the exact endpoint in use
 ```
 
 ## Uninstall
@@ -376,7 +376,7 @@ Run `ccskill-gmail doctor` to diagnose. If the issue persists, try `ccskill-gmai
 
 ### A change or operation doesn't take effect
 
-You may be hitting a different deployment than you expect — the same account can have both a dedicated GAS (legacy install) and the central shared GAS. Run `ccskill-gmail api whoami` and check `endpoint`. If it points at the central shared GAS, deploy code changes with `ccskill-gmail account update` (the project's `update --force` only updates the legacy dedicated GAS, so it won't be reflected).
+You may be talking to a different deployment than you expect — the same account can have both an old per-project deployment and the shared one. Run `ccskill-gmail api whoami` and check `endpoint`. If it points at the shared deployment, push code changes with `ccskill-gmail account update` (the project's `update --force` only updates the old per-project deployment, so your change won't show up).
 
 ## Support
 
