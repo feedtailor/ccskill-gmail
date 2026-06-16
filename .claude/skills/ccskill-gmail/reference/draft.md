@@ -87,6 +87,15 @@ Drafts are saved in Gmail's "Drafts" folder and can be reviewed, edited, and sen
 | htmlBody | | HTML body (when specified, body becomes the plain text fallback) |
 | attachments | | Attachment array (see details below) |
 
+### Recipient address format (to / cc / bcc)
+
+- The **address part (addr-spec)** must be **ASCII only**. A non-ASCII address such as `【要入力】@example.co.jp` is rejected with `code: INVALID_ADDRESS` — otherwise it would be saved as mojibake in Gmail.
+- To attach a Japanese (or other non-ASCII) **display name**, use the RFC 5322 **name-addr** form. The display name may be non-ASCII; only the address must be ASCII:
+  - `"\"岸田様\" <kishida@example.co.jp>"` → shows as `岸田様 <kishida@example.co.jp>` in Gmail (verified 2026-06-13)
+- If the recipient is not yet decided, use an **ASCII placeholder address** with a name-addr display name, e.g. `"\"岸田様\" <placeholder@kishidajim.co.jp>"`. Do **not** put placeholder text into the address part itself.
+
+> The same ASCII addr-spec rule applies to `cc` / `bcc` on `create_reply_draft` and to `to` / `cc` / `bcc` on `update_draft`.
+
 ### attachments Format
 
 ```json

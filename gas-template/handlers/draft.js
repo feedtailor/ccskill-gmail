@@ -47,6 +47,28 @@ function parseAttachments(attachments) {
 }
 
 /**
+ * Return an errorResponse if a recipient field contains a non-ASCII addr-spec, else null.
+ * Non-ASCII display-names (name-addr format) are allowed; only the address part is
+ * rejected because a non-ASCII addr-spec produces mojibake in Gmail (#127).
+ * @param {string} value - Recipient string (to / cc / bcc)
+ * @param {string} fieldName - Field label for the error message
+ * @returns {ContentService.TextOutput|null} errorResponse on violation, otherwise null
+ */
+function checkRecipientAddrSpec_(value, fieldName) {
+  var bad = findNonAsciiAddrSpec_(value);
+  if (!bad) return null;
+  return errorResponse(
+    "'" + fieldName + "' contains non-ASCII characters in the address part: \"" + bad + "\". " +
+    'Use name-addr format with an ASCII address, e.g. "\\"表示名\\" <address@example.com>".',
+    {
+      code: 'INVALID_ADDRESS',
+      hint: 'The display-name may be non-ASCII, but the address itself must be ASCII only',
+      retryable: false
+    }
+  );
+}
+
+/**
  * Create a new email draft
  * @param {string} to - Recipient email address(es), comma-separated for multiple
  * @param {string} subject - Email subject
@@ -67,6 +89,12 @@ function handleCreateDraft(to, subject, body, cc, bcc, htmlBody, attachments) {
   requireParam(to, 'to');
   requireParam(subject, 'subject');
   requireParam(body, 'body');
+
+  // Reject non-ASCII addr-spec to prevent mojibake (#127)
+  var addrErr = checkRecipientAddrSpec_(to, 'to')
+    || checkRecipientAddrSpec_(cc, 'cc')
+    || checkRecipientAddrSpec_(bcc, 'bcc');
+  if (addrErr) return addrErr;
 
   // Auto-generate htmlBody from body when not specified (preserves line breaks)
   if (!htmlBody && body) {
@@ -115,6 +143,10 @@ function handleCreateDraft(to, subject, body, cc, bcc, htmlBody, attachments) {
 function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, skipSelf, replyAll) {
   requireParam(threadId, 'threadId');
   requireParam(body, 'body');
+
+  // Reject non-ASCII addr-spec on user-supplied cc/bcc (#127; to comes from the thread)
+  var addrErr = checkRecipientAddrSpec_(cc, 'cc') || checkRecipientAddrSpec_(bcc, 'bcc');
+  if (addrErr) return addrErr;
 
   // Default: both true
   if (skipSelf === undefined || skipSelf === null) skipSelf = true;
@@ -220,6 +252,12 @@ function handleCreateReplyDraft(threadId, body, cc, bcc, htmlBody, attachments, 
  */
 function handleUpdateDraft(draftId, to, subject, body, cc, bcc, htmlBody) {
   requireParam(draftId, 'draftId');
+
+  // Reject non-ASCII addr-spec on any newly provided recipient (#127)
+  var addrErr = checkRecipientAddrSpec_(to, 'to')
+    || checkRecipientAddrSpec_(cc, 'cc')
+    || checkRecipientAddrSpec_(bcc, 'bcc');
+  if (addrErr) return addrErr;
 
   const drafts = GmailApp.getDrafts();
   const draft = drafts.find(function(d) { return d.getId() === draftId; });
