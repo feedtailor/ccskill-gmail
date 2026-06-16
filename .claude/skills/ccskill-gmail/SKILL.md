@@ -116,6 +116,8 @@ ccskill-gmail api get action=search query="is:important"
 ccskill-gmail api get action=search query="newer_than:1d in:inbox"
 ```
 
+> **`newer_than` caveat**: it matches on a thread's **last-activity time**, not the original receipt time. Draft edits and **scheduled-send** messages bump it — a scheduled send can even produce a **future-dated** hit, which is easy to misread as a brand-new arrival. When you need "true new arrivals only", verify each result via `get_thread` and check `lastSentMessage.date` and `hasDraft`.
+
 For the full classification workflow (reply-now / waiting / draft-needed / fyi / archive), read [reference/triage.md](reference/triage.md).
 
 ---

@@ -118,6 +118,8 @@ ccskill-gmail api get action=search query="is:important"
 ccskill-gmail api get action=search query="newer_than:1d in:inbox"
 ```
 
+> **`newer_than` の落とし穴**: `newer_than` はメールの受信時刻ではなく、**スレッドの最終更新時刻 (last-activity time)** を見る。下書きの編集や**送信予約**メッセージでも更新時刻が上がり、送信予約では**未来日付でヒット**することすらある（新着と誤認しやすい）。「本当の新着だけ」が必要なときは、各結果を `get_thread` で確認し `lastSentMessage.date` と `hasDraft` を見ること。
+
 完全な分類フロー (reply-now / waiting / draft-needed / fyi / archive) は [reference/triage.md](reference/triage.md) を参照。
 
 ---
