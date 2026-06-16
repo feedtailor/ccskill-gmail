@@ -37,19 +37,26 @@ ccskill-spreadsheet と同じアーキテクチャパターンを採用。
 GAS コードを変更したら、必ずデプロイしてテストすること。
 
 ```bash
-# 1. テスト用プロジェクトにデプロイ（プロジェクトのパスはユーザーに確認すること）
-cd ~/projects/<テスト用プロジェクト>
-~/projects/ccskill-gmail/ccskill-gmail update --force --yes .
+# 0. まずデプロイ先を確認する（最重要）
+#    binding 済みプロジェクト（ftgmail 等）の api 実行先は「中央アカウント共有 GAS」。
+#    api whoami の endpoint と、デプロイ時に表示される endpoint が一致するか必ず確認すること。
+cd ~/projects/<テスト用プロジェクト> && ccskill-gmail api whoami
 
-# 2. テスト用プロジェクトに cd してからテスト実行
-cd ~/projects/<テスト用プロジェクト>
-.ccskill-gmail/api get action=...
-.ccskill-gmail/api post '{"action":...}'
+# 1. デプロイ
+#    (a) binding 済み（=中央アカウント共有 GAS が実行先）の場合 ← ftgmail はこちら
+ccskill-gmail account update            # 中央アカウント共有 GAS を更新（要 sandbox 無効化: mktemp/.claude/skills コピーが弾かれる）
+#    (b) 専用デプロイ（--dedicated / レガシー install）の場合のみ
+cd ~/projects/<テスト用プロジェクト> && ccskill-gmail update --force --yes .
+
+# 2. テスト実行（cd はコールごとにリセットされるので各コマンドで cd して繋ぐ）
+cd ~/projects/<テスト用プロジェクト> && ccskill-gmail api get action=...
+cd ~/projects/<テスト用プロジェクト> && ccskill-gmail api post '{"action":...}'
 ```
 
 **注意事項**:
-- テストは必ず対象プロジェクトに `cd` してから行う（`.ccskill-gmail/api` がカレントディレクトリ依存）
-- デプロイは `ccskill-gmail update` を使う（`push_gas` を直接呼ばない）
+- **デプロイ先の取り違えに注意**: binding 済みプロジェクトで `update --force .`（レガシー専用 GAS）を実行しても、api 実行先（中央アカウント共有 GAS）には反映されない。`account update` を使い、`whoami` の endpoint と一致を確認すること（#127 でこのハマりが発生）
+- テストは必ず対象プロジェクトに `cd` してから行う（`ccskill-gmail api` は `whoami` 等で cwd を解決するため）。`cd` はコールごとにリセットされるので各コマンドで `cd ... && ...` と繋ぐ
+- GAS デプロイは `ccskill-gmail account update` / `update` を使う（`push_gas` を直接呼ばない）
 - Bash ツールでは `$()` を避けてパイプで繋ぐ（`$()` は sandbox の確認プロンプトを発生させる）
 - curl の exit code 56 やレスポンスが HTML の場合、まず OAuth トークン期限切れを疑う（`auth.sh` の `gas_token` が自動リフレッシュする仕組みがある。sandbox でリフレッシュがブロックされる場合は sandbox 無効化が必要）
 
