@@ -82,6 +82,9 @@ while IFS= read -r path; do
 
     if [ ! -d "$path" ] || [ ! -d "$path/.ccskill-gmail" ]; then
         SKIP_NOT_FOUND+=("$path")
+    elif [ "$(ccskill_install_mode "$path")" = "central" ]; then
+        # 共有 GAS 構成。account update が面倒を見るのでプロジェクト追従の対象外
+        SKIPPED=$((SKIPPED + 1))
     elif [ "$version" = "$MASTER_VERSION" ]; then
         SKIPPED=$((SKIPPED + 1))
     else

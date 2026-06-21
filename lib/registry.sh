@@ -20,6 +20,39 @@ _REGISTRY_FILE="${CCSKILL_GMAIL_REGISTRY_FILE:-${CCSKILL_GMAIL_DIR:-.}/.registry
 _REGISTRY_JQ_WARNED=false
 
 # ========================================
+# Install mode classification (#131)
+# ========================================
+#
+# 構成種別をファイルベースで判定する。バージョン文字列比較ではなく
+# 「どの GAS に解決されるか」で central / dedicated を分ける。
+#
+#   central   : binding.json あり (アカウント共有 GAS を使う。バージョン比較対象外)
+#               .clasp.json が残っていても binding.json があれば central
+#               (api は binding.json を優先解決するため)
+#   dedicated : binding.json なし & 専用 GAS の痕跡 (.clasp.json / 旧 metadata) あり
+#   none      : .ccskill-gmail/ が無い、または上記いずれの痕跡も無い
+#
+# Usage: mode=$(ccskill_install_mode "$dir")
+ccskill_install_mode() {
+    local dir="$1"
+    local g="$dir/.ccskill-gmail"
+    if [ -f "$g/binding.json" ]; then
+        echo "central"
+    elif [ -f "$g/.clasp.json" ] || [ -f "$g/.ccskill-metadata.json" ]; then
+        echo "dedicated"
+    else
+        echo "none"
+    fi
+}
+
+# central だが専用 GAS の痕跡 (.clasp.json) が残っている (= 集約後の残滓) なら成功
+ccskill_has_leftover_dedicated() {
+    local dir="$1"
+    local g="$dir/.ccskill-gmail"
+    [ -f "$g/binding.json" ] && [ -f "$g/.clasp.json" ]
+}
+
+# ========================================
 # Internal helpers
 # ========================================
 

@@ -17,6 +17,7 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m'
 
@@ -207,7 +208,11 @@ printf "  %-14s %s\n" "Account:" "$ACCOUNT"
 printf "  %-14s %s\n" "Directory:" "$DISPLAY_DIR"
 
 # Version
-if [ "$UP_TO_DATE" = true ]; then
+if [ "$(ccskill_install_mode "$TARGET_DIR")" = "central" ]; then
+    # 共有 GAS 構成。プロジェクト個別のバージョンを持たないので比較しない
+    printf "  %-14s %s " "Version:" "shared"
+    echo -e "${BLUE}(account-shared GAS; update with: ccskill-gmail account update)${NC}"
+elif [ "$UP_TO_DATE" = true ]; then
     printf "  %-14s %s " "Version:" "$INSTALLED_VERSION"
     echo -e "${GREEN}(up to date)${NC}"
 else

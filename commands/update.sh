@@ -269,8 +269,8 @@ echo ""
 # 7.5 セントラルモード (#126): GAS push/デプロイは不要
 # ========================================
 
-if [ -f "$GAS_DIR/binding.json" ] && [ ! -f "$GAS_DIR/.clasp.json" ]; then
-    echo "Central-account mode (bind-only): skipping GAS push/deploy."
+if [ "$(ccskill_install_mode "$TARGET_DIR")" = "central" ]; then
+    echo "Central-account mode: skipping GAS push/deploy."
     echo "(The account's shared GAS is updated with: ccskill-gmail account update)"
     echo ""
 
