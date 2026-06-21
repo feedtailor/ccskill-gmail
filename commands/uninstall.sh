@@ -132,9 +132,15 @@ echo "  Confirm Uninstallation"
 echo "================================================"
 echo ""
 echo "The following will be deleted:"
-echo "  - .claude/skills/ccskill-gmail/"
-echo "  - .ccskill-gmail/"
-echo "  - GMAIL_ENDPOINT entry in .env"
+[ -d "$SKILL_DIR" ] && echo "  - .claude/skills/ccskill-gmail/"
+[ -d "$GAS_DIR" ] && echo "  - .ccskill-gmail/"
+if [ -f "$TARGET_DIR/.env" ] && grep -q "GMAIL_ENDPOINT" "$TARGET_DIR/.env"; then
+    echo "  - GMAIL_ENDPOINT entry in .env"
+fi
+if [ -f "$TARGET_DIR/.claude/settings.local.json" ] && command -v jq &> /dev/null \
+    && jq -e '(.permissions.allow // []) | index("Bash(ccskill-gmail api *)")' "$TARGET_DIR/.claude/settings.local.json" >/dev/null 2>&1; then
+    echo "  - ccskill-gmail permission patterns in .claude/settings.local.json"
+fi
 echo ""
 
 if [ -n "$GAS_PROJECT_ID" ]; then

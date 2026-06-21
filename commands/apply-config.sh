@@ -26,6 +26,8 @@ if [ -z "$CCSKILL_GMAIL_DIR" ]; then
 fi
 
 source "$CCSKILL_GMAIL_DIR/lib/push-gas.sh"
+source "$CCSKILL_GMAIL_DIR/lib/registry.sh"
+source "$CCSKILL_GMAIL_DIR/lib/accounts.sh"
 
 # ========================================
 # 2. Argument / directory validation
@@ -39,6 +41,28 @@ if [ ! -d "$GAS_DIR" ]; then
     echo -e "${RED}Error: .ccskill-gmail/ directory not found in $TARGET_DIR${NC}"
     echo "Run 'ccskill-gmail install' first."
     exit 1
+fi
+
+# 共有 GAS 構成 (central) はプロジェクトに config.js を持たない。
+# apply-config は専用 GAS 専用なので、共有 GAS の config.js 編集 + account update を案内する。
+if [ "$(ccskill_install_mode "$TARGET_DIR")" = "central" ]; then
+    _bound_email=$(jq -r '.account // empty' "$GAS_DIR/binding.json" 2>/dev/null)
+    _clasp_user=""
+    if [ -n "$_bound_email" ]; then
+        _entry=$(accounts_get "$_bound_email" 2>/dev/null) || true
+        _clasp_user=$(printf '%s' "$_entry" | jq -r '.clasp_user // empty' 2>/dev/null)
+    fi
+    echo "This project uses the account's shared GAS (central mode)."
+    echo "apply-config is for dedicated (per-project) installs only."
+    echo ""
+    echo "To change permissions for the shared GAS, edit its config.js and re-deploy:"
+    if [ -n "$_clasp_user" ]; then
+        echo -e "  1. Edit:  ${YELLOW}~/.ccskill-gmail/gas/$_clasp_user/config.js${NC}"
+    else
+        echo -e "  1. Edit:  ${YELLOW}~/.ccskill-gmail/gas/<clasp_user>/config.js${NC}"
+    fi
+    echo -e "  2. Apply: ${YELLOW}ccskill-gmail account update${NC}"
+    exit 0
 fi
 
 if [ ! -f "$GAS_DIR/config.js" ]; then

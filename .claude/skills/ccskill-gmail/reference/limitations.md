@@ -1,6 +1,6 @@
 # Limitations
 
-- **Permission control**: The `permissions` setting in `config.js` allows controlling specific actions with allow/deny (following Claude Code's allow/deny pattern). `move_to_trash` is disabled by default. To enable it, remove it from `permissions.deny` in `config.js` and run `ccskill-gmail apply-config`.
+- **Permission control**: The `permissions` setting in `config.js` allows controlling specific actions with allow/deny (following Claude Code's allow/deny pattern). `move_to_trash` is disabled by default. To enable it, remove it from `permissions.deny`. The config location and re-deploy command depend on your setup: for the account-shared setup edit `~/.ccskill-gmail/gas/<clasp_user>/config.js` and run `ccskill-gmail account update`; for a dedicated per-project install edit `.ccskill-gmail/config.js` and run `ccskill-gmail apply-config`.
 - **No send functionality**: Only draft creation is supported (sending is done manually via the Gmail UI).
 - **Authentication**: Requires `clasp login` to be completed and the Web App to be published as "Only myself".
 - **Token management**: The `gas_token` function handles automatic refresh. If the `clasp login` session expires, re-login is required.

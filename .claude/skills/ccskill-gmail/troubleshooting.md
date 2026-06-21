@@ -31,13 +31,22 @@ Common issues and solutions for the Gmail Skill.
 
 **Cause**: The action is included in `permissions.deny` in `config.js` (`move_to_trash` is disabled by default)
 
-**Solution**:
+**Solution**: the steps depend on your setup.
 
-1. Edit `config.js` at the install location and remove the action from the `permissions.deny` array
-2. Redeploy
-   ```bash
-   ccskill-gmail apply-config
-   ```
+- **Account-shared setup (default)** — the project has only `binding.json` and no local `config.js`:
+  1. Edit `~/.ccskill-gmail/gas/<clasp_user>/config.js` and remove the action from `permissions.deny`
+  2. Re-deploy the account's shared GAS:
+     ```bash
+     ccskill-gmail account update
+     ```
+- **Dedicated per-project setup** — the project has its own `config.js` and `.clasp.json`:
+  1. Edit `.ccskill-gmail/config.js` and remove the action from `permissions.deny`
+  2. Re-deploy:
+     ```bash
+     ccskill-gmail apply-config
+     ```
+
+`apply-config` applies to dedicated installs only. For the account-shared setup, use `account update` (running `apply-config` there prints the same guidance).
 
 **Example**: Enabling `move_to_trash`
 ```javascript

@@ -87,7 +87,7 @@ ccskill-gmail api post '{"action":"move_to_inbox","threadId":"19bf7f25b96ab637"}
 
 ## move_to_trash - Move to Trash
 
-> **Note**: This action is disabled by default (included in `permissions.deny`). To enable it, remove `'move_to_trash'` from the `permissions.deny` array in `config.js` and run `ccskill-gmail apply-config`.
+> **Note**: This action is disabled by default (included in `permissions.deny`). To enable it, remove `'move_to_trash'` from the `permissions.deny` array. For the account-shared setup, edit `~/.ccskill-gmail/gas/<clasp_user>/config.js` and run `ccskill-gmail account update`; for a dedicated per-project install, edit `.ccskill-gmail/config.js` and run `ccskill-gmail apply-config`.
 
 Moves a thread to trash. It will be automatically deleted after 30 days.
 
