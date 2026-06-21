@@ -103,3 +103,43 @@ setup_permissions() {
     echo -e "${GREEN:-}✓ Permission patterns added (${#missing_patterns[@]} patterns)${NC:-}"
     return 0
 }
+
+# remove_permissions: setup_permissions が追加した allow パターンを撤去する
+#   remove_permissions /path/to/target/project
+# 当スキルが追加したパターンだけを取り除き、他の allow エントリは保持する。
+remove_permissions() {
+    local target_dir="$1"
+    local settings_file="$target_dir/.claude/settings.local.json"
+
+    [ -f "$settings_file" ] || return 0
+    command -v jq &> /dev/null || return 0
+
+    local patterns=(
+        "Bash(.ccskill-gmail/api *)"
+        "Bash(ccskill-gmail api *)"
+        "Write(.ccskill-gmail/tmp/*)"
+    )
+
+    local current removed=0
+    current=$(cat "$settings_file")
+    for pattern in "${patterns[@]}"; do
+        if echo "$current" | jq -e --arg p "$pattern" '(.permissions.allow // []) | index($p)' > /dev/null 2>&1; then
+            removed=$((removed + 1))
+        fi
+        current=$(echo "$current" | jq --arg p "$pattern" '
+            if .permissions.allow then
+                .permissions.allow = (.permissions.allow | map(select(. != $p)))
+            else . end')
+    done
+
+    if [ "$removed" -eq 0 ]; then
+        return 0
+    fi
+
+    # 同一ディレクトリの一時ファイルに書いて差し替え (sandbox 配慮)
+    local tmp="${settings_file}.tmp.$$"
+    if echo "$current" > "$tmp" 2>/dev/null && /bin/mv "$tmp" "$settings_file" 2>/dev/null; then
+        echo -e "${GREEN:-}✓ Permission patterns removed (${removed})${NC:-}"
+    fi
+    return 0
+}

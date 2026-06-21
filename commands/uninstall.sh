@@ -60,6 +60,7 @@ echo ""
 # ========================================
 
 source "$CCSKILL_GMAIL_DIR/lib/registry.sh"
+source "$CCSKILL_GMAIL_DIR/lib/permissions.sh"
 
 # ========================================
 # 3. インストール存在確認
@@ -237,6 +238,9 @@ fi
 registry_remove "$TARGET_DIR"
 echo -e "${GREEN}✓ Registry entry removed${NC}"
 echo ""
+
+# setup_permissions が追加した allow パターンを撤去する (#133)
+remove_permissions "$TARGET_DIR"
 
 # ========================================
 # 9. GASプロジェクト削除ガイダンス
