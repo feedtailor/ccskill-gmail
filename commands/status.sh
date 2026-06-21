@@ -16,6 +16,7 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
 # ========================================
@@ -144,6 +145,8 @@ fi
 UP_TO_DATE=0
 OUTDATED=0
 NOT_FOUND=0
+SHARED=0
+LEFTOVER=0
 
 # Truncate path to fit within max width, collapsing middle with ...
 _truncate_path() {
@@ -191,6 +194,16 @@ while IFS= read -r path; do
         printf "  %-40s %-24s %-12s " "$display_path" "$display_email" "(not found)"
         echo -e "${RED}x not found${NC}"
         NOT_FOUND=$((NOT_FOUND + 1))
+    elif [ "$(ccskill_install_mode "$path")" = "central" ]; then
+        # 共有 GAS を使う構成。プロジェクト個別のバージョンを持たないので比較しない
+        printf "  %-40s %-24s %-12s " "$display_path" "$display_email" "shared"
+        if ccskill_has_leftover_dedicated "$path"; then
+            echo -e "${BLUE}shared${NC} ${YELLOW}(leftover dedicated GAS)${NC}"
+            LEFTOVER=$((LEFTOVER + 1))
+        else
+            echo -e "${BLUE}shared${NC}"
+        fi
+        SHARED=$((SHARED + 1))
     elif [ "$version" = "$MASTER_VERSION" ]; then
         printf "  %-40s %-24s %-12s " "$display_path" "$display_email" "$version"
         echo -e "${GREEN}up to date${NC}"
@@ -203,16 +216,29 @@ while IFS= read -r path; do
 done <<< "$PATHS"
 
 echo ""
-echo "Summary: $UP_TO_DATE up to date, $OUTDATED outdated, $NOT_FOUND not found"
+echo "Summary: $UP_TO_DATE up to date, $SHARED shared, $OUTDATED outdated, $NOT_FOUND not found"
 
 if [ "$NOT_FOUND" -gt 0 ]; then
     echo ""
     echo -e "${YELLOW}Tip: Run 'ccskill-gmail status --clean' to remove invalid entries${NC}"
 fi
 
-if [ "$OUTDATED" -gt 0 ]; then
+# 純 dedicated (未集約) が残るなら、update-all 一辺倒でなく集約 (migrate) を主に促す
+DEDICATED=$((UP_TO_DATE + OUTDATED))
+if [ "$DEDICATED" -gt 0 ]; then
     echo ""
-    echo -e "${YELLOW}Tip: Run 'ccskill-gmail update-all' to update all outdated installations.${NC}"
+    echo -e "${YELLOW}Tip: $DEDICATED per-project install(s) still use a dedicated GAS.${NC}"
+    echo "     To consolidate onto the account's shared GAS: ccskill-gmail migrate"
+    if [ "$OUTDATED" -gt 0 ]; then
+        echo "     (Or keep them per-project and update with: ccskill-gmail update-all)"
+    fi
+fi
+
+if [ "$LEFTOVER" -gt 0 ]; then
+    echo ""
+    echo -e "${YELLOW}Tip: $LEFTOVER shared install(s) still have a leftover per-project GAS.${NC}"
+    echo "     They already use the account's shared GAS; the old dedicated GAS can be"
+    echo "     removed manually at https://script.google.com (see 'ccskill-gmail migrate')."
 fi
 
 # Master update check (silent on failure / up-to-date)
