@@ -268,6 +268,37 @@ cmd_remove() {
     }
     email=$(printf '%s' "$entry" | jq -r '.email')
 
+    # 削除の影響を事前に提示する (--yes でも常に表示)
+    local _acc_file _cur_default _total
+    _acc_file="$HOME/.ccskill-gmail/accounts.json"
+    _cur_default=$(jq -r '.default_account // empty' "$_acc_file" 2>/dev/null)
+    _total=$(accounts_count)
+    if [ "$_cur_default" = "$email" ]; then
+        local _remaining _new_default
+        _remaining=$((_total - 1))
+        if [ "$_remaining" -eq 1 ]; then
+            _new_default=$(jq -r --arg e "$email" '.accounts | keys | map(select(. != $e)) | .[0] // empty' "$_acc_file" 2>/dev/null)
+        else
+            _new_default=""
+        fi
+        echo -e "${YELLOW}Warning: $email is the current default account.${NC}"
+        if [ -n "$_new_default" ]; then
+            echo "  After removal, the default becomes: $_new_default"
+        else
+            echo "  After removal, no default remains. Set one with: ccskill-gmail account default <email|label>"
+        fi
+    fi
+    # この email を参照する登録ディレクトリ数を提示する
+    local _reg _affected
+    _reg="${CCSKILL_GMAIL_REGISTRY_FILE:-${CCSKILL_GMAIL_DIR}/.registry.json}"
+    if [ -f "$_reg" ]; then
+        _affected=$(jq -r --arg e "$email" '[.installations[]? | select(.email == $e)] | length' "$_reg" 2>/dev/null)
+        if [ -n "$_affected" ] && [ "$_affected" -gt 0 ] 2>/dev/null; then
+            echo -e "${YELLOW}  $_affected registered directory(ies) reference this account.${NC}"
+            echo "  Calls from those directories will fall back to the default (or fail if none remains)."
+        fi
+    fi
+
     if [ "$yes_flag" != true ]; then
         echo "Remove account from registry: $email"
         echo "(The GAS project itself is NOT deleted - remove it manually at"
