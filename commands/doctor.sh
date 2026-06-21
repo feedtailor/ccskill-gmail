@@ -187,7 +187,7 @@ if [ ! -d "$GAS_DIR" ]; then
     echo "================================================"
     echo -e "Result: ${RED}$ERRORS error(s)${NC}, $WARNINGS warning(s)"
     echo ""
-    echo "Install first: ccskill-gmail install"
+    echo "Install first: ccskill-gmail install (or: ccskill-gmail account add)"
     exit 1
 fi
 
