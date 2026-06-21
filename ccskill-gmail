@@ -39,7 +39,7 @@ Commands:
   unbind [DIR]                     Remove a directory binding
   migrate [--dry-run] [--yes]      Migrate legacy installs to central accounts
   setup                            One-time setup (clasp + symlink)
-  install [--user NAME] [NAME] [DIR]  Install to a project
+  install [--account NAME] [--dedicated] [DIR]  Install to a project
   uninstall [DIR]                  Uninstall from a project
   update [--force] [--yes] [DIR]   Update an installation
   update-all                       Update all installations
