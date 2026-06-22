@@ -35,6 +35,7 @@ ccskill-gmail は、Claude.ai / Codex の標準 Gmail コネクタを補完す�
 | 10 | POST 用 JSON 一時ファイルを `.ccskill-gmail/tmp/` に格納 — `/tmp/` 汚染の回避と sandbox 互換性の向上 | #085 |
 | 11 | Bulk 操作に `isActionAllowed` パーミッションチェックを適用 | #057 |
 | 12 | Bulk 操作に `dryRun` オプションを提供 — 実行前の安全なプレビュー | #057 |
+| 13 | 管理コマンドの監査ログ (`commands.jsonl`) — 管理コマンド (`account` / `bind` / `migrate` / `install` など) の実行をローカル記録。コマンド名・識別子・フラグのみを残し、機微フラグの値は伏字、コマンド出力は一切キャプチャしない | #135 |
 
 ### 多層防御（プロンプトインジェクション対策）
 

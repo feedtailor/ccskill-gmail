@@ -52,6 +52,8 @@ This is implemented by writing every operation — mail search, content fetch, d
 
 Only the action name and Gmail thread ID are recorded; subjects, bodies, and recipients are not. When you ask Claude Code to display  history, the information is looked up using those thread IDs.
 
+Management commands (`account`, `bind`, `migrate`, `install`, and so on) are logged separately to `~/.ccskill-gmail/history/commands.jsonl`, so you can trace when and where a setup or migration was run. Only command names, identifiers, and flags are recorded — sensitive flag values are redacted.
+
 ### Build your own Gmail scripts
 
 The `ccskill-gmail api` command works as a Gmail operation script callable from anywhere. You can use it to have Claude Code build programs that integrate with Gmail. No GCP API key (and no OAuth setup) is required.
