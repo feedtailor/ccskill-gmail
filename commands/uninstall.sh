@@ -32,6 +32,8 @@ fi
 
 # フラグのパース
 AUTO_YES=false
+ALL_MODE=false
+DRY_RUN=false
 TARGET_DIR="."
 
 for arg in "$@"; do
@@ -39,11 +41,69 @@ for arg in "$@"; do
         --yes|-y)
             AUTO_YES=true
             ;;
+        --all)
+            ALL_MODE=true
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            ;;
         *)
             TARGET_DIR="$arg"
             ;;
     esac
 done
+
+# ========================================
+# central フル撤去 (--all): setup と対称の一括アンインストール
+# ========================================
+
+if [ "$ALL_MODE" = true ]; then
+    source "$CCSKILL_GMAIL_DIR/lib/teardown.sh"
+
+    TARGETS=$(teardown_list_targets)
+    if [ -z "$TARGETS" ]; then
+        echo "Nothing to remove — no user skill, registry, or CLI symlink found."
+        exit 0
+    fi
+
+    echo "The following will be removed:"
+    echo ""
+    printf '%s\n' "$TARGETS" | while IFS= read -r line; do
+        case "$line" in
+            skill:*)    echo "  - user skill        ${line#skill: }" ;;
+            registry:*) echo "  - account registry  ${line#registry: } (all accounts, GAS config, history)" ;;
+            cli:*)      echo "  - CLI symlink       ${line#cli: }" ;;
+            cli-skip:*) echo -e "  ${YELLOW}(kept) CLI symlink  ${line#cli-skip: } — points elsewhere, left as-is${NC}" ;;
+        esac
+    done
+    echo ""
+    echo -e "${YELLOW}Not removed automatically:${NC} GAS projects (script.google.com) and clasp tokens (~/.clasprc.json)."
+    echo ""
+
+    if [ "$DRY_RUN" = true ]; then
+        echo "(dry-run) Nothing was removed."
+        exit 0
+    fi
+
+    if [ "$AUTO_YES" != true ]; then
+        printf "Remove all of the above? [y/N]: "
+        read -r REPLY
+        case "$REPLY" in
+            y|Y|yes|YES) ;;
+            *) echo "Aborted."; exit 0 ;;
+        esac
+    fi
+
+    teardown_execute false
+
+    echo ""
+    echo -e "${GREEN}✓ ccskill-gmail removed from this machine.${NC}"
+    echo ""
+    echo "To fully clean up (optional, manual):"
+    echo "  - Delete the GAS projects at https://script.google.com"
+    echo "  - Remove clasp tokens in ~/.clasprc.json if no longer needed"
+    exit 0
+fi
 
 # 絶対パスに変換
 if [ ! -d "$TARGET_DIR" ]; then
