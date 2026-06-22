@@ -70,6 +70,49 @@ EOF
     fi
 }
 
+# 管理コマンドの実行履歴を記録しつつ実行する (#135)
+#   $1: 記録するか (true/false。false なら従来どおり exec)
+#   $2: command 記録名   $3: subcommand 記録名 (無ければ "")
+#   $4: "--"             $5+: 実際に実行するコマンドと引数
+# 記録する引数 (args) はグローバル LOG_ARGS を用いる。
+run_managed() {
+    local do_record="$1"; shift
+    local rec_cmd="$1"; shift
+    local rec_sub="$1"; shift
+    shift  # "--"
+
+    if [ "$do_record" != true ]; then
+        exec "$@"
+    fi
+
+    if [ -f "$CCSKILL_GMAIL_DIR/lib/history.sh" ]; then
+        # shellcheck source=/dev/null
+        source "$CCSKILL_GMAIL_DIR/lib/history.sh"
+    fi
+
+    local start_ms="" end_ms="" dur=""
+    if command -v python3 &>/dev/null; then
+        start_ms=$(python3 -c 'import time; print(int(time.time()*1000))' 2>/dev/null || echo "")
+    fi
+
+    set +e
+    "$@"
+    local code=$?
+    set -e
+
+    if command -v python3 &>/dev/null && [ -n "$start_ms" ]; then
+        end_ms=$(python3 -c 'import time; print(int(time.time()*1000))' 2>/dev/null || echo "")
+        [ -n "$end_ms" ] && dur=$(( end_ms - start_ms ))
+    fi
+
+    if type _ccskill_history_record_command &>/dev/null; then
+        _ccskill_history_record_command "$rec_cmd" "$rec_sub" "$code" \
+            "${CCSKILL_GMAIL_ACCOUNT:-}" "$dur" \
+            ${LOG_ARGS[@]+"${LOG_ARGS[@]}"}
+    fi
+    exit "$code"
+}
+
 if [ $# -eq 0 ]; then
     show_help
     exit 0
@@ -78,42 +121,69 @@ fi
 COMMAND="$1"
 shift
 
+# 記録判定 (#135): 状態を変える管理コマンドのみ記録。読み取り専用は除外。
+RECORD=false
+REC_SUB=""
+LOG_ARGS=("$@")
+case "$COMMAND" in
+    account)
+        REC_SUB="${1:-}"
+        case "$REC_SUB" in
+            add|default|remove|update) RECORD=true ;;
+            *) RECORD=false ;;   # list / "" / help は読み取り専用
+        esac
+        # args からサブコマンドを除く (subcommand フィールドに入るため)
+        [ ${#LOG_ARGS[@]} -gt 0 ] && LOG_ARGS=("${LOG_ARGS[@]:1}")
+        ;;
+    skill)
+        REC_SUB="${1:-}"
+        case "$REC_SUB" in
+            install|uninstall) RECORD=true ;;
+            *) RECORD=false ;;
+        esac
+        [ ${#LOG_ARGS[@]} -gt 0 ] && LOG_ARGS=("${LOG_ARGS[@]:1}")
+        ;;
+    setup|install|uninstall|update|update-all|apply-config|bind|unbind|migrate)
+        RECORD=true
+        ;;
+esac
+
 case "$COMMAND" in
     api)
         exec "$CCSKILL_GMAIL_DIR/lib/api" "$@"
         ;;
     account)
-        exec "$CCSKILL_GMAIL_DIR/commands/account.sh" "$@"
+        run_managed "$RECORD" account "$REC_SUB" -- "$CCSKILL_GMAIL_DIR/commands/account.sh" "$@"
         ;;
     skill)
-        exec "$CCSKILL_GMAIL_DIR/commands/skill.sh" "$@"
+        run_managed "$RECORD" skill "$REC_SUB" -- "$CCSKILL_GMAIL_DIR/commands/skill.sh" "$@"
         ;;
     bind)
-        exec "$CCSKILL_GMAIL_DIR/commands/bind.sh" bind "$@"
+        run_managed "$RECORD" bind "" -- "$CCSKILL_GMAIL_DIR/commands/bind.sh" bind "$@"
         ;;
     unbind)
-        exec "$CCSKILL_GMAIL_DIR/commands/bind.sh" unbind "$@"
+        run_managed "$RECORD" unbind "" -- "$CCSKILL_GMAIL_DIR/commands/bind.sh" unbind "$@"
         ;;
     migrate)
-        exec "$CCSKILL_GMAIL_DIR/commands/migrate.sh" "$@"
+        run_managed "$RECORD" migrate "" -- "$CCSKILL_GMAIL_DIR/commands/migrate.sh" "$@"
         ;;
     setup)
-        exec "$CCSKILL_GMAIL_DIR/commands/setup.sh" "$@"
+        run_managed "$RECORD" setup "" -- "$CCSKILL_GMAIL_DIR/commands/setup.sh" "$@"
         ;;
     install)
-        exec "$CCSKILL_GMAIL_DIR/commands/install.sh" "$@"
+        run_managed "$RECORD" install "" -- "$CCSKILL_GMAIL_DIR/commands/install.sh" "$@"
         ;;
     uninstall)
-        exec "$CCSKILL_GMAIL_DIR/commands/uninstall.sh" "$@"
+        run_managed "$RECORD" uninstall "" -- "$CCSKILL_GMAIL_DIR/commands/uninstall.sh" "$@"
         ;;
     update)
-        exec "$CCSKILL_GMAIL_DIR/commands/update.sh" "$@"
+        run_managed "$RECORD" update "" -- "$CCSKILL_GMAIL_DIR/commands/update.sh" "$@"
         ;;
     update-all)
-        exec "$CCSKILL_GMAIL_DIR/commands/update-all.sh" "$@"
+        run_managed "$RECORD" update-all "" -- "$CCSKILL_GMAIL_DIR/commands/update-all.sh" "$@"
         ;;
     apply-config)
-        exec "$CCSKILL_GMAIL_DIR/commands/apply-config.sh" "$@"
+        run_managed "$RECORD" apply-config "" -- "$CCSKILL_GMAIL_DIR/commands/apply-config.sh" "$@"
         ;;
     register)
         exec "$CCSKILL_GMAIL_DIR/commands/register.sh" "$@"

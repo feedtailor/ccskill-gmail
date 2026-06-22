@@ -34,6 +34,7 @@ The following technical measures have been implemented. Each entry includes the 
 | 10 | POST temporary JSON files stored in `.ccskill-gmail/tmp/` — avoids `/tmp/` pollution and improves sandbox compatibility | #085 |
 | 11 | Bulk operations protected by `isActionAllowed` permission check | #057 |
 | 12 | Bulk operations provide `dryRun` option for safe preview before execution | #057 |
+| 13 | Management command audit log (`commands.jsonl`) — records management command runs (`account` / `bind` / `migrate` / `install`, etc.) locally; only command names, identifiers, and flags are kept, sensitive flag values are redacted, and command output is never captured | #135 |
 
 ### Defense in Depth (Prompt Injection)
 

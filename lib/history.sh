@@ -19,6 +19,7 @@
 
 if [ "${CCSKILL_GMAIL_HISTORY:-}" = "off" ]; then
     _ccskill_history_record() { :; }
+    _ccskill_history_record_command() { :; }
     return 0
 fi
 
@@ -28,6 +29,7 @@ fi
 
 if ! command -v jq &>/dev/null; then
     _ccskill_history_record() { :; }
+    _ccskill_history_record_command() { :; }
     return 0
 fi
 
@@ -286,17 +288,20 @@ _ccskill_history_record() {
 # ========================================
 
 _ccskill_history_rotate() {
-    local dir="${CCSKILL_HISTORY_DIR:-}"
-    [ -z "$dir" ] && return 0
-
-    local audit_file="${dir}/audit.jsonl"
+    # $1: 対象ファイル (省略時は CCSKILL_HISTORY_DIR/audit.jsonl で後方互換)
+    local audit_file="${1:-}"
+    if [ -z "$audit_file" ]; then
+        local dir="${CCSKILL_HISTORY_DIR:-}"
+        [ -z "$dir" ] && return 0
+        audit_file="${dir}/audit.jsonl"
+    fi
     [ ! -f "$audit_file" ] && return 0
 
     local line_count
     line_count=$(wc -l < "$audit_file")
 
     if [ "$line_count" -gt 1000 ]; then
-        local backup="${dir}/audit.jsonl.1"
+        local backup="${audit_file}.1"
         # atomic: mv は同一ファイルシステム内で atomic
         mv "$audit_file" "$backup"
         # 新しい空ファイルを作成してパーミッション設定
@@ -415,4 +420,140 @@ _ccskill_history_clear() {
 
     rm -f "${dir}/audit.jsonl" "${dir}/audit.jsonl.1"
     printf 'History cleared.\n'
+}
+
+# ========================================
+# 6. _ccskill_history_redact_args
+#    機微フラグ (--token / --password / --secret) の値を伏字にして
+#    引数配列を JSON 配列文字列として返す。
+#    形式は `--flag value` / `--flag=value` の両方に対応。
+# ========================================
+
+_ccskill_history_redact_args() {
+    local -a redacted=()
+    local redact_next=false
+    local a
+    for a in "$@"; do
+        if [ "$redact_next" = true ]; then
+            redacted+=("***")
+            redact_next=false
+            continue
+        fi
+        case "$a" in
+            --token|--password|--secret)
+                redacted+=("$a")
+                redact_next=true
+                ;;
+            --token=*|--password=*|--secret=*)
+                redacted+=("${a%%=*}=***")
+                ;;
+            *)
+                redacted+=("$a")
+                ;;
+        esac
+    done
+    if [ "${#redacted[@]}" -eq 0 ]; then
+        printf '[]'
+    else
+        # --args は値が "--" 始まりだとオプション誤認するため、1 行 1 値で渡す
+        printf '%s\n' "${redacted[@]}" | jq -cnR '[inputs]'
+    fi
+}
+
+# ========================================
+# 7. _ccskill_history_record_command
+#    管理コマンド (account / bind / migrate ...) の実行履歴を
+#    アカウント非依存のグローバル 1 本 commands.jsonl に記録する (#135)。
+#
+#    $1: command      （install / account / bind ...）
+#    $2: subcommand   （account の add/remove 等。無ければ ""）
+#    $3: exit_code
+#    $4: account      （解決済みアカウント。無ければ ""）
+#    $5: duration_ms  （数値。取得できなければ ""）
+#    $6+: 残りの引数  （識別子・フラグ）
+# ========================================
+
+_ccskill_history_record_command() {
+    local command="$1"
+    local subcommand="$2"
+    local exit_code="$3"
+    local account="$4"
+    local duration_ms="$5"
+    shift 5
+    # $@ = 残りの引数
+
+    local commands_file="${CCSKILL_COMMANDS_HISTORY_FILE:-$HOME/.ccskill-gmail/history/commands.jsonl}"
+    local commands_dir
+    commands_dir=$(dirname "$commands_file")
+
+    # ディレクトリ作成 (sandbox 等で失敗したら無言スキップ)
+    if [ ! -d "$commands_dir" ]; then
+        { mkdir -p "$commands_dir" && chmod 700 "$commands_dir"; } 2>/dev/null || return 0
+    fi
+
+    local file_is_new=false
+    [ ! -f "$commands_file" ] && file_is_new=true
+
+    # success / error
+    local success="false"
+    [ "$exit_code" = "0" ] && success="true"
+
+    local error_json="null"
+    if [ "$success" = "false" ]; then
+        # 出力本文はキャプチャしない (対話コマンドを壊さないため)。
+        # 終了コードを失敗の手掛かりとして残す。
+        error_json=$(printf 'exit code %s' "$exit_code" | jq -Rs .)
+    fi
+
+    # duration
+    local duration_json="null"
+    if [ -n "$duration_ms" ]; then
+        duration_json="$duration_ms"
+    fi
+
+    # args（機微フラグの値は伏字）
+    local args_json
+    args_json=$(_ccskill_history_redact_args "$@")
+
+    local timestamp
+    timestamp=$(date '+%Y-%m-%dT%H:%M:%S%z')
+    local project="$PWD"
+    local record_id
+    record_id=$(_ccskill_history_gen_id)
+
+    local json_line
+    json_line=$(jq -cn \
+        --arg id          "$record_id" \
+        --arg timestamp   "$timestamp" \
+        --arg project     "$project" \
+        --arg account     "$account" \
+        --arg command     "$command" \
+        --arg subcommand  "$subcommand" \
+        --argjson args        "$args_json" \
+        --argjson success     "$success" \
+        --argjson error       "$error_json" \
+        --argjson duration_ms "$duration_json" \
+        '{
+            id:          $id,
+            timestamp:   $timestamp,
+            project:     $project,
+            account:     (if $account == "" then null else $account end),
+            command:     $command,
+            subcommand:  (if $subcommand == "" then null else $subcommand end),
+            args:        $args,
+            success:     $success,
+            error:       $error,
+            duration_ms: $duration_ms
+        }')
+
+    # ファイルに追記 (sandbox 等で書き込めない場合は無言でスキップ)
+    if ! { printf '%s\n' "$json_line" >> "$commands_file"; } 2>/dev/null; then
+        return 0
+    fi
+
+    if [ "$file_is_new" = true ]; then
+        chmod 600 "$commands_file" 2>/dev/null || true
+    fi
+
+    _ccskill_history_rotate "$commands_file"
 }
