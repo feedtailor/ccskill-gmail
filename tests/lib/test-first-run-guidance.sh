@@ -50,10 +50,17 @@ test_setup_guidance_excludes_project_install() {
 # (2) release の配布手順が正規導線を案内する
 # ========================================
 
-test_release_guidance_mentions_account_add() {
+# #139 以降、配布手順は setup 一発に集約された (setup が skill install /
+# account add を内包する)。release は setup を案内し、素のプロジェクト
+# install へ誘導しないこと。
+test_release_guidance_points_to_setup() {
     local f="$REPO_DIR/commands/release.sh"
-    grep -q "ccskill-gmail account add" "$f" || { echo "release.sh lacks 'account add'" >&2; return 1; }
-    grep -q "ccskill-gmail skill install" "$f" || { echo "release.sh lacks 'skill install'" >&2; return 1; }
+    grep -q "ccskill-gmail setup" "$f" || { echo "release.sh lacks 'ccskill-gmail setup'" >&2; return 1; }
+    if grep -q "ccskill-gmail install" "$f"; then
+        echo "release.sh should not steer to per-project 'install'" >&2
+        return 1
+    fi
+    return 0
 }
 
 # ========================================
@@ -112,7 +119,7 @@ echo ""
 
 run_test "setup guidance -> account add + skill install"   test_setup_guidance_mentions_account_add
 run_test "setup guidance -> excludes per-project install"  test_setup_guidance_excludes_project_install
-run_test "release guidance -> account add + skill install" test_release_guidance_mentions_account_add
+run_test "release guidance -> points to setup"             test_release_guidance_points_to_setup
 run_test "help install line -> --account, not --user"      test_help_shows_account_not_user
 run_test "doctor 'Install first' -> includes account add"  test_doctor_install_first_mentions_account_add
 run_test "doctor master-repair fix -> excludes account add" test_doctor_master_fix_excludes_account_add

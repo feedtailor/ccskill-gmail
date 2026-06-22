@@ -116,6 +116,42 @@ else
 fi
 
 # ========================================
+# 4. ユーザースキルの登録（自動・冪等）
+# ========================================
+
+DISPATCHER="$CCSKILL_GMAIL_DIR/ccskill-gmail"
+
+echo ""
+echo "Registering the user skill..."
+"$DISPATCHER" skill install || echo -e "${YELLOW}Skill registration could not complete. Run 'ccskill-gmail skill install' later.${NC}"
+
+# ========================================
+# 5. Gmail アカウントの登録（未登録時のみ自動実行）
+# ========================================
+
+# 登録済みアカウント数を確認（jq があれば）
+ACCOUNT_COUNT=0
+if command -v jq &>/dev/null && [ -f "$HOME/.ccskill-gmail/accounts.json" ]; then
+    ACCOUNT_COUNT=$(jq -r '.accounts | length' "$HOME/.ccskill-gmail/accounts.json" 2>/dev/null || echo 0)
+fi
+
+echo ""
+if [ "$ACCOUNT_COUNT" -gt 0 ]; then
+    echo -e "${GREEN}✓ A Gmail account is already registered - skipping account setup${NC}"
+    echo "  To add another account: ccskill-gmail account add"
+else
+    echo "Registering your Gmail account (one-time)..."
+    echo "A browser will open for Google authorization. Follow the on-screen steps."
+    echo ""
+    # account add は対話・認可を伴い失敗しうる。setup 全体を落とさないよう失敗許容にする。
+    "$DISPATCHER" account add || {
+        echo ""
+        echo -e "${YELLOW}Account registration did not finish.${NC}"
+        echo "Re-run it any time with: ccskill-gmail account add"
+    }
+fi
+
+# ========================================
 # 完了
 # ========================================
 
@@ -127,12 +163,7 @@ echo ""
 echo -e "${YELLOW}Note:${NC} Tab completion may not work until you run 'hash -r'"
 echo "or open a new terminal."
 echo ""
-echo "Next: register a Gmail account, then register the skill for all projects:"
-echo ""
-echo -e "  ${BLUE}ccskill-gmail account add${NC}        # register your Gmail account (one-time)"
-echo -e "  ${BLUE}ccskill-gmail skill install${NC}      # use Gmail from any project"
-echo ""
-echo "Then verify:"
+echo "Verify your setup:"
 echo ""
 echo -e "  ${BLUE}ccskill-gmail api whoami${NC}"
 echo ""
