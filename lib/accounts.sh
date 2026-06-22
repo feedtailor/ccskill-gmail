@@ -288,3 +288,55 @@ accounts_count() {
     fi
     jq -r '.accounts | length' "$file" 2>/dev/null || echo 0
 }
+
+# ラベルとして有効か判定する。空は許容 (ラベルなし)、それ以外は
+# 英数字・ハイフン・アンダースコアのみ許可。
+# Usage: accounts_validate_label LABEL   (有効/空なら 0、無効なら 1)
+accounts_validate_label() {
+    local label="$1"
+    [ -z "$label" ] && return 0
+    [[ "$label" =~ ^[a-zA-Z0-9_-]+$ ]]
+}
+
+# 指定ラベルが既存アカウントで使われているか判定する。
+# 空ラベルは常に「使われていない」(=1) 扱い (null label と誤マッチさせない)。
+# Usage: accounts_label_exists LABEL   (使用中なら 0、未使用なら 1)
+accounts_label_exists() {
+    _accounts_has_jq || return 1
+
+    local label="$1"
+    [ -z "$label" ] && return 1
+
+    local file
+    file=$(_accounts_file)
+    [ -f "$file" ] || return 1
+
+    jq -e --arg l "$label" \
+        'any(.accounts[]?; .label == $l)' "$file" >/dev/null 2>&1
+}
+
+# 認証後にラベルを対話的に尋ねる。stdin から 1 行ずつ読み、空入力 (=ラベルなし)
+# か、有効かつ未使用のラベルが入力されるまで繰り返す。確定値を stdout に出力する
+# (プロンプト・エラーは stderr)。呼び出し側で TTY 判定を行うこと。
+# Usage: label=$(accounts_prompt_label EMAIL)
+accounts_prompt_label() {
+    local email="$1"
+    local label
+    while true; do
+        printf 'このアカウント (%s) を呼び出すラベルを入力してください (省略可・例: work, personal): ' "$email" >&2
+        IFS= read -r label || { label=""; break; }
+        if [ -z "$label" ]; then
+            break
+        fi
+        if ! accounts_validate_label "$label"; then
+            echo '  ラベルに使えるのは英数字・ハイフン・アンダースコアだけです。' >&2
+            continue
+        fi
+        if accounts_label_exists "$label"; then
+            echo '  そのラベルは既に使われています。別の名前を入力してください。' >&2
+            continue
+        fi
+        break
+    done
+    printf '%s' "$label"
+}

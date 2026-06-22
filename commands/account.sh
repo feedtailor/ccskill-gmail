@@ -165,6 +165,14 @@ cmd_add() {
     local SCRIPT_ID
     SCRIPT_ID=$(jq -r '.scriptId // empty' "$GAS_DIR/.clasp.json" 2>/dev/null)
 
+    # ラベル未指定かつ 2 個目以降なら、認証後に対話でラベルを尋ねる。
+    # --label 明示時・非 TTY (自動実行)・当該メール登録済みのときは尋ねない。
+    if [ -z "$LABEL" ] && [ -t 0 ] && [ "$(accounts_count)" -gt 0 ] \
+        && ! accounts_get "$EMAIL" >/dev/null 2>&1; then
+        echo ""
+        LABEL=$(accounts_prompt_label "$EMAIL")
+    fi
+
     accounts_upsert "$EMAIL" "$_CLASP_USER" "$SCRIPT_ID" "$PROVISION_DEPLOYMENT_ID" "$PROVISION_ENDPOINT" "$LABEL"
 
     local DEFAULT_MARK=""
