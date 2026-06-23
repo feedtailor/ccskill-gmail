@@ -104,6 +104,45 @@ test_idempotent_on_empty_home() {
 }
 
 # ========================================
+# ディスパッチャ経由 (#143): uninstall --all は監査記録せず、
+# ~/.ccskill-gmail を完全に消す (command audit フックが history/ を作り直さない)
+# ========================================
+
+# ccskill-gmail を fixture HOME で実行する (出力は捨て、終了コードは保持)
+run_dispatch() {
+    (HOME="$HOME" GMAIL_ENDPOINT="" CCSKILL_GMAIL_ACCOUNT="" \
+        "$REPO_DIR/ccskill-gmail" "$@" >/dev/null 2>&1)
+}
+
+test_dispatch_all_removes_registry_completely() {
+    make_footprint
+    run_dispatch uninstall --all --yes
+    [ ! -e "$HOME/.ccskill-gmail" ] || {
+        echo "~/.ccskill-gmail remains after 'uninstall --all' (audit hook recreated it?)" >&2
+        return 1
+    }
+}
+
+test_dispatch_all_not_audited() {
+    make_footprint
+    run_dispatch uninstall --all --yes
+    [ ! -e "$HOME/.ccskill-gmail/history/commands.jsonl" ] || {
+        echo "uninstall --all was audited; commands.jsonl recreated" >&2
+        return 1
+    }
+}
+
+# レガシー uninstall [DIR] は ~/.ccskill-gmail を消さないので従来どおり記録される
+test_dispatch_legacy_uninstall_is_audited() {
+    make_footprint
+    local proj
+    proj=$(test_mktemp_d)
+    mkdir -p "$proj/.ccskill-gmail"
+    run_dispatch uninstall --yes "$proj"
+    assert_file_exists "$HOME/.ccskill-gmail/history/commands.jsonl"
+}
+
+# ========================================
 # 実行
 # ========================================
 
@@ -116,5 +155,8 @@ run_test "dry-run: removes nothing"                      test_dry_run_removes_no
 run_test "execute: removes targets, keeps clasprc"       test_execute_removes_targets_keeps_clasprc
 run_test "execute: foreign cli symlink is kept"          test_foreign_cli_link_is_kept
 run_test "execute: idempotent on empty HOME"             test_idempotent_on_empty_home
+run_test "dispatch --all: registry fully removed (#143)" test_dispatch_all_removes_registry_completely
+run_test "dispatch --all: not audited (#143)"            test_dispatch_all_not_audited
+run_test "dispatch legacy uninstall: still audited"      test_dispatch_legacy_uninstall_is_audited
 
 test_summary

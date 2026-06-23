@@ -143,8 +143,17 @@ case "$COMMAND" in
         esac
         [ ${#LOG_ARGS[@]} -gt 0 ] && LOG_ARGS=("${LOG_ARGS[@]:1}")
         ;;
-    setup|install|uninstall|update|update-all|apply-config|bind|unbind|migrate)
+    setup|install|update|update-all|apply-config|bind|unbind|migrate)
         RECORD=true
+        ;;
+    uninstall)
+        RECORD=true
+        # uninstall --all は自己消去コマンド。記録すると command audit フックが
+        # 消したはずの ~/.ccskill-gmail/history/ を作り直してしまう (#143)。
+        # レガシー uninstall [DIR] は ~/.ccskill-gmail を消さないため従来どおり記録する。
+        for arg in "$@"; do
+            [ "$arg" = "--all" ] && { RECORD=false; break; }
+        done
         ;;
 esac
 
