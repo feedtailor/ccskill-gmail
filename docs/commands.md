@@ -70,7 +70,7 @@ These apply to dedicated per-project installs and are not needed for the standar
 
 | Command | Description |
 |---|---|
-| `ccskill-gmail install [--account NAME] [--dedicated] [DIR]` | Pin a project to an account (`--dedicated` creates a per-project GAS) |
-| `ccskill-gmail uninstall [DIR]` | Remove a per-project install's local files |
+| `ccskill-gmail install [--account NAME] [DIR]` | **Deprecated.** Alias for `bind` (pins the directory to an account). Creating a new dedicated GAS via `--dedicated` / `--user` has been retired; existing dedicated installs keep working |
+| `ccskill-gmail uninstall [DIR]` | Remove a legacy per-project install's local files |
 | `ccskill-gmail update [DIR]` | Update one project |
 | `ccskill-gmail apply-config [DIR]` | Push `config.js` changes to a dedicated GAS |

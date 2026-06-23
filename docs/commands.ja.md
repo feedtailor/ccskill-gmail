@@ -70,7 +70,7 @@ API 仕様の全体は [SKILL.md](../.claude/skills/ccskill-gmail/SKILL.md) を�
 
 | コマンド | 説明 |
 |---|---|
-| `ccskill-gmail install [--account NAME] [--dedicated] [DIR]` | プロジェクトをアカウントに固定（`--dedicated` で専用 GAS を作成） |
-| `ccskill-gmail uninstall [DIR]` | プロジェクト単位 install のローカルファイルを削除 |
+| `ccskill-gmail install [--account NAME] [DIR]` | **非推奨。** `bind`（ディレクトリをアカウントに固定）のエイリアス。`--dedicated` / `--user` による専用 GAS の新規作成は退役（既存の専用 GAS はそのまま動作） |
+| `ccskill-gmail uninstall [DIR]` | レガシーなプロジェクト単位 install のローカルファイルを削除 |
 | `ccskill-gmail update [DIR]` | プロジェクト 1 つを更新 |
 | `ccskill-gmail apply-config [DIR]` | `config.js` の変更を専用 GAS に反映 |
