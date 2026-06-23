@@ -40,8 +40,8 @@ Commands:
   migrate [--dry-run] [--yes]      Migrate legacy installs to central accounts
   setup                            One-time setup (clasp + symlink + skill + account)
   uninstall --all [--yes|--dry-run]  Remove ccskill-gmail from this machine (skill, accounts, CLI)
-  install [--account NAME] [--dedicated] [DIR]  Install to a project
-  uninstall [DIR]                  Uninstall from a project
+  install [--account NAME] [DIR]    (deprecated) Alias for 'bind'; --dedicated retired
+  uninstall [DIR]                  Uninstall a legacy per-project install
   update [--force] [--yes] [DIR]   Update an installation
   update-all                       Update all installations
   apply-config [DIR]               Apply config.js changes to GAS

@@ -76,7 +76,7 @@ fi
 # clasp login（v3: show-authorized-user で判定）
 if _clasp show-authorized-user 2>&1 | grep -qi "not logged in"; then
     echo -e "  $FAIL clasp not logged in"
-    echo "       Fix: ccskill-gmail install (will prompt for login)"
+    echo "       Fix: ccskill-gmail account add (or: ccskill-gmail setup)"
     ERRORS=$((ERRORS + 1))
 else
     echo -e "  $PASS clasp logged in"
@@ -180,14 +180,14 @@ if [ ! -d "$GAS_DIR" ]; then
         exit 0
     fi
     echo -e "  $FAIL .ccskill-gmail/ not found"
-    echo "       Fix: ccskill-gmail install (or: ccskill-gmail account add)"
+    echo "       Fix: ccskill-gmail bind <email|label> (or: ccskill-gmail account add)"
     ERRORS=$((ERRORS + 1))
     # これ以降のチェックはスキップ
     echo ""
     echo "================================================"
     echo -e "Result: ${RED}$ERRORS error(s)${NC}, $WARNINGS warning(s)"
     echo ""
-    echo "Install first: ccskill-gmail install (or: ccskill-gmail account add)"
+    echo "Set up first: ccskill-gmail account add, then: ccskill-gmail bind <email|label>"
     exit 1
 fi
 
@@ -234,7 +234,7 @@ if [ -f "$GAS_DIR/.clasp.json" ]; then
     fi
 else
     echo -e "  $FAIL .clasp.json not found"
-    echo "       Fix: ccskill-gmail install (or reinstall)"
+    echo "       Fix: ccskill-gmail bind <email|label> (switch to the account's shared deployment)"
     ERRORS=$((ERRORS + 1))
 fi
 
@@ -256,7 +256,7 @@ if [ -f "$GAS_DIR/.ccskill-metadata.json" ]; then
         endpoint=$(tr -d '[:space:]' < "$GAS_DIR/endpoint")
     else
         echo -e "  $FAIL endpoint not found"
-        echo "       Fix: ccskill-gmail install"
+        echo "       Fix: ccskill-gmail bind <email|label> (switch to the account's shared deployment)"
         ERRORS=$((ERRORS + 1))
     fi
 fi
@@ -274,12 +274,12 @@ if [ -n "$MASTER_DIR" ] && [ -d "$MASTER_DIR" ]; then
         echo -e "  $PASS auth.sh found in master"
     else
         echo -e "  $FAIL auth.sh not found in master"
-        echo "       Fix: ccskill-gmail install"
+        echo "       Fix: ccskill-gmail setup"
         ERRORS=$((ERRORS + 1))
     fi
 else
     echo -e "  $FAIL master directory not found: $MASTER_DIR"
-    echo "       Fix: ccskill-gmail install"
+    echo "       Fix: ccskill-gmail setup"
     ERRORS=$((ERRORS + 1))
 fi
 

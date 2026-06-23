@@ -81,7 +81,8 @@ test_help_shows_account_not_user() {
 }
 
 # ========================================
-# (4) doctor の "Install first" 行が account add も案内する (:190 を :183 に揃える)
+# (4) doctor の未設定フッターが global 導線 (account add → bind) を案内する
+#     (#141: install 退役に伴い "Install first: ... install" から差し替え)
 # ========================================
 
 test_doctor_install_first_mentions_account_add() {
@@ -89,7 +90,7 @@ test_doctor_install_first_mentions_account_add() {
     local proj out
     proj=$(test_mktemp_d)
     out=$(cd "$proj" && "$REPO_DIR/ccskill-gmail" doctor 2>&1) || true
-    assert_contains "Install first: ccskill-gmail install (or: ccskill-gmail account add)" "$out"
+    assert_contains "Set up first: ccskill-gmail account add, then: ccskill-gmail bind <email|label>" "$out"
 }
 
 # ========================================
@@ -121,7 +122,7 @@ run_test "setup guidance -> account add + skill install"   test_setup_guidance_m
 run_test "setup guidance -> excludes per-project install"  test_setup_guidance_excludes_project_install
 run_test "release guidance -> points to setup"             test_release_guidance_points_to_setup
 run_test "help install line -> --account, not --user"      test_help_shows_account_not_user
-run_test "doctor 'Install first' -> includes account add"  test_doctor_install_first_mentions_account_add
+run_test "doctor setup footer -> account add + bind"       test_doctor_install_first_mentions_account_add
 run_test "doctor master-repair fix -> excludes account add" test_doctor_master_fix_excludes_account_add
 
 test_summary
