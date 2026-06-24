@@ -70,7 +70,7 @@ CCSKILL_DIR="$TARGET_DIR/.ccskill-gmail"
 if [ ! -d "$CCSKILL_DIR" ]; then
     echo -e "${RED}Error: No ccskill-gmail installation found in $TARGET_DIR${NC}"
     echo ""
-    echo "  Run 'ccskill-gmail install' to install, or specify a directory:"
+    echo "  Run 'ccskill-gmail bind <email|label>' to link this directory, or specify a directory:"
     echo "  ccskill-gmail info /path/to/project"
     exit 1
 fi

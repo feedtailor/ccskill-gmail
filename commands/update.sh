@@ -77,8 +77,8 @@ GAS_DIR="$TARGET_DIR/.ccskill-gmail"
 if [ ! -d "$SKILL_DIR" ] || [ ! -d "$GAS_DIR" ]; then
     echo -e "${RED}Error: ccskill-gmail is not installed in this directory${NC}"
     echo ""
-    echo "Please install first:"
-    echo "  ccskill-gmail install"
+    echo "Link this directory first:"
+    echo "  ccskill-gmail bind <email|label>"
     exit 1
 fi
 
