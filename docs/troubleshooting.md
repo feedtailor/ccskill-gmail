@@ -20,6 +20,16 @@ This happens when you're already signed in to multiple Google accounts in the br
 - Do **not** copy the URL from the browser's error page — always use the URL **shown in your terminal**
 - Sign in at accounts.google.com **before** opening the Authorization URL. Opening the URL first will trigger the same redirect loop
 
+## "This app isn't verified" warning (personal Google accounts)
+
+With a personal Google account (`@gmail.com`, etc.), authorization shows a "This app isn't verified" warning. ccskill-gmail deploys a personal Apps Script in your own account that uses sensitive Gmail scopes, and it hasn't gone through Google's public verification. It's a script you built and authorize yourself, so it's safe to proceed.
+
+1. Click "Advanced"
+2. Click "Go to <project> (unsafe)"
+3. Click "Allow" on the permission list
+
+Google Workspace accounts treated as internal apps may not see this warning.
+
 ## Multi-account OAuth errors
 
 If you encounter authentication errors with multiple accounts, run `ccskill-gmail doctor`. The doctor command checks the full chain — clasp login, OAuth tokens, the account registry, endpoint connectivity — and tells you exactly what's broken with fix suggestions.

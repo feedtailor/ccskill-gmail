@@ -131,6 +131,8 @@ cd ~/projects/ccskill-gmail
 
 `setup` handles the whole install — it installs clasp, registers ccskill-gmail in your PATH, registers the user skill (so every project can use Gmail, no per-project install), and registers your Gmail account. A browser opens partway through for Google authorization — click "Allow".
 
+> With a personal Google account, authorization shows a "This app isn't verified" warning. It's a script you build and authorize in your own account, so it's safe to proceed — see [Troubleshooting](docs/troubleshooting.md) for the steps.
+
 That's it. Verify with:
 
 ```bash
@@ -163,12 +165,22 @@ To choose which account to use, just name it (by label or email) in your request
 
 ## Already using ccskill-gmail? (older per-project setup)
 
-If you used to run `ccskill-gmail install` per project, pull the latest code and consolidate those installs onto the central account registry with `migrate` (your existing installs keep working, so this is optional):
+If you used to run `ccskill-gmail install` per project, update to the latest code and consolidate those installs onto the central account registry with `migrate` (your existing installs keep working, so this is optional).
+
+### git clone
 
 ```bash
 cd ~/projects/ccskill-gmail
 git pull
 ccskill-gmail migrate            # consolidate onto the central accounts (--dry-run to preview)
+```
+
+### zip distribution
+
+```bash
+cd ~/projects
+unzip -o ccskill-gmail-XXXXXX.zip     # extract over the existing directory
+ccskill-gmail migrate                 # --dry-run to preview
 ```
 
 `migrate` registers your accounts from the existing installs, so no separate sign-in is needed, and it deletes nothing.
