@@ -136,8 +136,21 @@ test_user_flag_retired() {
     [ ! -f "$proj/.ccskill-gmail/binding.json" ] || { echo "    must not bind" >&2; return 1; }
 }
 
+# (9) 退役した 'ccskill-gmail install' をユーザー向け復旧ヒントとして案内していない (#144)
+#     install.sh 本体（deprecated 通知）と 'installation/installed' の説明的記述は除外。
+test_no_stale_install_hints() {
+    local hits
+    hits=$(grep -rnE "ccskill-gmail install([^a-zA-Z]|$)" "$REPO_DIR/lib" "$REPO_DIR/commands" \
+        | grep -v "/commands/install.sh:" || true)
+    if [ -n "$hits" ]; then
+        echo "    stale 'ccskill-gmail install' recovery hints found:" >&2
+        printf '%s\n' "$hits" | sed 's/^/      /' >&2
+        return 1
+    fi
+}
+
 echo ""
-echo "test-install-deprecation.sh (#141)"
+echo "test-install-deprecation.sh (#141, #144)"
 echo ""
 
 run_test "install(central): warns deprecated + binds"      test_deprecated_warns_and_binds
@@ -148,5 +161,6 @@ run_test "install(central): no accounts -> guide to add"   test_deprecated_witho
 run_test "install(central): api resolves via binding"      test_deprecated_api_resolution
 run_test "install --dedicated: retired (no creation)"      test_dedicated_retired
 run_test "install --user: retired (no creation)"           test_user_flag_retired
+run_test "no stale 'ccskill-gmail install' recovery hints"  test_no_stale_install_hints
 
 test_summary

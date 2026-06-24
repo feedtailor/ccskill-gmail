@@ -45,7 +45,7 @@ _api_init() {
         fi
         [ -z "$_MASTER_DIR" ] && _MASTER_DIR="${CCSKILL_GMAIL_DIR:-}"
         if [ -z "$_MASTER_DIR" ] || [ ! -d "$_MASTER_DIR" ]; then
-            echo '{"ok":false,"error":"Master directory not found. Run: ccskill-gmail install","error_code":"MASTER_NOT_FOUND","hint":"ccskill-gmail のインストール元が見つかりません。再インストールしてください","retryable":false}'
+            echo '{"ok":false,"error":"Master directory not found. Run: ccskill-gmail setup","error_code":"MASTER_NOT_FOUND","hint":"ccskill-gmail のインストール元が見つかりません。ccskill-gmail setup を実行してください","retryable":false}'
             return 1
         fi
     fi
@@ -181,7 +181,7 @@ _api_init() {
         # shellcheck source=/dev/null
         source "$SCRIPT_DIR/auth.sh"
     else
-        echo '{"ok":false,"error":"auth.sh not found. Run: ccskill-gmail install","error_code":"AUTH_NOT_FOUND","retryable":false}'
+        echo '{"ok":false,"error":"auth.sh not found. Run: ccskill-gmail setup","error_code":"AUTH_NOT_FOUND","retryable":false}'
         return 1
     fi
 

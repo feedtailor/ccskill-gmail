@@ -34,7 +34,7 @@ provision_gas() {
     local GAS_DIR="$1"
     local GAS_PROJECT_TITLE="$2"
 
-    local RETRY_HINT="${PROVISION_RETRY_HINT:-ccskill-gmail install}"
+    local RETRY_HINT="${PROVISION_RETRY_HINT:-ccskill-gmail account update}"
     local VERIFY_HINT="${PROVISION_VERIFY_HINT:-.ccskill-gmail/api get action=get_profile}"
 
     PROVISION_DEPLOYMENT_ID=""

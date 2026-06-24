@@ -19,7 +19,7 @@ gas_token() {
     local USER="${_CLASP_USER:-default}"
 
     if [ ! -f "$RC_FILE" ]; then
-        echo "ERROR: $RC_FILE not found. Run 'ccskill-gmail install' first." >&2
+        echo "ERROR: $RC_FILE not found. Run 'ccskill-gmail setup' first." >&2
         return 1
     fi
 
@@ -34,7 +34,7 @@ gas_token() {
     expiry_date=$(jq -r --arg u "$USER" '(.tokens[$u].expiry_date) // 0' "$RC_FILE")
 
     if [ -z "$access_token" ]; then
-        echo "ERROR: No credentials for user '$USER' in $RC_FILE. Run 'ccskill-gmail install' first." >&2
+        echo "ERROR: No credentials for user '$USER' in $RC_FILE. Run 'ccskill-gmail account add' first." >&2
         return 1
     fi
 
@@ -54,7 +54,7 @@ gas_token() {
     refresh_token=$(jq -r --arg u "$USER" '(.tokens[$u].refresh_token) // empty' "$RC_FILE")
 
     if [ -z "$refresh_token" ] || [ -z "$client_id" ] || [ -z "$client_secret" ]; then
-        echo "ERROR: Missing credentials for user '$USER' in $RC_FILE. Run 'ccskill-gmail install' first." >&2
+        echo "ERROR: Missing credentials for user '$USER' in $RC_FILE. Run 'ccskill-gmail account add' first." >&2
         return 1
     fi
 
@@ -72,7 +72,7 @@ gas_token() {
     if [ -z "$new_token" ]; then
         local error_desc
         error_desc=$(echo "$response" | jq -r '.error_description // .error // "Unknown error"')
-        echo "ERROR: Token refresh failed: $error_desc. Run 'ccskill-gmail install'." >&2
+        echo "ERROR: Token refresh failed: $error_desc. Run 'ccskill-gmail account add'." >&2
         return 1
     fi
 
