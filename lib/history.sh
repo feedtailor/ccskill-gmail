@@ -353,16 +353,21 @@ _ccskill_history_list() {
     fi
 
     # jq フィルターを構築（フィルタを先に適用してから末尾 N 件を取る）
+    # 値は jq --arg で安全に渡す（フィルタ文字列に直接展開しない: 引用符で壊れ
+    # たり jq フィルタインジェクションになるのを防ぐ）。
     local jq_filter='.'
+    local jq_args=()
 
     # --action フィルター
     if [ -n "${HISTORY_FILTER_ACTION:-}" ]; then
-        jq_filter="${jq_filter} | select(.action == \"${HISTORY_FILTER_ACTION}\")"
+        jq_filter="${jq_filter} | select(.action == \$fa)"
+        jq_args+=(--arg fa "$HISTORY_FILTER_ACTION")
     fi
 
     # --since フィルター（ISO 8601 日付プレフィックス比較）
     if [ -n "${HISTORY_FILTER_SINCE:-}" ]; then
-        jq_filter="${jq_filter} | select(.timestamp >= \"${HISTORY_FILTER_SINCE}\")"
+        jq_filter="${jq_filter} | select(.timestamp >= \$fs)"
+        jq_args+=(--arg fs "$HISTORY_FILTER_SINCE")
     fi
 
     # --errors フィルター
@@ -372,7 +377,7 @@ _ccskill_history_list() {
 
     # フィルタ適用 → 時系列ソート (複数ディレクトリの混在対応) → 末尾 N 件
     local lines
-    lines=$(printf '%s\n' "$combined_lines" | jq -c "$jq_filter" 2>/dev/null | jq -s -c 'sort_by(.timestamp)[]' 2>/dev/null | tail -n "$count")
+    lines=$(printf '%s\n' "$combined_lines" | jq -c ${jq_args[@]+"${jq_args[@]}"} "$jq_filter" 2>/dev/null | jq -s -c 'sort_by(.timestamp)[]' 2>/dev/null | tail -n "$count")
 
     if [ -z "$lines" ]; then
         printf '(no history)\n'
