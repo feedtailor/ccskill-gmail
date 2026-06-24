@@ -23,14 +23,12 @@
 ## 「このアプリは Google で確認されていません」と表示される（個人 Google アカウント）
 
 個人の Google アカウント（`@gmail.com`）を登録すると、認可時に「このアプリは Google で確認されていません」という警告が出ます。ccskill-gmail は各自のアカウントに自前の GAS を建て、Gmail の機微な権限を使う設計で、Google の公開審査を受けていないためです。自分で作って自分が許可するスクリプトなので、進めて問題ありません。
-
-![「このアプリは Google で確認されていません」警告画面。「詳細」を開くと最下部に「（プロジェクト名）（安全ではないページ）に移動」リンクが表示される](images/unverified-app-warning.png)
+<img src="images/unverified-app-warning.png" width="600" alt="「このアプリは Google で確認されていません」警告画面。「詳細」を開くと最下部に「（プロジェクト名）（安全ではないページ）に移動」リンクが表示される">
 
 1. 「詳細」をクリック
 2. 「（プロジェクト名）（安全ではないページ）に移動」をクリック
 3. 権限一覧でチェックボックスをONにして「許可」
-
-![Gmail 権限の許可画面。すべてのチェックボックスをONにして「続行」をクリックする](images/permission-grant.png)
+    <img src="images/permission-grant.png" width="600" alt="Gmail 権限の許可画面。すべてのチェックボックスをONにして「続行」をクリックする">
 
 Google Workspace アカウントでの登録の場合、この警告が出ないことがあります。
 

@@ -118,27 +118,8 @@ ccskill-gmail account add
 
 >ラベルには、半角英数字、ハイフン、アンダースコアが利用可能です。
 
-## 2026年6月以前の ccskill-gmail をご利用の方へ
 
-2026年7月のアップデートで、ccskill-gmail の仕様が大きく変わります。2026年6月以前からご利用の方は、ご利用の配布形態に応じて最新バージョンへ更新して下さい。再ログインは不要です。
-
-### git clone の場合
-
-```bash
-cd ~/projects/ccskill-gmail
-git pull
-ccskill-gmail migrate
-```
-
-### zip 配布の場合
-
-```bash
-cd ~/projects
-unzip -o ccskill-gmail-XXXXXX.zip     # 既存ディレクトリに上書き展開
-ccskill-gmail migrate
-```
-
-## 更新
+## アップデート
 
 ccskill-gmail は機能追加や不具合修正で更新されることがあります。
 
@@ -154,12 +135,30 @@ ccskill-gmail account update
 
 ### zip 配布の場合
 
-新しい zip を上書き展開し、アカウント共有 GAS を再デプロイします（`git pull` が `unzip -o` に変わるだけです）。
+新しい zip を上書きで展開して、以下コマンドを実行します。
+
+```bash
+ccskill-gmail account update
+```
+
+### 2026年6月以前の ccskill-gmail をご利用の方へ
+
+2026年7月のアップデートで、ccskill-gmail の仕様が大きく変わります。2026年6月以前からご利用の方は、ご利用の配布形態に応じて最新バージョンへ更新して下さい。再ログインは不要です。
+
+#### git clone の場合
+
+```bash
+cd ~/projects/ccskill-gmail
+git pull
+ccskill-gmail migrate
+```
+
+#### zip 配布の場合
 
 ```bash
 cd ~/projects
-unzip -o ccskill-gmail-XXXXXX.zip     # ディレクトリに上書き展開
-ccskill-gmail account update
+unzip -o ccskill-gmail-XXXXXX.zip     # 既存ディレクトリに上書き展開
+ccskill-gmail migrate
 ```
 
 ## アンインストール
