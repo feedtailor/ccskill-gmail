@@ -25,3 +25,7 @@ package-lock.json
 
 # Local settings
 .claude/settings.local.json
+
+# Skills: track only the product skill, ignore stray local skill symlinks
+/.claude/skills/*
+!/.claude/skills/ccskill-gmail/

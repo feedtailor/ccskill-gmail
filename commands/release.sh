@@ -21,14 +21,15 @@ fi
 
 OUTPUT_DIR="${1:-.}"
 
-# バージョン取得
+# バージョン取得（タグがあればタグ、なければ短縮ハッシュ）
+IS_GIT=0
 if [ -d "$CCSKILL_GMAIL_DIR/.git" ]; then
-    VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-    VERSION_LONG=$(cd "$CCSKILL_GMAIL_DIR" && git describe --tags --always 2>/dev/null || echo "$VERSION")
+    IS_GIT=1
+    VERSION=$(cd "$CCSKILL_GMAIL_DIR" && git describe --tags --always 2>/dev/null || echo "unknown")
 else
     VERSION=$(cat "$CCSKILL_GMAIL_DIR/VERSION" 2>/dev/null || echo "unknown")
-    VERSION_LONG="$VERSION"
 fi
+VERSION_LONG="$VERSION"
 
 ZIPNAME="ccskill-gmail-${VERSION}.zip"
 ZIPPATH="$OUTPUT_DIR/$ZIPNAME"
@@ -36,23 +37,42 @@ ZIPPATH="$OUTPUT_DIR/$ZIPNAME"
 echo "Creating release: $ZIPNAME"
 echo ""
 
+# 既存 zip があれば作り直す（zip は既存アーカイブに追記するため）
+rm -f "$ZIPPATH"
+
 # VERSION ファイルを一時的に作成
 echo "$VERSION" > "$CCSKILL_GMAIL_DIR/VERSION"
 
-# zip 作成（開発用ファイルを除外）
-(cd "$(dirname "$CCSKILL_GMAIL_DIR")" && zip -r "$ZIPPATH" "$(basename "$CCSKILL_GMAIL_DIR")" \
-    -x "$(basename "$CCSKILL_GMAIL_DIR")/.git/*" \
-    -x "$(basename "$CCSKILL_GMAIL_DIR")/.claude/issues/*" \
-    -x "$(basename "$CCSKILL_GMAIL_DIR")/.claude/settings.local.json" \
-    -x "$(basename "$CCSKILL_GMAIL_DIR")/.entire/*" \
-    -x "$(basename "$CCSKILL_GMAIL_DIR")/.registry.json" \
-    -x "$(basename "$CCSKILL_GMAIL_DIR")/review_*.md" \
-    -x "$(basename "$CCSKILL_GMAIL_DIR")/IDEAS-*.md" \
-    -x "$(basename "$CCSKILL_GMAIL_DIR")/MEMORY.md" \
-)
+DIRNAME=$(basename "$CCSKILL_GMAIL_DIR")
+PARENT=$(dirname "$CCSKILL_GMAIL_DIR")
+
+if [ "$IS_GIT" -eq 1 ]; then
+    # git 追跡ファイルのみを同梱する。これにより .DS_Store / log/ などの
+    # ローカル産物や、追跡対象外の symlink が混入しない。
+    # .claude/issues は開発用なので pathspec で除外する。
+    (cd "$PARENT" && \
+        { git -C "$DIRNAME" ls-files -- ':!.claude/issues/'; echo "VERSION"; } \
+        | sed "s,^,$DIRNAME/," \
+        | zip -q "$ZIPPATH" -@ )
+else
+    # 非 git（zip 再配布物からの再生成）: ワークツリーを zip 化しつつ開発用ファイルを除外
+    (cd "$PARENT" && zip -rq "$ZIPPATH" "$DIRNAME" \
+        -x "$DIRNAME/.git/*" \
+        -x "*/.DS_Store" -x "$DIRNAME/.DS_Store" \
+        -x "$DIRNAME/log/*" \
+        -x "$DIRNAME/.claude/issues/*" \
+        -x "$DIRNAME/.claude/settings.local.json" \
+        -x "$DIRNAME/.claude/skills/nano-banana-pro/*" \
+        -x "$DIRNAME/.entire/*" \
+        -x "$DIRNAME/.registry.json" \
+        -x "$DIRNAME/review_*.md" \
+        -x "$DIRNAME/IDEAS-*.md" \
+        -x "$DIRNAME/MEMORY.md" \
+    )
+fi
 
 # VERSION ファイルを削除（git リポジトリでは不要）
-if [ -d "$CCSKILL_GMAIL_DIR/.git" ]; then
+if [ "$IS_GIT" -eq 1 ]; then
     rm -f "$CCSKILL_GMAIL_DIR/VERSION"
 fi
 
