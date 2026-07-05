@@ -141,7 +141,7 @@ accounts_upsert() {
 
     local content
     content=$(jq --arg email "$email" \
-       --arg label "$label" \
+       --arg lbl "$label" \
        --arg clasp_user "$clasp_user" \
        --arg script_id "$script_id" \
        --arg deployment_id "$deployment_id" \
@@ -150,7 +150,7 @@ accounts_upsert() {
        --arg now "$now" \
        --arg version "$version" \
        '.accounts[$email] = {
-          "label": (if $label == "" then null else $label end),
+          "label": (if $lbl == "" then null else $lbl end),
           clasp_user: $clasp_user,
           script_id: (if $script_id == "" then null else $script_id end),
           deployment_id: (if $deployment_id == "" then null else $deployment_id end),
@@ -179,7 +179,7 @@ accounts_get() {
         (.accounts[$i] // null) as $by_email
         | if $by_email != null then {email: $i} + $by_email
           else (
-            ([.accounts | to_entries[] | select(.value.label == $i)] | first) as $m
+            ([.accounts | to_entries[] | select(.value["label"] == $i)] | first) as $m
             | if $m == null then empty else {email: $m.key} + $m.value end
           )
           end' "$file" 2>/dev/null)
@@ -312,7 +312,7 @@ accounts_label_exists() {
     [ -f "$file" ] || return 1
 
     jq -e --arg l "$label" \
-        'any(.accounts[]?; .label == $l)' "$file" >/dev/null 2>&1
+        'any(.accounts[]?; .["label"] == $l)' "$file" >/dev/null 2>&1
 }
 
 # 認証後にラベルを対話的に尋ねる。stdin から 1 行ずつ読み、空入力 (=ラベルなし)

@@ -31,6 +31,21 @@ find_bare_reserved_keys() {
     grep -nE "^[[:space:]]*(${JQ_RESERVED})[[:space:]]*:" "$file" 2>/dev/null || true
 }
 
+# jq 変数を予約語で定義している箇所 (--arg label ...) を抽出する。
+# jq 1.5/1.6 では $label のように予約語名の変数を参照できない。
+find_reserved_arg_vars() {
+    local file="$1"
+    # パターンが "--" で始まるため grep がオプションと誤認しないよう -e で明示する
+    grep -nE -e "--arg[[:space:]]+(${JQ_RESERVED})[[:space:]]" "$file" 2>/dev/null || true
+}
+
+# jq のドット形式フィールドアクセス (.label / .value.label) を抽出する。
+# 予約語フィールドは 1.5/1.6 で `.` 記法が使えないため .["label"] を用いる。
+find_reserved_dot_fields() {
+    local file="$1"
+    grep -nE "\.(${JQ_RESERVED})\b" "$file" 2>/dev/null || true
+}
+
 # ========================================
 # テスト
 # ========================================
@@ -88,6 +103,66 @@ test_detector_ignores_quoted_label() {
     assert_eq "" "$hits"
 }
 
+# jq 変数を予約語で定義していないこと (--arg label ...) — lib + commands (#147 follow-up)
+test_no_reserved_arg_vars() {
+    local f hits total=""
+    for f in "$REPO_DIR"/lib/*.sh "$REPO_DIR"/commands/*.sh; do
+        [ -f "$f" ] || continue
+        hits=$(find_reserved_arg_vars "$f")
+        [ -n "$hits" ] && total="${total}${f}:\n${hits}\n"
+    done
+    if [ -n "$total" ]; then
+        {
+            echo "    jq 変数を予約語名で定義しています (jq 1.5/1.6 で \$label 等が参照不能):"
+            printf "%b" "$total" | sed 's/^/      /'
+            echo "    → --arg lbl 等に改名してください"
+        } >&2
+        return 1
+    fi
+}
+
+# jq のドット形式フィールドアクセスに予約語を使っていないこと (.label) — lib + commands
+test_no_reserved_dot_fields() {
+    local f hits total=""
+    for f in "$REPO_DIR"/lib/*.sh "$REPO_DIR"/commands/*.sh; do
+        [ -f "$f" ] || continue
+        hits=$(find_reserved_dot_fields "$f")
+        [ -n "$hits" ] && total="${total}${f}:\n${hits}\n"
+    done
+    if [ -n "$total" ]; then
+        {
+            echo "    jq のドット形式で予約語フィールドにアクセスしています (jq 1.5/1.6 で不可):"
+            printf "%b" "$total" | sed 's/^/      /'
+            echo "    → .[\"label\"] のブラケット記法に変更してください"
+        } >&2
+        return 1
+    fi
+}
+
+# サニティ: 検出器が --arg label / .label を捕捉できること
+test_detector_catches_arg_and_dot() {
+    local tmp hits
+    tmp=$(test_mktemp)
+    printf '%s\n' '   jq --arg label "$x" ".accounts"' '   select(.value.label == $i)' > "$tmp"
+    hits=$(find_reserved_arg_vars "$tmp")
+    assert_contains "--arg label" "$hits" || { rm -f "$tmp"; return 1; }
+    hits=$(find_reserved_dot_fields "$tmp")
+    rm -f "$tmp"
+    assert_contains ".label" "$hits"
+}
+
+# サニティ: ブラケット記法 .["label"] と --arg lbl は捕捉しないこと
+test_detector_ignores_bracket_and_alias() {
+    local tmp hits
+    tmp=$(test_mktemp)
+    printf '%s\n' '   jq --arg lbl "$x"' '   select(.value["label"] == $i)' > "$tmp"
+    hits=$(find_reserved_arg_vars "$tmp")
+    assert_eq "" "$hits" || { rm -f "$tmp"; return 1; }
+    hits=$(find_reserved_dot_fields "$tmp")
+    rm -f "$tmp"
+    assert_eq "" "$hits"
+}
+
 # ========================================
 # 実行
 # ========================================
@@ -98,7 +173,11 @@ echo ""
 
 run_test "detector: catches bare 'label:' key"              test_detector_catches_bare_label
 run_test "detector: ignores quoted '\"label\":' key"        test_detector_ignores_quoted_label
+run_test "detector: catches '--arg label' and '.label'"     test_detector_catches_arg_and_dot
+run_test "detector: ignores bracket '.[\"label\"]'/alias"   test_detector_ignores_bracket_and_alias
 run_test "lib/accounts.sh: no bare jq reserved-word key"    test_accounts_sh_has_no_bare_reserved_key
 run_test "lib/*.sh: no bare jq reserved-word key"           test_all_lib_has_no_bare_reserved_key
+run_test "lib+commands: no jq var named as reserved word"   test_no_reserved_arg_vars
+run_test "lib+commands: no dot-form reserved field access"  test_no_reserved_dot_fields
 
 test_summary
