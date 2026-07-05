@@ -3,7 +3,7 @@
 # Gmail Skill - Account Manager (#123)
 #
 # Usage:
-#   ccskill-gmail account add [--label NAME] [--user CLASP_USER]
+#   ccskill-gmail account add [--label NAME] [--user CLASP_USER] [--force]
 #   ccskill-gmail account list
 #   ccskill-gmail account default <email|label>
 #   ccskill-gmail account remove <email|label> [--yes]
@@ -32,7 +32,10 @@ show_usage() {
 Usage: ccskill-gmail account <subcommand> [args...]
 
 Subcommands:
-  add [--label NAME] [--user CLASP_USER]  Register a Gmail account (creates a GAS project)
+  add [--label NAME] [--user CLASP_USER] [--force]
+                                          Register a Gmail account (creates a GAS project).
+                                          --force re-registers an already-registered account
+                                          (creates a new GAS; the old one is orphaned)
   list                                    Show registered accounts
   default <email|label>                   Set the default account
   remove <email|label> [--yes]            Remove an account from the registry
@@ -47,6 +50,7 @@ EOF
 cmd_add() {
     local LABEL=""
     local USER_OVERRIDE=""
+    local FORCE=false
 
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -57,6 +61,10 @@ cmd_add() {
             --user)
                 USER_OVERRIDE="${2:-}"
                 shift 2
+                ;;
+            --force|-f)
+                FORCE=true
+                shift
                 ;;
             *)
                 echo -e "${RED}Error: Unknown option: $1${NC}"
@@ -123,6 +131,32 @@ cmd_add() {
         echo "Sign in with the Gmail account you want to register."
         echo "Running: clasp login --user $_CLASP_USER"
         _clasp login
+    fi
+
+    # 重複登録ガード: GAS を作成する前に、ログイン中の Google アカウントが
+    # 既に登録済みなら中断する（新しい GAS を作って旧 GAS を孤立させないため）。#150
+    if [ "$FORCE" != true ]; then
+        local LOGGED_IN_EMAIL
+        LOGGED_IN_EMAIL=$(clasp_authorized_email)
+        if [ -n "$LOGGED_IN_EMAIL" ] && accounts_get "$LOGGED_IN_EMAIL" >/dev/null 2>&1; then
+            local _existing _ep _lbl
+            _existing=$(accounts_get "$LOGGED_IN_EMAIL")
+            _ep=$(printf '%s' "$_existing" | jq -r '.endpoint // empty')
+            _lbl=$(printf '%s' "$_existing" | jq -r '.label // empty')
+            echo ""
+            echo -e "${YELLOW}This Google account is already registered:${NC}"
+            echo "  Email:    $LOGGED_IN_EMAIL"
+            [ -n "$_lbl" ] && echo "  Label:    $_lbl"
+            [ -n "$_ep" ] && echo "  Endpoint: $_ep"
+            echo ""
+            echo "Re-registering would create a duplicate GAS project and orphan the current one."
+            echo "  - Redeploy the latest code:  ccskill-gmail account update"
+            echo "  - Replace with a fresh GAS:  ccskill-gmail account remove ${_lbl:-$LOGGED_IN_EMAIL}  then  ccskill-gmail account add"
+            echo "  - Register anyway (advanced): ccskill-gmail account add --force"
+            echo ""
+            echo -e "${GREEN}Aborted. No GAS project was created.${NC}"
+            exit 1
+        fi
     fi
 
     # アカウント用 GAS ディレクトリ (~/.ccskill-gmail/gas/<clasp_user>/)
