@@ -93,6 +93,7 @@ cmd_add() {
     source "$CCSKILL_GMAIL_DIR/lib/clasp.sh"
     source "$CCSKILL_GMAIL_DIR/lib/push-gas.sh"
     source "$CCSKILL_GMAIL_DIR/lib/provision.sh"
+    source "$CCSKILL_GMAIL_DIR/lib/hostname.sh"
 
     if ! _clasp --version &> /dev/null; then
         echo -e "${RED}Error: clasp is not available${NC}"
@@ -169,9 +170,16 @@ cmd_add() {
     fi
 
     # プロビジョニング (作成 → push → デプロイ → 認可 → 検証)
+    # GAS プロジェクト名: ccskill-gmail [<label> ]?[<host>]。作成マシンを判別できるよう
+    # 短縮ホスト名を付与する。ラベルは --label 指定時のみ（対話ラベルは検証後に決まるため）。#151
+    local _HOST _TITLE
+    _HOST=$(short_hostname)
+    _TITLE="ccskill-gmail"
+    [ -n "$LABEL" ] && _TITLE="$_TITLE $LABEL"
+    [ -n "$_HOST" ] && _TITLE="$_TITLE [$_HOST]"
     PROVISION_RETRY_HINT="ccskill-gmail account add"
     PROVISION_VERIFY_HINT="ccskill-gmail api get action=get_profile"
-    provision_gas "$GAS_DIR" "Gmail Skill - account ${LABEL:-$_CLASP_USER}"
+    provision_gas "$GAS_DIR" "$_TITLE"
 
     if [ "$PROVISION_VERIFY_OK" != true ]; then
         echo -e "${RED}Error: Could not verify the endpoint. Account was NOT registered.${NC}"
