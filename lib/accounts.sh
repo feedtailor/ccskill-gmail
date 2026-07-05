@@ -150,7 +150,7 @@ accounts_upsert() {
        --arg now "$now" \
        --arg version "$version" \
        '.accounts[$email] = {
-          label: (if $label == "" then null else $label end),
+          "label": (if $label == "" then null else $label end),
           clasp_user: $clasp_user,
           script_id: (if $script_id == "" then null else $script_id end),
           deployment_id: (if $deployment_id == "" then null else $deployment_id end),
