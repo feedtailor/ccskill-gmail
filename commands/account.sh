@@ -220,9 +220,9 @@ cmd_list() {
 
     printf "  %-3s %-34s %-12s %s\n" "" "EMAIL" "LABEL" "CREATED"
     jq -r '
-        .default_account as $def
+        .default_account as $defacct
         | .accounts | to_entries[]
-        | [ (if .key == $def then "*" else " " end),
+        | [ (if .key == $defacct then "*" else " " end),
             .key,
             (.value.label // "-"),
             (.value.created_at // "-") ]

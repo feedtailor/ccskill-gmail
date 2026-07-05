@@ -141,7 +141,7 @@ accounts_upsert() {
 
     local content
     content=$(jq --arg email "$email" \
-       --arg label "$label" \
+       --arg lbl "$label" \
        --arg clasp_user "$clasp_user" \
        --arg script_id "$script_id" \
        --arg deployment_id "$deployment_id" \
@@ -150,7 +150,7 @@ accounts_upsert() {
        --arg now "$now" \
        --arg version "$version" \
        '.accounts[$email] = {
-          "label": (if $label == "" then null else $label end),
+          "label": (if $lbl == "" then null else $lbl end),
           clasp_user: $clasp_user,
           script_id: (if $script_id == "" then null else $script_id end),
           deployment_id: (if $deployment_id == "" then null else $deployment_id end),
