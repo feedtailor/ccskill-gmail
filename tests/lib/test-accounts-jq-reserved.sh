@@ -22,7 +22,10 @@ source "$SCRIPT_DIR/test-helper.sh"
 
 # jq 予約語のうち、シェルスクリプト中で誤検知しにくく、オブジェクトキーに
 # 使うと古い jq で確実に落ちるもの。`label` が本 issue の実害。
+# オブジェクトキー / ドットフィールドで実害が出やすい予約語（誤検出しにくいもの）
 JQ_RESERVED='label|def|reduce|foreach|import|include|catch|elif|__loc__'
+# jq の全予約語。変数名 (--arg / as $) に使うと jq 1.5/1.6 で必ず落ちる。
+JQ_KEYWORDS='as|def|if|then|elif|else|end|and|or|reduce|foreach|try|catch|label|import|include|__loc__'
 
 # 指定ファイルから「行頭（インデント可）に 予約語: が裸で並ぶ」行を抽出する。
 # 引用符付き ("label":) は対象外。jq のオブジェクトリテラル整形を前提とする。
@@ -31,12 +34,13 @@ find_bare_reserved_keys() {
     grep -nE "^[[:space:]]*(${JQ_RESERVED})[[:space:]]*:" "$file" 2>/dev/null || true
 }
 
-# jq 変数を予約語で定義している箇所 (--arg label ...) を抽出する。
-# jq 1.5/1.6 では $label のように予約語名の変数を参照できない。
+# jq 変数を予約語名で束縛している箇所 (--arg label ... / .foo as $def) を抽出する。
+# jq 1.5/1.6 では $label / $def のように予約語名の変数を参照できない。
 find_reserved_arg_vars() {
     local file="$1"
     # パターンが "--" で始まるため grep がオプションと誤認しないよう -e で明示する
-    grep -nE -e "--arg[[:space:]]+(${JQ_RESERVED})[[:space:]]" "$file" 2>/dev/null || true
+    grep -nE -e "--arg[[:space:]]+(${JQ_KEYWORDS})[[:space:]]" \
+             -e "as[[:space:]]+\\\$(${JQ_KEYWORDS})\b" "$file" 2>/dev/null || true
 }
 
 # jq のドット形式フィールドアクセス (.label / .value.label) を抽出する。
@@ -139,23 +143,28 @@ test_no_reserved_dot_fields() {
     fi
 }
 
-# サニティ: 検出器が --arg label / .label を捕捉できること
+# サニティ: 検出器が --arg label / as $def / .label を捕捉できること
 test_detector_catches_arg_and_dot() {
     local tmp hits
     tmp=$(test_mktemp)
-    printf '%s\n' '   jq --arg label "$x" ".accounts"' '   select(.value.label == $i)' > "$tmp"
+    printf '%s\n' '   jq --arg label "$x" ".accounts"' \
+                  '   .default_account as $def' \
+                  '   select(.value.label == $i)' > "$tmp"
     hits=$(find_reserved_arg_vars "$tmp")
     assert_contains "--arg label" "$hits" || { rm -f "$tmp"; return 1; }
+    assert_contains "as \$def" "$hits" || { rm -f "$tmp"; return 1; }
     hits=$(find_reserved_dot_fields "$tmp")
     rm -f "$tmp"
     assert_contains ".label" "$hits"
 }
 
-# サニティ: ブラケット記法 .["label"] と --arg lbl は捕捉しないこと
+# サニティ: ブラケット記法 .["label"] / 別名 --arg lbl / as $defacct は捕捉しないこと
 test_detector_ignores_bracket_and_alias() {
     local tmp hits
     tmp=$(test_mktemp)
-    printf '%s\n' '   jq --arg lbl "$x"' '   select(.value["label"] == $i)' > "$tmp"
+    printf '%s\n' '   jq --arg lbl "$x"' \
+                  '   .default_account as $defacct' \
+                  '   select(.value["label"] == $i)' > "$tmp"
     hits=$(find_reserved_arg_vars "$tmp")
     assert_eq "" "$hits" || { rm -f "$tmp"; return 1; }
     hits=$(find_reserved_dot_fields "$tmp")
