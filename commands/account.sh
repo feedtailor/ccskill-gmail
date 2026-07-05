@@ -3,7 +3,7 @@
 # Gmail Skill - Account Manager (#123)
 #
 # Usage:
-#   ccskill-gmail account add [--label NAME] [--user CLASP_USER]
+#   ccskill-gmail account add [--label NAME] [--user CLASP_USER] [--force]
 #   ccskill-gmail account list
 #   ccskill-gmail account default <email|label>
 #   ccskill-gmail account remove <email|label> [--yes]
@@ -32,7 +32,10 @@ show_usage() {
 Usage: ccskill-gmail account <subcommand> [args...]
 
 Subcommands:
-  add [--label NAME] [--user CLASP_USER]  Register a Gmail account (creates a GAS project)
+  add [--label NAME] [--user CLASP_USER] [--force]
+                                          Register a Gmail account (creates a GAS project).
+                                          --force re-registers an already-registered account
+                                          (creates a new GAS; the old one is orphaned)
   list                                    Show registered accounts
   default <email|label>                   Set the default account
   remove <email|label> [--yes]            Remove an account from the registry
@@ -47,6 +50,7 @@ EOF
 cmd_add() {
     local LABEL=""
     local USER_OVERRIDE=""
+    local FORCE=false
 
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -57,6 +61,10 @@ cmd_add() {
             --user)
                 USER_OVERRIDE="${2:-}"
                 shift 2
+                ;;
+            --force|-f)
+                FORCE=true
+                shift
                 ;;
             *)
                 echo -e "${RED}Error: Unknown option: $1${NC}"
@@ -85,6 +93,7 @@ cmd_add() {
     source "$CCSKILL_GMAIL_DIR/lib/clasp.sh"
     source "$CCSKILL_GMAIL_DIR/lib/push-gas.sh"
     source "$CCSKILL_GMAIL_DIR/lib/provision.sh"
+    source "$CCSKILL_GMAIL_DIR/lib/hostname.sh"
 
     if ! _clasp --version &> /dev/null; then
         echo -e "${RED}Error: clasp is not available${NC}"
@@ -125,6 +134,32 @@ cmd_add() {
         _clasp login
     fi
 
+    # 重複登録ガード: GAS を作成する前に、ログイン中の Google アカウントが
+    # 既に登録済みなら中断する（新しい GAS を作って旧 GAS を孤立させないため）。#150
+    if [ "$FORCE" != true ]; then
+        local LOGGED_IN_EMAIL
+        LOGGED_IN_EMAIL=$(clasp_authorized_email)
+        if [ -n "$LOGGED_IN_EMAIL" ] && accounts_get "$LOGGED_IN_EMAIL" >/dev/null 2>&1; then
+            local _existing _ep _lbl
+            _existing=$(accounts_get "$LOGGED_IN_EMAIL")
+            _ep=$(printf '%s' "$_existing" | jq -r '.endpoint // empty')
+            _lbl=$(printf '%s' "$_existing" | jq -r '.label // empty')
+            echo ""
+            echo -e "${YELLOW}This Google account is already registered:${NC}"
+            echo "  Email:    $LOGGED_IN_EMAIL"
+            [ -n "$_lbl" ] && echo "  Label:    $_lbl"
+            [ -n "$_ep" ] && echo "  Endpoint: $_ep"
+            echo ""
+            echo "Re-registering would create a duplicate GAS project and orphan the current one."
+            echo "  - Redeploy the latest code:  ccskill-gmail account update"
+            echo "  - Replace with a fresh GAS:  ccskill-gmail account remove ${_lbl:-$LOGGED_IN_EMAIL}  then  ccskill-gmail account add"
+            echo "  - Register anyway (advanced): ccskill-gmail account add --force"
+            echo ""
+            echo -e "${GREEN}Aborted. No GAS project was created.${NC}"
+            exit 1
+        fi
+    fi
+
     # アカウント用 GAS ディレクトリ (~/.ccskill-gmail/gas/<clasp_user>/)
     local GAS_DIR="$HOME/.ccskill-gmail/gas/$_CLASP_USER"
     mkdir -p "$GAS_DIR"
@@ -135,9 +170,16 @@ cmd_add() {
     fi
 
     # プロビジョニング (作成 → push → デプロイ → 認可 → 検証)
+    # GAS プロジェクト名: ccskill-gmail [<label> ]?[<host>]。作成マシンを判別できるよう
+    # 短縮ホスト名を付与する。ラベルは --label 指定時のみ（対話ラベルは検証後に決まるため）。#151
+    local _HOST _TITLE
+    _HOST=$(short_hostname)
+    _TITLE="ccskill-gmail"
+    [ -n "$LABEL" ] && _TITLE="$_TITLE $LABEL"
+    [ -n "$_HOST" ] && _TITLE="$_TITLE [$_HOST]"
     PROVISION_RETRY_HINT="ccskill-gmail account add"
     PROVISION_VERIFY_HINT="ccskill-gmail api get action=get_profile"
-    provision_gas "$GAS_DIR" "Gmail Skill - account ${LABEL:-$_CLASP_USER}"
+    provision_gas "$GAS_DIR" "$_TITLE"
 
     if [ "$PROVISION_VERIFY_OK" != true ]; then
         echo -e "${RED}Error: Could not verify the endpoint. Account was NOT registered.${NC}"
