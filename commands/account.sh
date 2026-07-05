@@ -224,7 +224,7 @@ cmd_list() {
         | .accounts | to_entries[]
         | [ (if .key == $defacct then "*" else " " end),
             .key,
-            (.value["label"] // "-"),
+            (.value.label // "-"),
             (.value.created_at // "-") ]
         | @tsv' "$file" | while IFS=$'\t' read -r mark email label created; do
         printf "  %-3s %-34s %-12s %s\n" "$mark" "$email" "$label" "$created"
@@ -381,7 +381,7 @@ cmd_update() {
         script_id=$(printf '%s' "$entry" | jq -r '.script_id // empty')
         deployment_id=$(printf '%s' "$entry" | jq -r '.deployment_id // empty')
         endpoint=$(printf '%s' "$entry" | jq -r '.endpoint // empty')
-        label=$(printf '%s' "$entry" | jq -r '.["label"] // empty')
+        label=$(printf '%s' "$entry" | jq -r '.label // empty')
         version=$(printf '%s' "$entry" | jq -r '.version // empty')
 
         if [ "$FORCE" != true ] && [ "$version" = "$MASTER_VERSION" ]; then

@@ -179,7 +179,7 @@ accounts_get() {
         (.accounts[$i] // null) as $by_email
         | if $by_email != null then {email: $i} + $by_email
           else (
-            ([.accounts | to_entries[] | select(.value["label"] == $i)] | first) as $m
+            ([.accounts | to_entries[] | select(.value.label == $i)] | first) as $m
             | if $m == null then empty else {email: $m.key} + $m.value end
           )
           end' "$file" 2>/dev/null)
@@ -312,7 +312,7 @@ accounts_label_exists() {
     [ -f "$file" ] || return 1
 
     jq -e --arg l "$label" \
-        'any(.accounts[]?; .["label"] == $l)' "$file" >/dev/null 2>&1
+        'any(.accounts[]?; .label == $l)' "$file" >/dev/null 2>&1
 }
 
 # 認証後にラベルを対話的に尋ねる。stdin から 1 行ずつ読み、空入力 (=ラベルなし)
