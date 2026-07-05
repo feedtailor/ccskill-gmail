@@ -30,6 +30,7 @@ fi
 
 source "$CCSKILL_GMAIL_DIR/lib/clasp.sh"
 source "$CCSKILL_GMAIL_DIR/lib/update_check.sh"
+source "$CCSKILL_GMAIL_DIR/lib/jq_version.sh"
 
 # ========================================
 # 1. 対象ディレクトリの決定
@@ -85,7 +86,14 @@ fi
 # jq
 if command -v jq &>/dev/null; then
     jq_version=$(jq --version 2>/dev/null || echo "unknown")
-    echo -e "  $PASS jq installed ($jq_version)"
+    if jq_version_is_old "$jq_version"; then
+        echo -e "  $WARN jq is old ($jq_version) - version 1.6+ recommended"
+        echo "       jq < 1.6 rejects some filters used here and has caused account"
+        echo "       registration to fail (#147). Fix: brew upgrade jq"
+        WARNINGS=$((WARNINGS + 1))
+    else
+        echo -e "  $PASS jq installed ($jq_version)"
+    fi
 else
     echo -e "  $FAIL jq not installed"
     echo "       Fix: brew install jq"
