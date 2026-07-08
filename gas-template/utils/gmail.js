@@ -14,10 +14,18 @@ function formatThread(thread) {
   const firstMessage = messages[0];
   const lastMessage = messages[messages.length - 1];
 
+  // Drafts appear inline with sent messages; skip them to find who actually
+  // last acted (same convention as lastSentMessage in formatThreadWithMessages).
+  var lastRealMessage = null;
+  for (var i = messages.length - 1; i >= 0; i--) {
+    if (!messages[i].isDraft()) { lastRealMessage = messages[i]; break; }
+  }
+
   return {
     id: thread.getId(),
     subject: stripInvisibleChars(firstMessage.getSubject()),
     from: firstMessage.getFrom(),
+    lastFrom: lastRealMessage ? lastRealMessage.getFrom() : null,
     date: lastMessage.getDate().toISOString(),
     messageCount: messages.length,
     isUnread: thread.isUnread(),
