@@ -40,6 +40,11 @@ _ccskill_init() {
         return 1
     fi
 
+    # http_retry.sh を読み込み（GAS 側の一時的な HTML 応答への自動リトライ, #155）
+    if [ -f "$gas_dir/http_retry.sh" ]; then
+        source "$gas_dir/http_retry.sh"
+    fi
+
     # gas_token 関数の存在チェック
     if ! type gas_token &>/dev/null; then
         echo '{"ok":false,"error":"gas_token function not available. Run: clasp login && ccskill-gmail update"}' >&2
@@ -115,9 +120,15 @@ ccskill-get() {
         url="${endpoint}?${2}"
     fi
 
-    curl -sL --max-time 60 \
-        -H "Authorization: Bearer $(gas_token)" \
-        "$url"
+    if type _ccskill_fetch_with_retry &>/dev/null; then
+        _ccskill_fetch_with_retry curl -sL --max-time 60 \
+            -H "Authorization: Bearer $(gas_token)" \
+            "$url"
+    else
+        curl -sL --max-time 60 \
+            -H "Authorization: Bearer $(gas_token)" \
+            "$url"
+    fi
 }
 
 # ========================================
@@ -139,11 +150,19 @@ ccskill-post() {
     ccskill-assert-endpoint "$endpoint" || return $?
 
     # @file 対応: curl の --data は @file を自動認識するのでそのまま渡す
-    curl -sL --max-time 60 \
-        -H "Authorization: Bearer $(gas_token)" \
-        -H "Content-Type: application/json" \
-        --data "$body" \
-        "$endpoint"
+    if type _ccskill_fetch_with_retry &>/dev/null; then
+        _ccskill_fetch_with_retry curl -sL --max-time 60 \
+            -H "Authorization: Bearer $(gas_token)" \
+            -H "Content-Type: application/json" \
+            --data "$body" \
+            "$endpoint"
+    else
+        curl -sL --max-time 60 \
+            -H "Authorization: Bearer $(gas_token)" \
+            -H "Content-Type: application/json" \
+            --data "$body" \
+            "$endpoint"
+    fi
 }
 
 # ========================================
