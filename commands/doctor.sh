@@ -74,13 +74,15 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
-# clasp login（v3: show-authorized-user で判定）
-if _clasp show-authorized-user 2>&1 | grep -qi "not logged in"; then
+# clasp login（v3: show-authorized-user で判定。#153: 実行失敗とnot loggedin
+# を区別するため、有効なメールアドレスが取り出せたかどうかで判定する）
+clasp_login_raw=$(_clasp show-authorized-user 2>&1) || true
+if clasp_login_email=$(clasp_login_check "$clasp_login_raw"); then
+    echo -e "  $PASS clasp logged in ($clasp_login_email)"
+else
     echo -e "  $FAIL clasp not logged in"
     echo "       Fix: ccskill-gmail account add (or: ccskill-gmail setup)"
     ERRORS=$((ERRORS + 1))
-else
-    echo -e "  $PASS clasp logged in"
 fi
 
 # jq

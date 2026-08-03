@@ -68,11 +68,46 @@ test_only_first_match() {
 }
 
 # ========================================
+# clasp_login_check (#153)
+#
+# doctor.sh は従来 `grep -qi "not logged in"` の有無だけで PASS/FAIL を
+# 決めており、_clasp の実行自体が別の理由（モジュール欠落等）で失敗した
+# 場合に、その出力が「not logged in」という文言を含まないという理由だけで
+# 誤って「ログイン済み」と表示してしまっていた。
+# clasp_login_check は「有効なメールアドレスが取り出せたか」だけで判定
+# することで、失敗理由を問わず一貫して FAIL を返す。
+# ========================================
+
+test_login_check_success() {
+    local email
+    email=$(clasp_login_check 'You are logged in as oishi@feedtailor.jp.')
+    assert_exit_code 0 "$?" || return 1
+    assert_eq "oishi@feedtailor.jp" "$email"
+}
+
+test_login_check_not_logged_in_fails() {
+    clasp_login_check 'You are not logged in.' >/dev/null
+    assert_exit_code 1 "$?"
+}
+
+test_login_check_execution_error_fails() {
+    # #153 で実際に観測した状況の再現: _clasp が「not logged in」という
+    # 文言を含まないエラーで異常終了するケース。これを「ログイン済み」と
+    # 誤判定しないことを確認する。
+    local crash_output
+    crash_output=$(printf '%s\n' \
+        "Error [ERR_MODULE_NOT_FOUND]: Cannot find module '.../open-credentials.js'" \
+        "    at finalizeResolution (node:internal/modules/esm/resolve:271:11)")
+    clasp_login_check "$crash_output" >/dev/null
+    assert_exit_code 1 "$?"
+}
+
+# ========================================
 # 実行
 # ========================================
 
 echo ""
-echo "test-clasp-email.sh (#150)"
+echo "test-clasp-email.sh (#150, #153)"
 echo ""
 
 run_test "extracts simple email"                     test_simple_email
@@ -81,5 +116,8 @@ run_test "extracts dotted local-part email"          test_dotted_localpart
 run_test "not logged in -> empty"                    test_not_logged_in_is_empty
 run_test "empty input -> empty"                      test_empty_input_is_empty
 run_test "takes only the first match"                test_only_first_match
+run_test "login check succeeds with valid email"       test_login_check_success
+run_test "login check fails when not logged in"        test_login_check_not_logged_in_fails
+run_test "login check fails on unrelated crash output" test_login_check_execution_error_fails
 
 test_summary

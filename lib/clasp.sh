@@ -41,3 +41,24 @@ clasp_parse_authorized_email() {
 clasp_authorized_email() {
     _clasp show-authorized-user 2>&1 | clasp_parse_authorized_email
 }
+
+# Decide whether clasp is logged in, given the raw output (stdout+stderr) of
+# `_clasp show-authorized-user`. Echoes the authorized email and returns 0
+# when logged in; returns 1 with no output otherwise.
+#
+# Unlike matching only the literal string "not logged in", this treats ANY
+# output lacking a valid "logged in as <email>." line as "not logged in" —
+# so a _clasp execution failure (missing module, crash, etc.) is not
+# mistaken for a successful login (#153: doctor.sh previously showed a
+# false "PASS clasp logged in" whenever the failure message didn't happen
+# to contain the words "not logged in").
+clasp_login_check() {
+    local raw_output="$1"
+    local email
+    email=$(printf '%s' "$raw_output" | clasp_parse_authorized_email)
+    if [ -n "$email" ]; then
+        printf '%s\n' "$email"
+        return 0
+    fi
+    return 1
+}
