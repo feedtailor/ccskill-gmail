@@ -11,6 +11,8 @@ Common issues and solutions for the Gmail Skill.
 | Symptom | Cause | Solution |
 |---------|-------|----------|
 | HTML returned (login page) | No authentication / token expired | Run `clasp login` |
+| `Token refresh failed: ` with an empty error detail, inside Claude Code | Bash tool sandbox blocked the OAuth refresh request | Retry with the sandbox disabled — no re-authentication needed |
+| HTML returned (Google Drive "can't open this file" page, not a login page) | GAS-side transient hiccup, unrelated to auth | Auto-retried internally (up to 3 attempts); if it still persists, just retry the command |
 | Timeout | Cold start | Retry (`--max-time 60` is already applied automatically) |
 | Unknown action | Incorrect GET/POST usage | Use the correct get / post subcommand |
 | Invalid JSON | JSON syntax error | Validate JSON beforehand |
@@ -100,6 +102,26 @@ permissions: {
    # OK: Via api script (auto-authentication)
    ccskill-gmail api get action=list_labels
    ```
+
+---
+
+### Claude Code Sandbox Blocked the Token Refresh
+
+**Symptom**: `ERROR: Token refresh failed: . Run 'ccskill-gmail account add'.` — note the empty error detail between `Token refresh failed:` and the period. This is distinct from a genuinely expired/revoked refresh token, where Google's OAuth endpoint would return a specific `error_description`.
+
+**Cause**: `gas_token()` (`lib/auth.sh`) refreshes the access token by calling `https://oauth2.googleapis.com/token`. When this command runs inside Claude Code's sandboxed Bash tool, that request can be blocked even when the host is on the allowed list, leaving `curl` with no response at all — hence the empty error detail.
+
+**Solution**: Re-run the same command with the sandbox disabled. The credentials themselves are fine; no re-authentication (`clasp login`, `ccskill-gmail account add`) is needed.
+
+---
+
+### GAS Returned an Unrelated "Page Not Found" HTML (Not a Login Page)
+
+**Symptom**: The response is HTML, but it is Google Drive's generic "現在、ファイルを開くことができません。" ("Can't open this file right now.") error page — not the Google account login page described under [Authentication Error](#authentication-error-401--access-denied) above.
+
+**Cause**: A transient GAS-side hiccup unrelated to authentication or deployment. Observed to happen intermittently (roughly a few times per dozen calls) and to resolve on a simple retry; connectivity checks (`ccskill-gmail api whoami`, a plain health-check call) succeed normally around it.
+
+**Solution**: `ccskill-gmail api get` / `post` already retry automatically (up to 3 attempts, #155) when the response looks like an HTML page, so this is usually invisible in normal use. If it still surfaces after those retries, simply run the command again — do **not** treat it as a sign that clasp, npm, or the account setup is broken (see #153 for a real incident where this kind of transient failure led to an incorrect diagnosis of environment corruption).
 
 ---
 
